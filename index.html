@@ -293,9 +293,12 @@
   .filter-bar .field label { margin-bottom: 6px; }
 
   /* Shift indicator */
-  .shift-badge-P { background: #dbeafe; color: #1d4ed8; padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
-  .shift-badge-M { background: #ede9fe; color: #5b21b6; padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
-  .shift-badge-- { background: #f1f5f9; color: #94a3b8; padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+  .shift-badge-P { background:#dcfce7;color:#16a34a;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:inherit }
+  .shift-badge-M { background:#ede9fe;color:#7c3aed;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:inherit }
+  .shift-badge-L, .shift-badge-- { background:#f1f5f9;color:#6b7280;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:inherit }
+  .shift-edit-cell { display:flex;align-items:center;justify-content:center;gap:6px }
+  .shift-select { padding:4px 8px;border-radius:8px;border:2px solid #e2e8f0;font-size:12px;font-weight:700;cursor:pointer;outline:none;background:#fff }
+  .shift-select:focus { border-color:var(--primary-light) }
 
   /* Responsive */
   @media (max-width: 768px) {
@@ -361,6 +364,7 @@
   .logout-modal p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
   .logout-modal .btn-row { display: flex; gap: 10px; justify-content: center; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -484,6 +488,10 @@
       <a class="nav-item" onclick="showPage('adminHakCuti')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         Hak Cuti Pegawai
+      </a>
+      <a class="nav-item" onclick="showPage('adminPotongan')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Rekapitulasi Potongan
       </a>
     </div>
     <div class="sidebar-footer">
@@ -778,6 +786,7 @@
               </select>
             </div>
             <button class="btn btn-primary" onclick="loadAdminAbsensi()">🔍 Tampilkan</button>
+            <button class="btn btn-success" onclick="exportAbsensiExcel()" style="background:#16a34a;border-color:#16a34a">⬇ Export Excel</button>
           </div>
           <div class="table-wrap">
             <table>
@@ -832,15 +841,55 @@
 
       <!-- ===== ADMIN: SHIFT ===== -->
       <div class="page" id="page-adminShift">
+
+        <!-- Info legend -->
+        <div class="card" style="background:linear-gradient(135deg,#1a3a5c,#2d5a8e);color:#fff;margin-bottom:16px;padding:16px 20px">
+          <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+            <div style="font-weight:700;font-size:14px">Kode Shift:</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <span style="background:#16a34a;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">P = PAGI (07:00–19:00)</span>
+              <span style="background:#7c3aed;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">M = MALAM (19:00–07:00)</span>
+              <span style="background:#6b7280;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">L = LIBUR / OFF</span>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-title">🔄 Jadwal Shift Security</div>
-          <div class="filter-bar">
+
+          <!-- Filter & Aksi -->
+          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
             <div class="field"><label>Bulan</label><input type="month" id="filterShiftMonth"></div>
             <button class="btn btn-primary" onclick="loadShiftData()">🔍 Tampilkan</button>
+            <button class="btn btn-success" onclick="toggleEditShift()" id="btnEditShift" style="background:#16a34a;border-color:#16a34a">✏️ Mode Edit</button>
+            <button class="btn btn-primary" onclick="simpanJadwalShift()" id="btnSimpanShift" style="display:none;background:#7c3aed;border-color:#7c3aed">💾 Simpan Jadwal</button>
+            <button class="btn btn-outline" onclick="batalEditShift()" id="btnBatalShift" style="display:none">✕ Batal</button>
+            <label class="btn" style="background:#f59e0b;border:none;color:#fff;cursor:pointer;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600">
+              📤 Upload Excel
+              <input type="file" id="shiftFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadJadwalShift(event)">
+            </label>
+            <button class="btn btn-outline" onclick="downloadTemplateShift()">⬇ Template Excel</button>
+            <button class="btn btn-success" onclick="exportShiftExcel()" style="background:#16a34a;border-color:#16a34a">📊 Export Excel</button>
           </div>
+
+          <!-- Petunjuk upload -->
+          <div id="shiftUploadInfo" style="display:none;margin:10px 0">
+            <div class="alert alert-info" style="font-size:13px">
+              📋 <strong>Format upload:</strong> Kolom: Tanggal (YYYY-MM-DD) | TIM 1 | TIM 2 | TIM 3 | TIM 4 — Isi dengan <strong>P</strong> (Pagi), <strong>M</strong> (Malam), atau <strong>L</strong> (Libur)
+            </div>
+          </div>
+
           <div class="table-wrap">
-            <table>
-              <thead><tr><th>Tanggal</th><th>TIM 1</th><th>TIM 2</th><th>TIM 3</th><th>TIM 4</th></tr></thead>
+            <table id="shiftTable">
+              <thead>
+                <tr>
+                  <th style="min-width:100px">Tanggal</th>
+                  <th style="min-width:90px">TIM 1</th>
+                  <th style="min-width:90px">TIM 2</th>
+                  <th style="min-width:90px">TIM 3</th>
+                  <th style="min-width:90px">TIM 4</th>
+                </tr>
+              </thead>
               <tbody id="shiftBody"></tbody>
             </table>
           </div>
@@ -872,6 +921,88 @@
                 </tr>
               </thead>
               <tbody id="adminHakCutiBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ADMIN: REKAPITULASI POTONGAN ===== -->
+      <div class="page" id="page-adminPotongan">
+        <!-- Info potongan -->
+        <div class="card" style="background:linear-gradient(135deg,#1a3a5c,#2d5a8e);color:#fff;margin-bottom:16px">
+          <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+            <div>
+              <div style="font-size:11px;opacity:0.7;font-weight:600;margin-bottom:4px">POTONGAN TERLAMBAT</div>
+              <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace">1%</div>
+              <div style="font-size:12px;opacity:0.7">per kejadian</div>
+            </div>
+            <div style="width:1px;height:48px;background:rgba(255,255,255,0.2)"></div>
+            <div>
+              <div style="font-size:11px;opacity:0.7;font-weight:600;margin-bottom:4px">POTONGAN PULANG CEPAT</div>
+              <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace">1%</div>
+              <div style="font-size:12px;opacity:0.7">per kejadian</div>
+            </div>
+            <div style="width:1px;height:48px;background:rgba(255,255,255,0.2)"></div>
+            <div>
+              <div style="font-size:11px;opacity:0.7;font-weight:600;margin-bottom:4px">POTONGAN TIDAK MASUK</div>
+              <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace">4%</div>
+              <div style="font-size:12px;opacity:0.7">per hari (tanpa ijin/cuti)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💰 Rekapitulasi Potongan Per Pegawai</div>
+          <div class="filter-bar">
+            <div class="field"><label>Dari</label><input type="date" id="potFilterFrom"></div>
+            <div class="field"><label>Sampai</label><input type="date" id="potFilterTo"></div>
+            <div class="field"><label>Jabatan</label>
+              <select id="potFilterJab">
+                <option value="">Semua</option>
+                <option>Cleaning Service</option>
+                <option>Pramubakti</option>
+                <option>Security</option>
+                <option>Pengemudi</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="loadAdminPotongan()">🔍 Hitung</button>
+            <button class="btn btn-success" onclick="exportPotonganExcel()" style="background:#16a34a;border-color:#16a34a">⬇ Export Excel</button>
+          </div>
+
+          <div id="potonganSummaryCards" style="display:none;margin-bottom:16px">
+            <div class="stats-grid">
+              <div class="stat-card red"><div class="label">Total Terlambat</div><div class="value" id="pot-late">0</div><div class="sub">kejadian</div></div>
+              <div class="stat-card amber"><div class="label">Total Pulang Cepat</div><div class="value" id="pot-early">0</div><div class="sub">kejadian</div></div>
+              <div class="stat-card red"><div class="label">Total Tidak Masuk</div><div class="value" id="pot-absent">0</div><div class="sub">hari tanpa ijin</div></div>
+              <div class="stat-card blue"><div class="label">Rata-rata Potongan</div><div class="value" id="pot-avg">0%</div><div class="sub">per pegawai</div></div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table id="potonganTable">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>ID Pegawai</th>
+                  <th>Nama</th>
+                  <th>Jabatan</th>
+                  <th>Hari Kerja</th>
+                  <th>Hadir</th>
+                  <th style="color:#86efac">Ijin/Cuti Disetujui</th>
+                  <th style="color:#fca5a5">Terlambat</th>
+                  <th style="color:#fcd34d">Pulang Cepat</th>
+                  <th style="color:#fca5a5">Tidak Masuk</th>
+                  <th style="color:#fca5a5">Pot. Terlambat</th>
+                  <th style="color:#fcd34d">Pot. Pulang Cepat</th>
+                  <th style="color:#fca5a5">Pot. Tidak Masuk</th>
+                  <th style="background:#dc2626;color:#fff;border-radius:4px">TOTAL POTONGAN</th>
+                </tr>
+              </thead>
+              <tbody id="adminPotonganBody">
+                <tr><td colspan="14" style="text-align:center;padding:40px;color:var(--text-muted)">
+                  Pilih periode dan klik <strong>Hitung</strong>
+                </td></tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -1129,7 +1260,10 @@ function doLogout() {
   closeModal('logoutModal');
   currentUser = null;
   currentUserData = null;
-  if (cameraStream) { cameraStream.getTracks().forEach(t=>t.stop()); cameraStream=null; }
+  if (cameraStream && cameraStream !== 'skip') {
+    cameraStream.getTracks().forEach(function(t){ t.stop(); });
+  }
+  cameraStream = null;
   if (clockInterval) { clearInterval(clockInterval); clockInterval=null; }
   sessionStorage.removeItem('ppnpn_session');
   document.getElementById('appPage').style.display = 'none';
@@ -1292,7 +1426,8 @@ function showPage(name) {
     adminCuti: '✅ Persetujuan Cuti & Ijin',
     adminPegawai: '👥 Data Seluruh Pegawai',
     adminShift: '🔄 Jadwal Shift Security',
-    adminHakCuti: '🏖 Hak Cuti Pegawai'
+    adminHakCuti: '🏖 Hak Cuti Pegawai',
+    adminPotongan: '💰 Rekapitulasi Potongan'
   };
   document.getElementById('topbarTitle').textContent = titles[name] || name;
 
@@ -1313,6 +1448,7 @@ function showPage(name) {
   if (name === 'adminPegawai') loadAdminPegawai();
   if (name === 'adminShift') { initShiftFilter(); loadShiftData(); }
   if (name === 'adminHakCuti') loadAdminHakCuti();
+  if (name === 'adminPotongan') initAdminPotongan();
   if (name === 'dashboard') loadDashboard();
 }
 
@@ -1466,7 +1602,7 @@ async function loadDashboard() {
 // ============================================================
 // ABSENSI PAGE
 // ============================================================
-function initAbsensiPage() {
+async function initAbsensiPage() {
   const u = currentUser;
   document.getElementById('absenNama').textContent = u.namaPegawai;
   document.getElementById('absenJabatan').textContent = u.pekerjaan;
@@ -1474,7 +1610,6 @@ function initAbsensiPage() {
   // Determine shift
   let jamMasuk = '-', jamPulang = '-';
   if (u.pekerjaan === 'Security') {
-    // Look up shift from DEMO shift data or determine based on tim
     const shiftInfo = getSecurityShiftToday(u.Tim);
     if (shiftInfo === '-') {
       document.getElementById('offDayNotice').style.display='block';
@@ -1488,7 +1623,6 @@ function initAbsensiPage() {
       document.getElementById('absenShiftLabel').textContent = shiftInfo==='P' ? 'Pagi (07:00 - 19:00)' : 'Malam (19:00 - 07:00)';
     }
   } else {
-    // Check holiday (Sabtu/Minggu)
     const dayOfWeek = new Date().getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       document.getElementById('holidayNotice').style.display = 'block';
@@ -1507,20 +1641,27 @@ function initAbsensiPage() {
   if (clockInterval) clearInterval(clockInterval);
   clockInterval = setInterval(updateClock, 1000);
   updateClock();
-
-  // Date
   document.getElementById('absenDateDisplay').textContent = todayStr();
 
-  // Check existing absen today
-  todayAbsenData = localAbsensi.find(a => a.idPegawai===u.idPegawai && a.tanggal===today());
+  // Cek absensi hari ini dari Sheets (prioritas) supaya tidak dobel
+  todayAbsenData = null;
+  if (SCRIPT_URL) {
+    const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: today(), to: today() });
+    if (res && res.success && res.data.length > 0) {
+      todayAbsenData = res.data[0];
+      // Sync ke local
+      localAbsensi = localAbsensi.filter(function(a){ return !(a.idPegawai===u.idPegawai && a.tanggal===today()); });
+      localAbsensi.push(todayAbsenData);
+      localStorage.setItem('ppnpn_absensi', JSON.stringify(localAbsensi));
+    }
+  }
+  if (!todayAbsenData) {
+    todayAbsenData = localAbsensi.find(function(a){ return a.idPegawai===u.idPegawai && a.tanggal===today(); });
+  }
 
-  // Update button states
   updateAbsenButtons();
-
-  // Get location
   getLocation();
 
-  // Default filter range for history
   const d = new Date();
   d.setDate(d.getDate()-30);
   document.getElementById('filterAbsenFrom').value = d.toISOString().split('T')[0];
@@ -1551,44 +1692,91 @@ function updateClock() {
 }
 
 function updateAbsenButtons() {
-  const btnMasuk = document.getElementById('btnAbsenMasuk');
+  const btnMasuk  = document.getElementById('btnAbsenMasuk');
   const btnPulang = document.getElementById('btnAbsenPulang');
-  const cameraOk = !!cameraStream;
-  const allOk = cameraOk && locationOk;
+  const cameraOk  = !!cameraStream; // true juga jika cameraStream === 'skip'
+  const allOk     = cameraOk && locationOk;
 
   if (todayAbsenData) {
     if (todayAbsenData.absenMasuk) {
       btnMasuk.disabled = true;
-      btnMasuk.textContent = `✅ Sudah Masuk (${fmtTime(todayAbsenData.absenMasuk)})`;
+      btnMasuk.textContent = '✅ Sudah Masuk (' + fmtTime(todayAbsenData.absenMasuk) + ')';
     } else {
       btnMasuk.disabled = !allOk;
+      btnMasuk.textContent = '✅ Absen Masuk';
     }
     if (todayAbsenData.absenPulang) {
       btnPulang.disabled = true;
-      btnPulang.textContent = `🏠 Sudah Pulang (${fmtTime(todayAbsenData.absenPulang)})`;
+      btnPulang.textContent = '🏠 Sudah Pulang (' + fmtTime(todayAbsenData.absenPulang) + ')';
     } else {
       btnPulang.disabled = !allOk || !todayAbsenData.absenMasuk;
+      btnPulang.textContent = '🏠 Absen Pulang';
     }
   } else {
-    btnMasuk.disabled = !allOk;
-    btnMasuk.textContent = '✅ Absen Masuk';
+    btnMasuk.disabled  = !allOk;
+    btnMasuk.textContent  = '✅ Absen Masuk';
     btnPulang.disabled = true;
     btnPulang.textContent = '🏠 Absen Pulang';
   }
 }
 
 async function startCamera() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-    cameraStream = stream;
-    const video = document.getElementById('videoPreview');
-    video.srcObject = stream;
-    video.play();
-    document.getElementById('camOverlay').style.display = 'none';
-    updateAbsenButtons();
-  } catch(e) {
-    showAlert('absenAlert', 'error', '❌ Gagal mengakses kamera: ' + e.message);
+  const btn = document.querySelector('.btn-amber[onclick="startCamera()"]');
+  if (btn) { btn.textContent = '⏳ Membuka kamera...'; btn.disabled = true; }
+
+  // Hentikan stream lama jika masih ada
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(function(t){ t.stop(); });
+    cameraStream = null;
+    await new Promise(function(r){ setTimeout(r, 500); }); // jeda 500ms
   }
+
+  // Coba beberapa konfigurasi kamera
+  var configs = [
+    { video: { facingMode: 'user' }, audio: false },
+    { video: { facingMode: 'environment' }, audio: false },
+    { video: true, audio: false }
+  ];
+
+  var lastError = null;
+  for (var i = 0; i < configs.length; i++) {
+    try {
+      var stream = await navigator.mediaDevices.getUserMedia(configs[i]);
+      cameraStream = stream;
+      var video = document.getElementById('videoPreview');
+      video.srcObject = stream;
+      await video.play();
+      document.getElementById('camOverlay').style.display = 'none';
+      if (btn) { btn.textContent = '🔄 Ganti Kamera'; btn.disabled = false; }
+      updateAbsenButtons();
+      return; // berhasil
+    } catch(e) {
+      lastError = e;
+      await new Promise(function(r){ setTimeout(r, 300); });
+    }
+  }
+
+  // Semua config gagal — tampilkan opsi lanjut tanpa kamera
+  if (btn) { btn.textContent = '🔄 Coba Lagi'; btn.disabled = false; }
+
+  var pesanError = lastError ? lastError.message : 'Tidak diketahui';
+  var overlay = document.getElementById('camOverlay');
+  overlay.innerHTML =
+    '<div style="text-align:center;padding:16px">' +
+      '<div style="font-size:32px;margin-bottom:8px">📷</div>' +
+      '<div style="color:#dc2626;font-weight:700;margin-bottom:8px">Kamera tidak tersedia</div>' +
+      '<div style="font-size:12px;color:#666;margin-bottom:16px">' + pesanError + '</div>' +
+      '<button class="btn btn-amber" onclick="startCamera()" style="margin-bottom:8px;width:100%">🔄 Coba Lagi</button>' +
+      '<button class="btn btn-outline" onclick="lanjutTanpaKamera()" style="width:100%;font-size:13px">✅ Lanjut Tanpa Kamera</button>' +
+    '</div>';
+  overlay.style.display = 'flex';
+}
+
+function lanjutTanpaKamera() {
+  cameraStream = 'skip'; // flag khusus: absen tanpa foto
+  document.getElementById('camOverlay').style.display = 'none';
+  updateAbsenButtons();
+  showAlert('absenAlert', 'warn', '⚠ Mode tanpa kamera — absensi tetap tercatat tanpa foto.');
 }
 
 function getLocation() {
@@ -1625,9 +1813,10 @@ function getLocation() {
 }
 
 function capturePhoto() {
-  const video = document.getElementById('videoPreview');
+  if (!cameraStream || cameraStream === 'skip') return 'tanpa_foto';
+  const video  = document.getElementById('videoPreview');
   const canvas = document.getElementById('captureCanvas');
-  canvas.width = video.videoWidth || 640;
+  canvas.width  = video.videoWidth  || 640;
   canvas.height = video.videoHeight || 480;
   canvas.getContext('2d').drawImage(video, 0, 0);
   return canvas.toDataURL('image/jpeg', 0.7);
@@ -1638,7 +1827,7 @@ function getStatusMasuk(jamKerjaStr) {
   const [h,m] = jamKerjaStr.split(':').map(Number);
   const jamKerjaMs = h*60+m;
   const nowMs = now.getHours()*60+now.getMinutes();
-  return nowMs > jamKerjaMs + 15 ? 'Terlambat' : 'Tepat Waktu';
+  return nowMs > jamKerjaMs + 5 ? 'Terlambat' : 'Tepat Waktu';
 }
 
 function getStatusPulang(jamPulangStr) {
@@ -1646,25 +1835,70 @@ function getStatusPulang(jamPulangStr) {
   const [h,m] = jamPulangStr.split(':').map(Number);
   const jamPulangMs = h*60+m;
   const nowMs = now.getHours()*60+now.getMinutes();
-  return nowMs < jamPulangMs - 15 ? 'Pulang Cepat' : 'Tepat Waktu';
+  return nowMs < jamPulangMs - 5 ? 'Pulang Cepat' : 'Tepat Waktu';
 }
 
 async function doAbsen(type) {
   const u = currentUser;
-  const nowStr = new Date().toTimeString().substring(0,5);
-  const photoData = cameraStream ? capturePhoto() : 'demo_photo';
-  const lokasi = `Lat: ${userLat?.toFixed(6)||'-'}, Lon: ${userLon?.toFixed(6)||'-'}`;
 
-  const jamMasukEl = document.getElementById('absenJamMasuk').textContent;
+  // ── GUARD: cek dulu ke Sheets apakah hari ini sudah ada record ──
+  if (SCRIPT_URL) {
+    const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: today(), to: today() });
+    if (res && res.success && res.data.length > 0) {
+      // Ambil record pertama (satu hari = satu record)
+      todayAbsenData = res.data[0];
+      // Sync ke local, hapus duplikat jika ada
+      localAbsensi = localAbsensi.filter(function(a){
+        return !(a.idPegawai === u.idPegawai && a.tanggal === today());
+      });
+      localAbsensi.push(todayAbsenData);
+      saveLocal();
+    }
+  }
+
+  // ── Cek local jika Sheets tidak tersedia ──
+  if (!todayAbsenData) {
+    const existing = localAbsensi.filter(function(a){
+      return a.idPegawai === u.idPegawai && a.tanggal === today();
+    });
+    // Jika ada duplikat di local, ambil yang paling lengkap
+    if (existing.length > 0) {
+      todayAbsenData = existing.reduce(function(best, cur){
+        return (cur.absenPulang && !best.absenPulang) ? cur : best;
+      }, existing[0]);
+      // Bersihkan duplikat
+      localAbsensi = localAbsensi.filter(function(a){
+        return !(a.idPegawai === u.idPegawai && a.tanggal === today());
+      });
+      localAbsensi.push(todayAbsenData);
+      saveLocal();
+    }
+  }
+
+  const nowStr    = new Date().toTimeString().substring(0,5);
+  const photoData = cameraStream ? capturePhoto() : 'demo_photo';
+  const lokasi    = 'Lat: ' + (userLat ? userLat.toFixed(6) : '-') + ', Lon: ' + (userLon ? userLon.toFixed(6) : '-');
+  const jamMasukEl  = document.getElementById('absenJamMasuk').textContent;
   const jamPulangEl = document.getElementById('absenJamPulang').textContent;
 
   if (type === 'masuk') {
+    // Tolak jika sudah absen masuk
+    if (todayAbsenData && todayAbsenData.absenMasuk) {
+      showAlert('absenAlert', 'warn', '⚠ Anda sudah absen masuk hari ini pukul ' + fmtTime(todayAbsenData.absenMasuk));
+      updateAbsenButtons();
+      return;
+    }
+
     const statusMasuk = jamMasukEl !== '-' ? getStatusMasuk(jamMasukEl) : 'Tepat Waktu';
+
     if (!todayAbsenData) {
+      // Buat record baru
       const row = {
         IdAbsen: genId('ABS'),
         idPegawai: u.idPegawai,
         namaPegawai: u.namaPegawai,
+        pekerjaan: u.pekerjaan,
+        Tim: u.Tim || '',
         tanggal: today(),
         absenMasuk: nowStr,
         statusAbsenMasuk: statusMasuk,
@@ -1673,7 +1907,8 @@ async function doAbsen(type) {
         lonMasuk: userLon,
         fotoMasuk: 'captured',
         absenPulang: '', statusAbsenPulang: '',
-        lokasiPulang: '', latPulang: '', lonPulang: '', fotoPulang: '', durasiKerja: ''
+        lokasiPulang: '', latPulang: '', lonPulang: '',
+        fotoPulang: '', durasiKerja: ''
       };
       localAbsensi.push(row);
       todayAbsenData = row;
@@ -1681,31 +1916,43 @@ async function doAbsen(type) {
       todayAbsenData.absenMasuk = nowStr;
       todayAbsenData.statusAbsenMasuk = statusMasuk;
     }
+
     saveLocal();
-    showAlert('absenAlert', 'success', `✅ Absen masuk berhasil! ${nowStr} — Status: ${statusMasuk}`);
-    if (SCRIPT_URL) postAPI('saveAbsensi', todayAbsenData);
+    showAlert('absenAlert', 'success', '✅ Absen masuk berhasil! ' + nowStr + ' — Status: ' + statusMasuk);
+    if (SCRIPT_URL) await postAPI('saveAbsensi', todayAbsenData);
+
   } else {
+    // Tolak jika belum absen masuk
     if (!todayAbsenData || !todayAbsenData.absenMasuk) {
       showAlert('absenAlert', 'error', '❌ Harus absen masuk terlebih dahulu!'); return;
     }
+    // Tolak jika sudah absen pulang
+    if (todayAbsenData.absenPulang) {
+      showAlert('absenAlert', 'warn', '⚠ Anda sudah absen pulang hari ini pukul ' + fmtTime(todayAbsenData.absenPulang));
+      updateAbsenButtons();
+      return;
+    }
+
     const statusPulang = jamPulangEl !== '-' ? getStatusPulang(jamPulangEl) : 'Tepat Waktu';
-    // Calculate duration
-    const [hm, mm2] = todayAbsenData.absenMasuk.split(':').map(Number);
-    const [hp, mp] = nowStr.split(':').map(Number);
-    let diff = (hp*60+mp) - (hm*60+mm2);
+    const [hm, mm2]    = todayAbsenData.absenMasuk.split(':').map(Number);
+    const [hp, mp]     = nowStr.split(':').map(Number);
+    var diff = (hp*60+mp) - (hm*60+mm2);
     if (diff < 0) diff += 24*60;
-    const durasi = `${Math.floor(diff/60)}j ${diff%60}m`;
-    todayAbsenData.absenPulang = nowStr;
+    const durasi = Math.floor(diff/60) + 'j ' + (diff%60) + 'm';
+
+    todayAbsenData.absenPulang       = nowStr;
     todayAbsenData.statusAbsenPulang = statusPulang;
-    todayAbsenData.lokasiPulang = lokasi;
-    todayAbsenData.latPulang = userLat;
-    todayAbsenData.lonPulang = userLon;
-    todayAbsenData.fotoPulang = 'captured';
-    todayAbsenData.durasiKerja = durasi;
+    todayAbsenData.lokasiPulang      = lokasi;
+    todayAbsenData.latPulang         = userLat;
+    todayAbsenData.lonPulang         = userLon;
+    todayAbsenData.fotoPulang        = 'captured';
+    todayAbsenData.durasiKerja       = durasi;
+
     saveLocal();
-    showAlert('absenAlert', 'success', `🏠 Absen pulang berhasil! ${nowStr} — Durasi: ${durasi}`);
-    if (SCRIPT_URL) postAPI('saveAbsensi', todayAbsenData);
+    showAlert('absenAlert', 'success', '🏠 Absen pulang berhasil! ' + nowStr + ' — Durasi: ' + durasi);
+    if (SCRIPT_URL) await postAPI('saveAbsensi', todayAbsenData);
   }
+
   updateAbsenButtons();
   loadAbsenHistory();
 }
@@ -2140,64 +2387,738 @@ async function loadAdminPegawai() {
 // ADMIN: SHIFT
 // ============================================================
 function initShiftFilter() {
-  const now = new Date();
-  document.getElementById('filterShiftMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  var now = new Date();
+  document.getElementById('filterShiftMonth').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
 }
-function loadShiftData() {
-  const monthVal = document.getElementById('filterShiftMonth').value;
-  if (!monthVal) return;
-  const [year, month] = monthVal.split('-').map(Number);
-  const daysInMonth = new Date(year,month,0).getDate();
-  const tbody = document.getElementById('shiftBody');
-  const tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
-  let html = '';
 
-  for (let day=1; day<=daysInMonth; day++) {
-    const d = new Date(year,month-1,day);
-    const dayOfYear = Math.floor((d - new Date(d.getFullYear(),0,0))/86400000);
-    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const dayName = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'][d.getDay()];
-    const isWeekend = d.getDay()===0||d.getDay()===6;
-    html += `<tr style="${isWeekend?'background:#fef3c7':''}" >
-      <td><strong>${day}</strong> <span style="color:var(--text-muted);font-size:12px">${dayName}</span></td>`;
-    tims.forEach((tim,idx) => {
-      const shift = (dayOfYear+idx)%4;
-      const s = shift===0?'P':shift===1?'P':shift===2?'M':'-';
-      html += `<td><span class="shift-badge-${s}">${s==='-'?'OFF':s==='P'?'PAGI':'MALAM'}</span></td>`;
+// Data jadwal shift disimpan di sini: { 'YYYY-MM-DD': { 'TIM 1':'P', 'TIM 2':'M', ... } }
+var shiftData = JSON.parse(localStorage.getItem('ppnpn_shift') || '{}');
+var shiftEditMode = false;
+var shiftOriginalData = {};
+
+function shiftLabel(s) {
+  s = (s||'L').toUpperCase();
+  if (s === 'P') return '<span class="shift-badge-P">PAGI</span>';
+  if (s === 'M') return '<span class="shift-badge-M">MALAM</span>';
+  return '<span class="shift-badge-L">LIBUR</span>';
+}
+
+function shiftSelect(dateStr, tim, val) {
+  val = (val||'L').toUpperCase();
+  return '<select class="shift-select" data-date="'+dateStr+'" data-tim="'+tim+'" onchange="onShiftChange(this)">' +
+    '<option value="P"'+(val==='P'?' selected':'')+'>PAGI</option>' +
+    '<option value="M"'+(val==='M'?' selected':'')+'>MALAM</option>' +
+    '<option value="L"'+(val==='L'?' selected':'')+'>LIBUR</option>' +
+  '</select>';
+}
+
+function onShiftChange(el) {
+  var date = el.getAttribute('data-date');
+  var tim  = el.getAttribute('data-tim');
+  if (!shiftData[date]) shiftData[date] = {};
+  shiftData[date][tim] = el.value;
+}
+
+// Hitung otomatis shift berdasarkan rotasi
+function hitungShiftOtomatis(dateStr, timIdx) {
+  var d = new Date(dateStr);
+  var dayOfYear = Math.floor((d - new Date(d.getFullYear(),0,0)) / 86400000);
+  var shift = (dayOfYear + timIdx) % 4;
+  return shift === 0 ? 'P' : shift === 1 ? 'P' : shift === 2 ? 'M' : 'L';
+}
+
+async function loadShiftData() {
+  var monthVal = document.getElementById('filterShiftMonth').value;
+  if (!monthVal) return;
+  var parts = monthVal.split('-').map(Number);
+  var year = parts[0], month = parts[1];
+  var daysInMonth = new Date(year, month, 0).getDate();
+  var tbody = document.getElementById('shiftBody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+
+  // Ambil dari Sheets jika tersedia
+  if (SCRIPT_URL) {
+    var from = year+'-'+String(month).padStart(2,'0')+'-01';
+    var to   = year+'-'+String(month).padStart(2,'0')+'-'+String(daysInMonth).padStart(2,'0');
+    var res  = await callAPI('getShift', { from: from, to: to });
+    if (res && res.success && res.data.length > 0) {
+      res.data.forEach(function(r) {
+        var tgl = r['Tanggal'] || r['tanggal'] || '';
+        if (!tgl) return;
+        if (!shiftData[tgl]) shiftData[tgl] = {};
+        if (r['TIM 1']) shiftData[tgl]['TIM 1'] = r['TIM 1'];
+        if (r['TIM 2']) shiftData[tgl]['TIM 2'] = r['TIM 2'];
+        if (r['TIM 3']) shiftData[tgl]['TIM 3'] = r['TIM 3'];
+        if (r['TIM 4']) shiftData[tgl]['TIM 4'] = r['TIM 4'];
+      });
+      localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
+    }
+  }
+
+  renderShiftTable(year, month, daysInMonth);
+}
+
+function renderShiftTable(year, month, daysInMonth) {
+  var tims  = ['TIM 1','TIM 2','TIM 3','TIM 4'];
+  var days  = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+  var html  = '';
+
+  for (var day = 1; day <= daysInMonth; day++) {
+    var d       = new Date(year, month-1, day);
+    var dateStr = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    var dayName = days[d.getDay()];
+    var isWeekend = d.getDay()===0 || d.getDay()===6;
+    var bgStyle = isWeekend ? 'background:#fef9c3' : '';
+
+    html += '<tr style="'+bgStyle+'">';
+    html += '<td><strong>'+day+'</strong> <span style="font-size:12px;color:var(--text-muted)">'+dayName+'</span></td>';
+
+    tims.forEach(function(tim, idx) {
+      var val = (shiftData[dateStr] && shiftData[dateStr][tim])
+        ? shiftData[dateStr][tim].toUpperCase()
+        : hitungShiftOtomatis(dateStr, idx);
+
+      if (shiftEditMode) {
+        html += '<td style="text-align:center">'+shiftSelect(dateStr, tim, val)+'</td>';
+      } else {
+        html += '<td style="text-align:center">'+shiftLabel(val)+'</td>';
+      }
     });
     html += '</tr>';
   }
-  tbody.innerHTML = html;
+  document.getElementById('shiftBody').innerHTML = html;
+}
+
+function toggleEditShift() {
+  shiftEditMode = true;
+  // Simpan backup
+  shiftOriginalData = JSON.parse(JSON.stringify(shiftData));
+  document.getElementById('btnEditShift').style.display   = 'none';
+  document.getElementById('btnSimpanShift').style.display = 'inline-flex';
+  document.getElementById('btnBatalShift').style.display  = 'inline-flex';
+  var monthVal = document.getElementById('filterShiftMonth').value;
+  if (monthVal) {
+    var p = monthVal.split('-').map(Number);
+    renderShiftTable(p[0], p[1], new Date(p[0], p[1], 0).getDate());
+  }
+}
+
+function batalEditShift() {
+  shiftEditMode = false;
+  shiftData = shiftOriginalData;
+  document.getElementById('btnEditShift').style.display   = 'inline-flex';
+  document.getElementById('btnSimpanShift').style.display = 'none';
+  document.getElementById('btnBatalShift').style.display  = 'none';
+  var monthVal = document.getElementById('filterShiftMonth').value;
+  if (monthVal) {
+    var p = monthVal.split('-').map(Number);
+    renderShiftTable(p[0], p[1], new Date(p[0], p[1], 0).getDate());
+  }
+}
+
+async function simpanJadwalShift() {
+  var btn = document.getElementById('btnSimpanShift');
+  btn.textContent = '⏳ Menyimpan...';
+  btn.disabled = true;
+
+  // Kumpulkan nilai dari select yang ada di DOM
+  document.querySelectorAll('.shift-select').forEach(function(sel) {
+    var date = sel.getAttribute('data-date');
+    var tim  = sel.getAttribute('data-tim');
+    if (!shiftData[date]) shiftData[date] = {};
+    shiftData[date][tim] = sel.value;
+  });
+
+  localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
+
+  // Kirim ke Sheets
+  if (SCRIPT_URL) {
+    var rows = [];
+    Object.keys(shiftData).forEach(function(tgl) {
+      rows.push({
+        Tanggal: tgl,
+        'TIM 1': shiftData[tgl]['TIM 1'] || 'L',
+        'TIM 2': shiftData[tgl]['TIM 2'] || 'L',
+        'TIM 3': shiftData[tgl]['TIM 3'] || 'L',
+        'TIM 4': shiftData[tgl]['TIM 4'] || 'L'
+      });
+    });
+    var res = await callAPI('saveShift', { rows: rows });
+    if (res && res.success) {
+      showAlert('absenAlert','success','✅ Jadwal shift berhasil disimpan ke Google Sheets!');
+    } else {
+      showAlert('absenAlert','warn','⚠ Tersimpan lokal, gagal sync ke Sheets: '+(res?res.error:'no response'));
+    }
+  } else {
+    showAlert('absenAlert','success','✅ Jadwal shift tersimpan secara lokal!');
+  }
+
+  shiftEditMode = false;
+  btn.textContent = '💾 Simpan Jadwal';
+  btn.disabled = false;
+  document.getElementById('btnEditShift').style.display   = 'inline-flex';
+  document.getElementById('btnSimpanShift').style.display = 'none';
+  document.getElementById('btnBatalShift').style.display  = 'none';
+
+  var monthVal = document.getElementById('filterShiftMonth').value;
+  if (monthVal) {
+    var p = monthVal.split('-').map(Number);
+    renderShiftTable(p[0], p[1], new Date(p[0], p[1], 0).getDate());
+  }
+}
+
+// Upload jadwal dari Excel/CSV
+function uploadJadwalShift(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  document.getElementById('shiftUploadInfo').style.display = 'block';
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var text = '';
+      // Coba parse sebagai CSV dulu
+      if (file.name.endsWith('.csv')) {
+        text = e.target.result;
+        parseShiftCSV(text);
+      } else {
+        // XLSX — gunakan SheetJS
+        var data = new Uint8Array(e.target.result);
+        var workbook = XLSX.read(data, { type: 'array' });
+        var sheet = workbook.Sheets[workbook.SheetNames[0]];
+        var csv = XLSX.utils.sheet_to_csv(sheet);
+        parseShiftCSV(csv);
+      }
+    } catch(err) {
+      alert('Gagal membaca file: ' + err.message);
+    }
+  };
+  if (file.name.endsWith('.csv')) {
+    reader.readAsText(file);
+  } else {
+    reader.readAsArrayBuffer(file);
+  }
+  event.target.value = '';
+}
+
+function parseShiftCSV(csv) {
+  var lines = csv.trim().split('\n');
+  if (lines.length < 2) { alert('File kosong atau format tidak valid'); return; }
+
+  var headers = lines[0].split(',').map(function(h){ return h.trim().replace(/"/g,''); });
+  var tglIdx  = headers.findIndex(function(h){ return h.toLowerCase().includes('tanggal') || h.toLowerCase().includes('date'); });
+  var tim1Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim1'; });
+  var tim2Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim2'; });
+  var tim3Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim3'; });
+  var tim4Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim4'; });
+
+  if (tglIdx < 0) { alert('Kolom Tanggal tidak ditemukan'); return; }
+
+  var count = 0;
+  lines.slice(1).forEach(function(line) {
+    if (!line.trim()) return;
+    var cols = line.split(',').map(function(c){ return c.trim().replace(/"/g,''); });
+    var tgl  = cols[tglIdx];
+    if (!tgl || !tgl.match(/\d{4}-\d{2}-\d{2}/)) return;
+    if (!shiftData[tgl]) shiftData[tgl] = {};
+    if (tim1Idx >= 0 && cols[tim1Idx]) shiftData[tgl]['TIM 1'] = cols[tim1Idx].toUpperCase();
+    if (tim2Idx >= 0 && cols[tim2Idx]) shiftData[tgl]['TIM 2'] = cols[tim2Idx].toUpperCase();
+    if (tim3Idx >= 0 && cols[tim3Idx]) shiftData[tgl]['TIM 3'] = cols[tim3Idx].toUpperCase();
+    if (tim4Idx >= 0 && cols[tim4Idx]) shiftData[tgl]['TIM 4'] = cols[tim4Idx].toUpperCase();
+    count++;
+  });
+
+  localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
+  alert('✅ Berhasil memuat ' + count + ' baris jadwal. Klik Simpan Jadwal untuk menyimpan ke Google Sheets.');
+
+  var monthVal = document.getElementById('filterShiftMonth').value;
+  if (monthVal) {
+    var p = monthVal.split('-').map(Number);
+    renderShiftTable(p[0], p[1], new Date(p[0], p[1], 0).getDate());
+  }
+}
+
+// Download template Excel
+function downloadTemplateShift() {
+  var monthVal = document.getElementById('filterShiftMonth').value;
+  var year, month, daysInMonth;
+  if (monthVal) {
+    var p = monthVal.split('-').map(Number);
+    year = p[0]; month = p[1];
+  } else {
+    var now = new Date();
+    year = now.getFullYear(); month = now.getMonth()+1;
+  }
+  daysInMonth = new Date(year, month, 0).getDate();
+
+  var csv = 'Tanggal,TIM 1,TIM 2,TIM 3,TIM 4\n';
+  for (var day = 1; day <= daysInMonth; day++) {
+    var dateStr = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    var vals = ['TIM 1','TIM 2','TIM 3','TIM 4'].map(function(tim, idx){
+      return (shiftData[dateStr] && shiftData[dateStr][tim])
+        ? shiftData[dateStr][tim]
+        : hitungShiftOtomatis(dateStr, idx);
+    });
+    csv += dateStr+','+vals.join(',')+'\n';
+  }
+
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = 'Template_Jadwal_Shift_'+year+'-'+String(month).padStart(2,'0')+'.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Export jadwal ke Excel
+function exportShiftExcel() {
+  var monthVal = document.getElementById('filterShiftMonth').value;
+  if (!monthVal) { alert('Pilih bulan terlebih dahulu'); return; }
+  var p = monthVal.split('-').map(Number);
+  var year = p[0], month = p[1];
+  var daysInMonth = new Date(year, month, 0).getDate();
+  var days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  var bulanNames = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office">';
+  html += '<head><meta charset="UTF-8"><' + 'style>';
+  html += 'body{font-family:Arial,sans-serif;font-size:10pt}';
+  html += 'table{border-collapse:collapse;width:100%}';
+  html += 'th{background:#1a3a5c;color:#fff;padding:8px;border:1px solid #888;text-align:center}';
+  html += 'td{padding:6px 8px;border:1px solid #ccc;text-align:center}';
+  html += '.pagi{background:#dcfce7;color:#16a34a;font-weight:bold}';
+  html += '.malam{background:#ede9fe;color:#7c3aed;font-weight:bold}';
+  html += '.libur{background:#f1f5f9;color:#6b7280}';
+  html += '.weekend{background:#fef9c3}';
+  html += '<' + '/style><' + '/head><body>';
+  html += '<h2 style="color:#1a3a5c">JADWAL SHIFT SECURITY</h2>';
+  html += '<p style="color:#666">Bulan: <strong>' + bulanNames[month] + ' ' + year + '</strong></p>';
+  html += '<table><thead><tr><th>Tgl</th><th>Hari</th><th>TIM 1</th><th>TIM 2</th><th>TIM 3</th><th>TIM 4</th></tr><' + '/thead><tbody>';
+
+  for (var day = 1; day <= daysInMonth; day++) {
+    var d       = new Date(year, month-1, day);
+    var dateStr = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    var isWeekend = d.getDay()===0||d.getDay()===6;
+    var rowClass = isWeekend ? ' class="weekend"' : '';
+    html += '<tr'+rowClass+'>';
+    html += '<td><strong>'+day+'</strong></td><td>'+days[d.getDay()]+'</td>';
+    ['TIM 1','TIM 2','TIM 3','TIM 4'].forEach(function(tim, idx) {
+      var val = (shiftData[dateStr] && shiftData[dateStr][tim])
+        ? shiftData[dateStr][tim].toUpperCase()
+        : hitungShiftOtomatis(dateStr, idx);
+      var cls = val==='P' ? 'pagi' : val==='M' ? 'malam' : 'libur';
+      var label = val==='P' ? 'PAGI' : val==='M' ? 'MALAM' : 'LIBUR';
+      html += '<td class="'+cls+'">'+label+'</td>';
+    });
+    html += '</tr>';
+  }
+  html += '<' + '/tbody><' + '/table><' + '/body><' + '/html>';
+
+  var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = 'Jadwal_Shift_'+year+'-'+String(month).padStart(2,'0')+'.xls';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ============================================================
 // ADMIN: HAK CUTI
 // ============================================================
-function loadAdminHakCuti() {
+async function loadAdminHakCuti() {
   var filter = document.getElementById('filterHakCutiJab').value;
-  var data = DEMO_USERS.filter(function(u){
-    return u.status==='Pegawai' && (!filter || u.pekerjaan===filter);
-  });
-  var tbody = document.getElementById('adminHakCutiBody');
-  tbody.innerHTML = data.map(function(u){
-    var pakai = localPermohonan.filter(function(p){
-      return p.ID_Karyawan===u.idPegawai && p.Jenis_Cuti==='Cuti Tahunan' && p.Status==='Disetujui';
-    }).reduce(function(s,p){ return s+Number(p.Jumlah_Hari||0); }, 0);
-    var sisa = Math.max(0, 6-pakai);
-    var statusLabel = sisa === 0 ? '<span class="badge badge-red">Habis</span>'
-      : sisa <= 2 ? '<span class="badge badge-amber">Hampir Habis</span>'
-      : '<span class="badge badge-green">Tersedia</span>';
+  var tbody  = document.getElementById('adminHakCutiBody');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat data pegawai...</td></tr>';
+
+  // Ambil semua pegawai dari Sheets
+  var pegawaiList = [];
+  if (SCRIPT_URL) {
+    var pResult = await callAPI('getPegawai', filter ? {pekerjaan: filter} : {});
+    if (pResult && pResult.success) pegawaiList = pResult.data;
+
+    // Ambil semua permohonan untuk hitung saldo
+    var cResult = await callAPI('getPermohonan', {});
+    if (cResult && cResult.success) {
+      localPermohonan = cResult.data;
+      localStorage.setItem('ppnpn_permohonan', JSON.stringify(localPermohonan));
+    }
+  }
+
+  if (!pegawaiList.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data pegawai</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = pegawaiList.map(function(p) {
+    var idPeg = p['ID PEGAWAI'] || '';
+    var nama  = p['NAMA'] || '-';
+    var job   = p['PEKERJAAN'] || '-';
+    var tim   = p['Tim'] || p['TIM'] || '-';
+    var pakai = localPermohonan.filter(function(pm) {
+      return pm.ID_Karyawan === idPeg &&
+             (pm.Jenis_Cuti||'').indexOf('Cuti Tahunan') >= 0 &&
+             pm.Status === 'Disetujui';
+    }).reduce(function(s, pm) { return s + Number(pm.Jumlah_Hari || 0); }, 0);
+    var sisa = Math.max(0, 6 - pakai);
+    var statusLabel = sisa === 0
+      ? '<span class="badge badge-red">Habis</span>'
+      : sisa <= 2
+        ? '<span class="badge badge-amber">Hampir Habis</span>'
+        : '<span class="badge badge-green">Tersedia</span>';
     return '<tr>' +
-      '<td style="font-family:Space Mono,monospace;font-size:12px">' + u.idPegawai + '</td>' +
-      '<td><strong>' + u.namaPegawai + '</strong></td>' +
-      '<td><span class="badge badge-blue">' + u.pekerjaan + '</span></td>' +
-      '<td><span class="badge badge-gray">' + u.Tim + '</span></td>' +
+      '<td style="font-family:Space Mono,monospace;font-size:12px">' + idPeg + '</td>' +
+      '<td><strong>' + nama + '</strong></td>' +
+      '<td><span class="badge badge-blue">' + job + '</span></td>' +
+      '<td><span class="badge badge-gray">' + tim + '</span></td>' +
       '<td style="text-align:center;font-weight:700">6</td>' +
       '<td style="text-align:center;font-weight:700;color:var(--danger)">' + pakai + '</td>' +
-      '<td style="text-align:center;font-weight:800;font-family:Space Mono,monospace;color:' + (sisa>2?'var(--accent2)':sisa>0?'var(--accent)':'var(--danger)') + '">' + sisa + '</td>' +
+      '<td style="text-align:center;font-weight:800;font-family:Space Mono,monospace;color:' +
+        (sisa > 2 ? 'var(--accent2)' : sisa > 0 ? 'var(--accent)' : 'var(--danger)') + '">' + sisa + '</td>' +
       '<td>' + statusLabel + '</td>' +
       '</tr>';
   }).join('');
+}
+
+// ============================================================
+// ADMIN: REKAPITULASI POTONGAN
+// ============================================================
+function initAdminPotongan() {
+  // Set default periode: bulan ini
+  var now   = new Date();
+  var y     = now.getFullYear();
+  var m     = String(now.getMonth()+1).padStart(2,'0');
+  var firstDay = y + '-' + m + '-01';
+  var lastDay  = y + '-' + m + '-' + String(new Date(y, now.getMonth()+1, 0).getDate()).padStart(2,'0');
+  document.getElementById('potFilterFrom').value = firstDay;
+  document.getElementById('potFilterTo').value   = lastDay;
+}
+
+async function loadAdminPotongan() {
+  var from   = document.getElementById('potFilterFrom').value;
+  var to     = document.getElementById('potFilterTo').value;
+  var jab    = document.getElementById('potFilterJab').value;
+  var tbody  = document.getElementById('adminPotonganBody');
+
+  if (!from || !to) {
+    alert('Pilih periode terlebih dahulu!');
+    return;
+  }
+
+  tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text-muted)">⏳ Menghitung data...</td></tr>';
+
+  // Ambil data pegawai dari Sheets
+  var pegawaiList = [];
+  if (SCRIPT_URL) {
+    var pRes = await callAPI('getPegawai', jab ? {pekerjaan: jab} : {});
+    if (pRes && pRes.success) pegawaiList = pRes.data;
+
+    // Ambil semua absensi periode ini
+    var aRes = await callAPI('getAbsensi', {from: from, to: to});
+    if (aRes && aRes.success) {
+      localAbsensi = localAbsensi.filter(function(a){ return a.tanggal < from || a.tanggal > to; });
+      localAbsensi = localAbsensi.concat(aRes.data);
+      localStorage.setItem('ppnpn_absensi', JSON.stringify(localAbsensi));
+    }
+
+    // Ambil permohonan cuti disetujui periode ini (untuk hitung tidak masuk sah)
+    var cRes = await callAPI('getPermohonan', {});
+    if (cRes && cRes.success) {
+      localPermohonan = cRes.data;
+      localStorage.setItem('ppnpn_permohonan', JSON.stringify(localPermohonan));
+    }
+  }
+
+  if (!pegawaiList.length) {
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text-muted)">Tidak ada data pegawai</td></tr>';
+    return;
+  }
+
+  // Hitung hari kerja dalam periode (Senin-Jumat)
+  var hariKerja = hitungHariKerja(from, to);
+
+  var rows = [];
+  var totalLambatAll = 0, totalCepatAll = 0, totalAbsenAll = 0;
+
+  pegawaiList.forEach(function(p) {
+    var idPeg = p['ID PEGAWAI'] || '';
+    var nama  = p['NAMA']       || '-';
+    var job   = p['PEKERJAAN']  || '-';
+    var tim   = p['Tim']        || '-';
+
+    // Absensi pegawai ini dalam periode
+    var absensiPeg = localAbsensi.filter(function(a) {
+      return a.idPegawai === idPeg && a.tanggal >= from && a.tanggal <= to;
+    });
+
+    var jumlahHadir    = absensiPeg.length;
+    var jumlahTerlambat = absensiPeg.filter(function(a){ return a.statusAbsenMasuk === 'Terlambat'; }).length;
+    var jumlahCepat    = absensiPeg.filter(function(a){ return a.statusAbsenPulang === 'Pulang Cepat'; }).length;
+
+    // Cuti/ijin disetujui dalam periode ini
+    var hariCutiDisetujui = 0;
+    localPermohonan.filter(function(pm) {
+      return pm.ID_Karyawan === idPeg && pm.Status === 'Disetujui';
+    }).forEach(function(pm) {
+      var mulai  = pm.Tanggal_Mulai   || '';
+      var selesai = pm.Tanggal_Selesai || '';
+      if (!mulai || !selesai) return;
+      // Hitung overlap dengan periode filter
+      var start = mulai  > from ? mulai  : from;
+      var end   = selesai < to  ? selesai : to;
+      if (start <= end) hariCutiDisetujui += hitungHariKerja(start, end);
+    });
+
+    // Tidak masuk tanpa ijin = hari kerja - hadir - cuti disetujui
+    var tidakMasukTanpaIjin = Math.max(0, hariKerja - jumlahHadir - hariCutiDisetujui);
+
+    // Hitung potongan
+    var potTerlambat = jumlahTerlambat * 1;   // 1% per kejadian
+    var potCepat     = jumlahCepat     * 1;   // 1% per kejadian
+    var potAbsen     = tidakMasukTanpaIjin * 4; // 4% per hari
+    var totalPotongan = potTerlambat + potCepat + potAbsen;
+
+    totalLambatAll += jumlahTerlambat;
+    totalCepatAll  += jumlahCepat;
+    totalAbsenAll  += tidakMasukTanpaIjin;
+
+    rows.push({
+      idPeg: idPeg, nama: nama, job: job, tim: tim,
+      hariKerja: hariKerja, hadir: jumlahHadir,
+      cutiDisetujui: hariCutiDisetujui,
+      terlambat: jumlahTerlambat, cepat: jumlahCepat,
+      tidakMasuk: tidakMasukTanpaIjin,
+      potTerlambat: potTerlambat, potCepat: potCepat, potAbsen: potAbsen,
+      totalPotongan: totalPotongan
+    });
+  });
+
+  // Tampilkan summary cards
+  document.getElementById('potonganSummaryCards').style.display = 'block';
+  document.getElementById('pot-late').textContent   = totalLambatAll;
+  document.getElementById('pot-early').textContent  = totalCepatAll;
+  document.getElementById('pot-absent').textContent = totalAbsenAll;
+  var avgPotongan = rows.length > 0
+    ? (rows.reduce(function(s,r){ return s+r.totalPotongan; },0) / rows.length).toFixed(1)
+    : 0;
+  document.getElementById('pot-avg').textContent = avgPotongan + '%';
+
+  // Render tabel
+  tbody.innerHTML = rows.map(function(r, i) {
+    var potonganColor = r.totalPotongan === 0 ? '#16a34a' : r.totalPotongan <= 5 ? '#d97706' : '#dc2626';
+    return '<tr>' +
+      '<td style="text-align:center">' + (i+1) + '</td>' +
+      '<td style="font-family:Space Mono,monospace;font-size:12px">' + r.idPeg + '</td>' +
+      '<td><strong>' + r.nama + '</strong></td>' +
+      '<td><span class="badge badge-blue">' + r.job + '</span></td>' +
+      '<td style="text-align:center">' + r.hariKerja + '</td>' +
+      '<td style="text-align:center;font-weight:600;color:#16a34a">' + r.hadir + '</td>' +
+      '<td style="text-align:center;font-weight:700;color:' + (r.cutiDisetujui>0?'#16a34a':'#94a3b8') + '">' +
+        (r.cutiDisetujui > 0 ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:700">'+r.cutiDisetujui+' hari</span>' : '-') +
+      '</td>' +
+      '<td style="text-align:center;font-weight:700;color:' + (r.terlambat>0?'#dc2626':'#16a34a') + '">' + r.terlambat + '</td>' +
+      '<td style="text-align:center;font-weight:700;color:' + (r.cepat>0?'#d97706':'#16a34a') + '">' + r.cepat + '</td>' +
+      '<td style="text-align:center;font-weight:700;color:' + (r.tidakMasuk>0?'#dc2626':'#16a34a') + '">' + r.tidakMasuk + '</td>' +
+      '<td style="text-align:center">' + (r.potTerlambat>0?'<span style="color:#dc2626;font-weight:700">-'+r.potTerlambat+'%</span>':'<span style="color:#16a34a">0%</span>') + '</td>' +
+      '<td style="text-align:center">' + (r.potCepat>0?'<span style="color:#d97706;font-weight:700">-'+r.potCepat+'%</span>':'<span style="color:#16a34a">0%</span>') + '</td>' +
+      '<td style="text-align:center">' + (r.potAbsen>0?'<span style="color:#dc2626;font-weight:700">-'+r.potAbsen+'%</span>':'<span style="color:#16a34a">0%</span>') + '</td>' +
+      '<td style="text-align:center;font-size:16px;font-weight:900;font-family:Space Mono,monospace;color:' + potonganColor + '">' +
+        (r.totalPotongan > 0 ? '-' + r.totalPotongan + '%' : '<span style="color:#16a34a">✓ 0%</span>') +
+      '</td>' +
+      '</tr>';
+  }).join('');
+
+  // Simpan rows ke global untuk export
+  window._lastPotonganRows = rows;
+  window._lastPotonganPeriode = { from: from, to: to, jab: jab, hariKerja: hariKerja };
+}
+
+// Hitung jumlah hari kerja (Senin-Jumat) antara dua tanggal
+function hitungHariKerja(from, to) {
+  var count = 0;
+  var cur   = new Date(from);
+  var end   = new Date(to);
+  while (cur <= end) {
+    var day = cur.getDay();
+    if (day !== 0 && day !== 6) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
+function exportPotonganExcel() {
+  var rows    = window._lastPotonganRows;
+  var periode = window._lastPotonganPeriode;
+
+  if (!rows || !rows.length) {
+    alert('Hitung rekapitulasi terlebih dahulu!');
+    return;
+  }
+
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+  html += '<head><meta charset="UTF-8"><' + 'style>';
+  html += 'body{font-family:Arial,sans-serif;font-size:10pt}';
+  html += 'table{border-collapse:collapse;width:100%}';
+  html += 'th{background:#1a3a5c;color:#fff;padding:7px 9px;border:1px solid #888;font-size:9pt;text-align:center}';
+  html += 'td{padding:5px 8px;border:1px solid #ccc;font-size:10pt;vertical-align:middle}';
+  html += 'tr:nth-child(even)td{background:#f8fafc}';
+  html += '.red{color:#dc2626;font-weight:bold} .green{color:#16a34a;font-weight:bold} .amber{color:#d97706;font-weight:bold}';
+  html += '.total-row td{background:#fef3c7;font-weight:bold;border-top:2px solid #d97706}';
+  html += '<' + '/style><' + '/head><body>';
+
+  html += '<h2 style="color:#1a3a5c;margin-bottom:4px">REKAPITULASI POTONGAN PEGAWAI PPNPN</h2>';
+  html += '<p style="color:#666;font-size:10pt">Periode: ' + fmtDate(periode.from) + ' s/d ' + fmtDate(periode.to);
+  html += ' &nbsp;|&nbsp; Jabatan: ' + (periode.jab||'Semua');
+  html += ' &nbsp;|&nbsp; Hari Kerja: ' + periode.hariKerja + ' hari</p>';
+  html += '<p style="color:#666;font-size:9pt;margin-bottom:12px">Diekspor: ' + todayStr() + '</p>';
+
+  html += '<table><thead><tr>';
+  html += '<th>No</th><th>ID Pegawai</th><th>Nama</th><th>Jabatan</th>';
+  html += '<th>Hari Kerja</th><th>Hadir</th><th style="background:#166534;color:#fff">Ijin/Cuti Disetujui</th><th>Terlambat</th><th>Pulang Cepat</th><th>Tidak Masuk</th>';
+  html += '<th>Pot. Terlambat (1%)</th><th>Pot. Pulang Cepat (1%)</th><th>Pot. Tidak Masuk (4%)</th>';
+  html += '<th>TOTAL POTONGAN (%)</th>';
+  html += '</tr><' + '/thead><tbody>';
+
+  var totalPot = 0;
+  rows.forEach(function(r, i) {
+    totalPot += r.totalPotongan;
+    html += '<tr>';
+    html += '<td style="text-align:center">' + (i+1) + '</td>';
+    html += '<td style="font-family:monospace">' + r.idPeg + '</td>';
+    html += '<td><b>' + r.nama + '</b></td>';
+    html += '<td>' + r.job + '</td>';
+    html += '<td style="text-align:center">' + r.hariKerja + '</td>';
+    html += '<td style="text-align:center" class="green">' + r.hadir + '</td>';
+    html += '<td style="text-align:center;background:#f0fdf4;color:#16a34a;font-weight:bold">' + (r.cutiDisetujui > 0 ? r.cutiDisetujui + ' hari' : '-') + '</td>';
+    html += '<td style="text-align:center" class="' + (r.terlambat>0?'red':'green') + '">' + r.terlambat + '</td>';
+    html += '<td style="text-align:center" class="' + (r.cepat>0?'amber':'green') + '">' + r.cepat + '</td>';
+    html += '<td style="text-align:center" class="' + (r.tidakMasuk>0?'red':'green') + '">' + r.tidakMasuk + '</td>';
+    html += '<td style="text-align:center" class="' + (r.potTerlambat>0?'red':'green') + '">' + (r.potTerlambat>0?'-'+r.potTerlambat+'%':'0%') + '</td>';
+    html += '<td style="text-align:center" class="' + (r.potCepat>0?'amber':'green') + '">' + (r.potCepat>0?'-'+r.potCepat+'%':'0%') + '</td>';
+    html += '<td style="text-align:center" class="' + (r.potAbsen>0?'red':'green') + '">' + (r.potAbsen>0?'-'+r.potAbsen+'%':'0%') + '</td>';
+    html += '<td style="text-align:center;font-size:12pt;font-weight:bold" class="' + (r.totalPotongan>0?'red':'green') + '">';
+    html += (r.totalPotongan > 0 ? '-' + r.totalPotongan + '%' : '0%') + '</td>';
+    html += '</tr>';
+  });
+
+  // Baris total
+  var avgPot = rows.length > 0 ? (totalPot/rows.length).toFixed(1) : 0;
+  html += '<tr class="total-row">';
+  html += '<td colspan="4" style="text-align:right"><b>RATA-RATA POTONGAN:</b></td>';
+  html += '<td colspan="9"></td>';
+  html += '<td style="text-align:center;font-size:12pt;font-weight:bold;color:#dc2626">-' + avgPot + '%</td>';
+  html += '</tr>';
+
+  html += '<' + '/tbody><' + '/table>';
+  html += '<p style="font-size:9pt;color:#888;margin-top:12px">Keterangan: Terlambat = masuk &gt;5 menit setelah jam kerja | Pulang Cepat = pulang &gt;5 menit sebelum jam kerja | Tidak Masuk = tidak hadir tanpa cuti/ijin yang disetujui</p>';
+  html += '<' + '/body><' + '/html>';
+
+  var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'Rekapitulasi_Potongan_' + (periode.from||'') + '_sd_' + (periode.to||'') + '.xls';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportAbsensiExcel() {
+  var from = document.getElementById('admFilterFrom').value;
+  var to   = document.getElementById('admFilterTo').value;
+  var jab  = document.getElementById('admFilterJab').value;
+
+  var data = localAbsensi.filter(function(a) {
+    if (from && a.tanggal < from) return false;
+    if (to   && a.tanggal > to)   return false;
+    if (jab  && a.pekerjaan !== jab && !localAbsensi.find(function(x){
+      return x.idPegawai===a.idPegawai;
+    })) return false;
+    return true;
+  }).sort(function(a,b) {
+    return a.tanggal.localeCompare(b.tanggal) || (a.namaPegawai||'').localeCompare(b.namaPegawai||'');
+  });
+
+  if (!data.length) {
+    alert('Tidak ada data untuk di-export. Tampilkan data terlebih dahulu.');
+    return;
+  }
+
+  // Build HTML table untuk Excel
+  var periodLabel = (from || '...') + ' s/d ' + (to || '...');
+  var jabLabel    = jab || 'Semua';
+
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+  html += '<head><meta charset="UTF-8">';
+  html += '<style>';
+  html += 'body{font-family:Arial,sans-serif;font-size:11pt}';
+  html += 'table{border-collapse:collapse;width:100%}';
+  html += 'th{background:#1a3a5c;color:#fff;padding:8px 10px;border:1px solid #ddd;font-size:10pt;text-align:center}';
+  html += 'td{padding:6px 10px;border:1px solid #ddd;font-size:10pt;vertical-align:middle}';
+  html += 'tr:nth-child(even)td{background:#f8fafc}';
+  html += '.title{font-size:14pt;font-weight:bold;color:#1a3a5c;margin-bottom:4px}';
+  html += '.subtitle{font-size:10pt;color:#666;margin-bottom:12px}';
+  html += '.late{color:#dc2626;font-weight:bold}';
+  html += '.ontime{color:#16a34a;font-weight:bold}';
+  html += '.early{color:#d97706;font-weight:bold}';
+  html += '<' + '/style><' + '/head><body>';
+
+  html += '<p class="title">REKAP ABSENSI PEGAWAI PPNPN</p>';
+  html += '<p class="subtitle">Periode: ' + periodLabel + ' &nbsp;|&nbsp; Jabatan: ' + jabLabel + '</p>';
+  html += '<p class="subtitle">Diekspor: ' + todayStr() + '</p>';
+
+  html += '<table>';
+  html += '<thead><tr>';
+  html += '<th>No</th><th>Tanggal</th><th>ID Pegawai</th><th>Nama</th><th>Jabatan</th><th>Tim</th>';
+  html += '<th>Jam Masuk</th><th>Status Masuk</th><th>Jam Pulang</th><th>Status Pulang</th><th>Durasi Kerja</th><th>Lokasi Masuk</th>';
+  html += '</tr></thead><tbody>';
+
+  data.forEach(function(a, i) {
+    var statusMasukClass = a.statusAbsenMasuk === 'Terlambat' ? 'late' : 'ontime';
+    var statusPulangClass = a.statusAbsenPulang === 'Pulang Cepat' ? 'early' : 'ontime';
+    html += '<tr>';
+    html += '<td style="text-align:center">' + (i+1) + '</td>';
+    html += '<td>' + fmtDate(a.tanggal) + '</td>';
+    html += '<td style="font-family:monospace">' + (a.idPegawai||'-') + '</td>';
+    html += '<td><b>' + (a.namaPegawai||'-') + '</b></td>';
+    html += '<td>' + (a.pekerjaan||'-') + '</td>';
+    html += '<td>' + (a.Tim||'-') + '</td>';
+    html += '<td style="text-align:center;font-family:monospace">' + (fmtTime(a.absenMasuk)||'-') + '</td>';
+    html += '<td class="' + statusMasukClass + '" style="text-align:center">' + (a.statusAbsenMasuk||'-') + '</td>';
+    html += '<td style="text-align:center;font-family:monospace">' + (fmtTime(a.absenPulang)||'-') + '</td>';
+    html += '<td class="' + statusPulangClass + '" style="text-align:center">' + (a.statusAbsenPulang||'-') + '</td>';
+    html += '<td style="text-align:center">' + (a.durasiKerja||'-') + '</td>';
+    html += '<td style="font-size:9pt;color:#666">' + (a.lokasiMasuk||'-') + '</td>';
+    html += '</tr>';
+  });
+
+  // Summary row
+  var totalHadir  = data.length;
+  var totalLambat = data.filter(function(a){ return a.statusAbsenMasuk==='Terlambat'; }).length;
+  var totalTepat  = totalHadir - totalLambat;
+  html += '<tr style="background:#e0f2fe;font-weight:bold">';
+  html += '<td colspan="6" style="text-align:right">TOTAL:</td>';
+  html += '<td style="text-align:center">' + totalHadir + ' hari</td>';
+  html += '<td style="text-align:center">' + totalLambat + ' terlambat / ' + totalTepat + ' tepat</td>';
+  html += '<td colspan="4"></td>';
+  html += '</tr>';
+
+  html += '<' + '/tbody><' + '/table><' + '/body><' + '/html>';
+
+  // Download
+  var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var filename = 'Rekap_Absensi_' + (from||'') + '_sd_' + (to||'') + (jab?'_'+jab.replace(/ /g,'_'):'') + '.xls';
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ============================================================
