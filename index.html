@@ -1908,15 +1908,24 @@ async function initAbsensiPage() {
   if (SCRIPT_URL) {
     const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: today(), to: today() });
     if (res && res.success && res.data.length > 0) {
-      todayAbsenData = res.data[0];
-      // Sync ke local
-      localAbsensi = localAbsensi.filter(function(a){ return !(a.idPegawai===u.idPegawai && a.tanggal===today()); });
-      localAbsensi.push(todayAbsenData);
-      localStorage.setItem('ppnpn_absensi', JSON.stringify(localAbsensi));
+      // Ambil yang paling lengkap jika ada >1 (seharusnya tidak, tapi antisipasi)
+      todayAbsenData = res.data.reduce(function(best, cur){
+        return (cur.absenPulang && !best.absenPulang) ? cur : best;
+      }, res.data[0]);
+      upsertLocalAbsen(todayAbsenData);
     }
   }
   if (!todayAbsenData) {
-    todayAbsenData = localAbsensi.find(function(a){ return a.idPegawai===u.idPegawai && a.tanggal===today(); });
+    const existing = localAbsensi.filter(function(a){
+      return String(a.idPegawai||'').toUpperCase() === String(u.idPegawai||'').toUpperCase()
+          && a.tanggal === today();
+    });
+    if (existing.length > 0) {
+      todayAbsenData = existing.reduce(function(best, cur){
+        return (cur.absenPulang && !best.absenPulang) ? cur : best;
+      }, existing[0]);
+      upsertLocalAbsen(todayAbsenData);
+    }
   }
 
   updateAbsenButtons();
@@ -2098,99 +2107,96 @@ function getStatusPulang(jamPulangStr) {
   return nowMs < jamPulangMs - 5 ? 'Pulang Cepat' : 'Tepat Waktu';
 }
 
+// Fungsi terpusat: selalu simpan 1 row per idPegawai per tanggal di localAbsensi
+function upsertLocalAbsen(record) {
+  var tgl = record.tanggal;
+  var pid = String(record.idPegawai || '').toUpperCase();
+  // Hapus semua entry yang sama (id+tanggal) — tidak ada duplikat
+  localAbsensi = localAbsensi.filter(function(a){
+    return !(String(a.idPegawai||'').toUpperCase() === pid && a.tanggal === tgl);
+  });
+  localAbsensi.push(record);
+  saveLocal();
+}
+
 async function doAbsen(type) {
   const u = currentUser;
 
-  // ── GUARD: cek dulu ke Sheets apakah hari ini sudah ada record ──
+  // ── Selalu ambil state terbaru dari Sheets sebelum aksi ──
   if (SCRIPT_URL) {
     const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: today(), to: today() });
     if (res && res.success && res.data.length > 0) {
-      // Ambil record pertama (satu hari = satu record)
-      todayAbsenData = res.data[0];
-      // Sync ke local, hapus duplikat jika ada
-      localAbsensi = localAbsensi.filter(function(a){
-        return !(a.idPegawai === u.idPegawai && a.tanggal === today());
-      });
-      localAbsensi.push(todayAbsenData);
-      saveLocal();
+      // Sheets bisa kembalikan >1 baris jika masih ada duplikat lama — ambil yang paling lengkap
+      todayAbsenData = res.data.reduce(function(best, cur){
+        return (cur.absenPulang && !best.absenPulang) ? cur : best;
+      }, res.data[0]);
+      upsertLocalAbsen(todayAbsenData);
     }
   }
 
-  // ── Cek local jika Sheets tidak tersedia ──
+  // ── Fallback: cek local storage ──
   if (!todayAbsenData) {
     const existing = localAbsensi.filter(function(a){
-      return a.idPegawai === u.idPegawai && a.tanggal === today();
+      return String(a.idPegawai||'').toUpperCase() === String(u.idPegawai||'').toUpperCase()
+          && a.tanggal === today();
     });
-    // Jika ada duplikat di local, ambil yang paling lengkap
     if (existing.length > 0) {
       todayAbsenData = existing.reduce(function(best, cur){
         return (cur.absenPulang && !best.absenPulang) ? cur : best;
       }, existing[0]);
-      // Bersihkan duplikat
-      localAbsensi = localAbsensi.filter(function(a){
-        return !(a.idPegawai === u.idPegawai && a.tanggal === today());
-      });
-      localAbsensi.push(todayAbsenData);
-      saveLocal();
+      upsertLocalAbsen(todayAbsenData); // bersihkan duplikat local sekaligus
     }
   }
 
   const nowStr    = new Date().toTimeString().substring(0,5);
-  const photoData = cameraStream ? capturePhoto() : 'demo_photo';
   const lokasi    = 'Lat: ' + (userLat ? userLat.toFixed(6) : '-') + ', Lon: ' + (userLon ? userLon.toFixed(6) : '-');
   const jamMasukEl  = document.getElementById('absenJamMasuk').textContent;
   const jamPulangEl = document.getElementById('absenJamPulang').textContent;
+  cameraStream ? capturePhoto() : null; // trigger capture jika ada
 
   if (type === 'masuk') {
-    // Tolak jika sudah absen masuk
+    // Blok jika sudah masuk
     if (todayAbsenData && todayAbsenData.absenMasuk) {
       showAlert('absenAlert', 'warn', '⚠ Anda sudah absen masuk hari ini pukul ' + fmtTime(todayAbsenData.absenMasuk));
-      updateAbsenButtons();
-      return;
+      updateAbsenButtons(); return;
     }
 
     const statusMasuk = jamMasukEl !== '-' ? getStatusMasuk(jamMasukEl) : 'Tepat Waktu';
 
     if (!todayAbsenData) {
-      // Buat record baru
-      const row = {
+      // Belum ada record sama sekali — buat baru
+      todayAbsenData = {
         IdAbsen: genId('ABS'),
         idPegawai: u.idPegawai,
         namaPegawai: u.namaPegawai,
         pekerjaan: u.pekerjaan,
         Tim: u.Tim || '',
         tanggal: today(),
-        absenMasuk: nowStr,
-        statusAbsenMasuk: statusMasuk,
-        lokasiMasuk: lokasi,
-        latMasuk: userLat,
-        lonMasuk: userLon,
-        fotoMasuk: 'captured',
+        absenMasuk: nowStr, statusAbsenMasuk: statusMasuk,
+        lokasiMasuk: lokasi, latMasuk: userLat, lonMasuk: userLon,
         absenPulang: '', statusAbsenPulang: '',
-        lokasiPulang: '', latPulang: '', lonPulang: '',
-        fotoPulang: '', durasiKerja: ''
+        lokasiPulang: '', latPulang: '', lonPulang: '', durasiKerja: ''
       };
-      localAbsensi.push(row);
-      todayAbsenData = row;
     } else {
-      todayAbsenData.absenMasuk = nowStr;
-      todayAbsenData.statusAbsenMasuk = statusMasuk;
+      // Record sudah ada tapi belum masuk (edge case) — update field masuk saja
+      todayAbsenData.absenMasuk        = nowStr;
+      todayAbsenData.statusAbsenMasuk  = statusMasuk;
+      todayAbsenData.lokasiMasuk       = lokasi;
+      todayAbsenData.latMasuk          = userLat;
+      todayAbsenData.lonMasuk          = userLon;
     }
 
-    saveLocal();
+    upsertLocalAbsen(todayAbsenData);
     showAlert('absenAlert', 'success', '✅ Absen masuk berhasil! ' + nowStr + ' — Status: ' + statusMasuk);
     if (SCRIPT_URL) await postAPI('saveAbsensi', todayAbsenData);
 
-  } else {
-    // Tolak jika belum absen masuk
+  } else { // pulang
     if (!todayAbsenData || !todayAbsenData.absenMasuk) {
       showAlert('absenAlert', 'error', '❌ Harus absen masuk terlebih dahulu!'); return;
     }
-    // Tolak jika sudah absen pulang
     if (todayAbsenData.absenPulang) {
       showAlert('absenAlert', 'warn', '⚠ Anda sudah absen pulang hari ini pukul ' + fmtTime(todayAbsenData.absenPulang));
-      updateAbsenButtons();
-      return;
+      updateAbsenButtons(); return;
     }
 
     const statusPulang = jamPulangEl !== '-' ? getStatusPulang(jamPulangEl) : 'Tepat Waktu';
@@ -2200,15 +2206,15 @@ async function doAbsen(type) {
     if (diff < 0) diff += 24*60;
     const durasi = Math.floor(diff/60) + 'j ' + (diff%60) + 'm';
 
+    // Mutasi objek yang SAMA — tidak buat objek baru
     todayAbsenData.absenPulang       = nowStr;
     todayAbsenData.statusAbsenPulang = statusPulang;
     todayAbsenData.lokasiPulang      = lokasi;
     todayAbsenData.latPulang         = userLat;
     todayAbsenData.lonPulang         = userLon;
-    todayAbsenData.fotoPulang        = 'captured';
     todayAbsenData.durasiKerja       = durasi;
 
-    saveLocal();
+    upsertLocalAbsen(todayAbsenData);
     showAlert('absenAlert', 'success', '🏠 Absen pulang berhasil! ' + nowStr + ' — Durasi: ' + durasi);
     if (SCRIPT_URL) await postAPI('saveAbsensi', todayAbsenData);
   }
