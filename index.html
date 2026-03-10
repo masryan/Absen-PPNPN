@@ -684,7 +684,17 @@
           </div>
         </div>
         <div class="card" style="margin-top:16px">
-          <div class="card-title">📅 Absensi Terakhir (7 Hari)</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+            <div class="card-title" id="recentAbsenTitle" style="margin-bottom:0">📅 Riwayat Absensi</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input type="date" id="dashAbsenFrom" onchange="filterDashAbsen()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit">
+              <span style="font-size:12px;color:var(--text-muted)">s/d</span>
+              <input type="date" id="dashAbsenTo" onchange="filterDashAbsen()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit">
+              <button class="btn btn-primary btn-sm" onclick="filterDashAbsen()" style="padding:6px 14px;font-size:12px">🔍</button>
+              <button class="btn btn-outline btn-sm" onclick="resetDashAbsen()" style="padding:6px 12px;font-size:12px">Reset</button>
+            </div>
+          </div>
+          <div id="dashAbsenSummary" style="display:none;margin-bottom:12px"></div>
           <div class="table-wrap">
             <table id="recentAbsenTable">
               <thead><tr><th>Tanggal</th><th>Masuk</th><th>Status Masuk</th><th>Pulang</th><th>Status Pulang</th><th>Durasi</th></tr></thead>
@@ -1664,24 +1674,18 @@ async function loadDashboard() {
         }
       </div>`;
 
-    // Recent absensi all pegawai
-    var recent = localAbsensi.sort(function(a,b){ return b.tanggal.localeCompare(a.tanggal); }).slice(0,10);
-    document.getElementById('recentAbsenBody').innerHTML = recent.length === 0
-      ? '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">Belum ada data absensi</td></tr>'
-      : recent.map(function(a){
-          return '<tr>' +
-            '<td>' + fmtDate(a.tanggal) + '</td>' +
-            '<td><strong>' + (a.namaPegawai||'-') + '</strong></td>' +
-            '<td>' + (fmtTime(a.absenMasuk)||'-') + '</td>' +
-            '<td>' + (a.statusAbsenMasuk ? '<span class="badge ' + (a.statusAbsenMasuk==='Terlambat'?'badge-red':'badge-green') + '">' + a.statusAbsenMasuk + '</span>' : '-') + '</td>' +
-            '<td>' + (fmtTime(a.absenPulang)||'-') + '</td>' +
-            '<td>' + (a.durasiKerja||'-') + '</td>' +
-            '</tr>';
-        }).join('');
-    // Update table header for admin
+    // Recent absensi all pegawai — default 1 bulan
+    var now2 = new Date();
+    var defFrom = now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-01';
+    var defTo   = today();
+    if (!document.getElementById('dashAbsenFrom').value) {
+      document.getElementById('dashAbsenFrom').value = defFrom;
+      document.getElementById('dashAbsenTo').value   = defTo;
+    }
     document.querySelector('#recentAbsenTable thead tr').innerHTML =
       '<th>Tanggal</th><th>Nama</th><th>Masuk</th><th>Status</th><th>Pulang</th><th>Durasi</th>';
-    document.querySelector('.card:last-child .card-title').textContent = '📅 Absensi Terbaru (Semua Pegawai)';
+    document.getElementById('recentAbsenTitle').textContent = '📅 Riwayat Absensi Semua Pegawai';
+    filterDashAbsen();
 
   } else {
     // ---- PEGAWAI DASHBOARD ----
@@ -1736,29 +1740,115 @@ async function loadDashboard() {
         '</div>' +
       '</div>';
 
-    // Recent absensi (my own)
-    var myAbsen = localAbsensi.filter(function(a){ return a.idPegawai===u.idPegawai; })
-      .sort(function(a,b){ return b.tanggal.localeCompare(a.tanggal); }).slice(0,7);
-    document.getElementById('recentAbsenBody').innerHTML = myAbsen.length === 0
-      ? '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">Belum ada data absensi</td></tr>'
-      : myAbsen.map(function(a){
-          return '<tr>' +
-            '<td>' + fmtDate(a.tanggal) + '</td>' +
-            '<td><strong>' + (fmtTime(a.absenMasuk)||'-') + '</strong></td>' +
-            '<td>' + (a.statusAbsenMasuk ? '<span class="badge ' + (a.statusAbsenMasuk==='Terlambat'?'badge-red':'badge-green') + '">' + a.statusAbsenMasuk + '</span>' : '-') + '</td>' +
-            '<td>' + (fmtTime(a.absenPulang)||'-') + '</td>' +
-            '<td>' + (a.statusAbsenPulang ? '<span class="badge ' + (a.statusAbsenPulang==='Pulang Cepat'?'badge-amber':'badge-green') + '">' + a.statusAbsenPulang + '</span>' : '-') + '</td>' +
-            '<td>' + (a.durasiKerja||'-') + '</td>' +
-            '</tr>';
-        }).join('');
+    // Recent absensi (my own) — default 1 bulan
+    var now3 = new Date();
+    var defFrom2 = now3.getFullYear()+'-'+String(now3.getMonth()+1).padStart(2,'0')+'-01';
+    if (!document.getElementById('dashAbsenFrom').value) {
+      document.getElementById('dashAbsenFrom').value = defFrom2;
+      document.getElementById('dashAbsenTo').value   = today();
+    }
     document.querySelector('#recentAbsenTable thead tr').innerHTML =
       '<th>Tanggal</th><th>Masuk</th><th>Status Masuk</th><th>Pulang</th><th>Status Pulang</th><th>Durasi</th>';
+    document.getElementById('recentAbsenTitle').textContent = '📅 Riwayat Absensi Saya';
+    filterDashAbsen();
   }
 }
 
 // ============================================================
-// ABSENSI PAGE
+// DASHBOARD FILTER ABSENSI
 // ============================================================
+async function filterDashAbsen() {
+  var from   = document.getElementById('dashAbsenFrom').value;
+  var to     = document.getElementById('dashAbsenTo').value;
+  var u      = currentUser;
+  var isAdmin = u && u.status === 'Admin';
+  var tbody  = document.getElementById('recentAbsenBody');
+
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+
+  // Ambil dari Sheets jika tersedia
+  if (SCRIPT_URL) {
+    var params = {};
+    if (from) params.from = from;
+    if (to)   params.to   = to;
+    if (!isAdmin) params.idPegawai = u.idPegawai;
+    var res = await callAPI('getAbsensi', params);
+    if (res && res.success) {
+      if (isAdmin) {
+        // Merge ke local hanya untuk range ini
+        localAbsensi = localAbsensi.filter(function(a){
+          return !((from ? a.tanggal >= from : true) && (to ? a.tanggal <= to : true));
+        });
+        localAbsensi = localAbsensi.concat(res.data);
+      } else {
+        localAbsensi = localAbsensi.filter(function(a){ return a.idPegawai !== u.idPegawai; });
+        localAbsensi = localAbsensi.concat(res.data);
+      }
+      localStorage.setItem('ppnpn_absensi', JSON.stringify(localAbsensi));
+    }
+  }
+
+  // Filter dari local
+  var data = localAbsensi.filter(function(a){
+    if (!isAdmin && a.idPegawai !== u.idPegawai) return false;
+    if (from && a.tanggal < from) return false;
+    if (to   && a.tanggal > to)   return false;
+    return true;
+  }).sort(function(a,b){ return b.tanggal.localeCompare(a.tanggal); });
+
+  // Tampilkan summary mini
+  var summaryEl = document.getElementById('dashAbsenSummary');
+  if (data.length > 0) {
+    var jumlahHadir   = data.length;
+    var jumlahLambat  = data.filter(function(a){ return a.statusAbsenMasuk==='Terlambat'; }).length;
+    var jumlahCepat   = data.filter(function(a){ return a.statusAbsenPulang==='Pulang Cepat'; }).length;
+    var jumlahTepat   = jumlahHadir - jumlahLambat;
+    summaryEl.style.display = 'flex';
+    summaryEl.style.gap     = '10px';
+    summaryEl.style.flexWrap = 'wrap';
+    summaryEl.innerHTML =
+      '<div style="background:#dcfce7;color:#16a34a;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700">✅ Hadir: '+jumlahHadir+' hari</div>' +
+      '<div style="background:#fee2e2;color:#dc2626;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700">🔴 Terlambat: '+jumlahLambat+'×</div>' +
+      '<div style="background:#fef3c7;color:#d97706;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700">🟡 Pulang Cepat: '+jumlahCepat+'×</div>' +
+      '<div style="background:#dbeafe;color:#1d4ed8;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700">🟢 Tepat Waktu: '+jumlahTepat+' hari</div>';
+  } else {
+    summaryEl.style.display = 'none';
+  }
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">Tidak ada data absensi pada periode ini</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(function(a){
+    if (isAdmin) {
+      return '<tr>' +
+        '<td>' + fmtDate(a.tanggal) + '</td>' +
+        '<td><strong>' + (a.namaPegawai||'-') + '</strong></td>' +
+        '<td>' + (fmtTime(a.absenMasuk)||'-') + '</td>' +
+        '<td>' + (a.statusAbsenMasuk ? '<span class="badge '+(a.statusAbsenMasuk==='Terlambat'?'badge-red':'badge-green')+'">'+a.statusAbsenMasuk+'</span>' : '-') + '</td>' +
+        '<td>' + (fmtTime(a.absenPulang)||'-') + '</td>' +
+        '<td>' + (a.durasiKerja||'-') + '</td>' +
+        '</tr>';
+    } else {
+      return '<tr>' +
+        '<td>' + fmtDate(a.tanggal) + '</td>' +
+        '<td><strong>' + (fmtTime(a.absenMasuk)||'-') + '</strong></td>' +
+        '<td>' + (a.statusAbsenMasuk ? '<span class="badge '+(a.statusAbsenMasuk==='Terlambat'?'badge-red':'badge-green')+'">'+a.statusAbsenMasuk+'</span>' : '-') + '</td>' +
+        '<td>' + (fmtTime(a.absenPulang)||'-') + '</td>' +
+        '<td>' + (a.statusAbsenPulang ? '<span class="badge '+(a.statusAbsenPulang==='Pulang Cepat'?'badge-amber':'badge-green')+'">'+a.statusAbsenPulang+'</span>' : '-') + '</td>' +
+        '<td>' + (a.durasiKerja||'-') + '</td>' +
+        '</tr>';
+    }
+  }).join('');
+}
+
+function resetDashAbsen() {
+  var now = new Date();
+  document.getElementById('dashAbsenFrom').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
+  document.getElementById('dashAbsenTo').value   = today();
+  filterDashAbsen();
+}
 async function initAbsensiPage() {
   const u = currentUser;
   document.getElementById('absenNama').textContent = u.namaPegawai;
