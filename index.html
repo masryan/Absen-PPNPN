@@ -523,9 +523,6 @@
       <span id="loginBtnText">Masuk</span>
     </button>
     <div class="login-error" id="loginError"></div>
-    <div style="margin-top:16px; text-align:center;">
-      <button onclick="showConfigSetup()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:12px;cursor:pointer;text-decoration:underline;">⚙ Konfigurasi Google Sheets</button>
-    </div>
   </div>
 </div>
 
@@ -533,11 +530,15 @@
 <div class="modal-backdrop" id="configModal">
   <div class="modal" style="max-width:520px">
     <div class="modal-header">
-      <h3>⚙ Konfigurasi Google Sheets</h3>
+      <h3>⚙ Konfigurasi Sistem</h3>
       <button class="modal-close" onclick="closeConfigModal()">✕</button>
     </div>
+    <div style="display:inline-flex;align-items:center;gap:6px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:#92400e;margin-bottom:14px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Hanya dapat diakses oleh Administrator
+    </div>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">
-      Masukkan Spreadsheet ID dan API Key atau Apps Script URL untuk menghubungkan aplikasi ke Google Sheets Anda.
+      Hubungkan aplikasi ke Google Sheets dengan mengisi Apps Script URL dari deployment Anda.
     </p>
     <div class="field" style="margin-bottom:14px">
       <label>Spreadsheet ID</label>
@@ -548,12 +549,11 @@
       <input type="text" id="cfgScriptUrl" placeholder="https://script.google.com/macros/s/YOUR_ID/exec">
     </div>
     <div class="alert alert-info" style="font-size:13px;">
-      💡 <strong>Cara setup:</strong> Deploy Google Apps Script sebagai Web App dengan akses "Anyone". 
-      Script handle GET/POST requests untuk read/write data. Download template script di bawah.
+      💡 Dapatkan URL dari Apps Script → <strong>Deploy → Manage deployments</strong>. Pastikan akses diset ke <strong>"Anyone"</strong>.
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeConfigModal()">Batal</button>
-      <button class="btn btn-primary" onclick="saveConfig()">Simpan Konfigurasi</button>
+      <button class="btn btn-primary" onclick="saveConfig()">💾 Simpan Konfigurasi</button>
     </div>
   </div>
 </div>
@@ -627,6 +627,10 @@
       <a class="nav-item" onclick="showPage('adminPotongan')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Rekapitulasi Potongan
+      </a>
+      <a class="nav-item" onclick="showConfigSetup()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Konfigurasi Sistem
       </a>
     </div>
     <div class="sidebar-footer">
@@ -1331,19 +1335,28 @@ function showAlert(elId, type, msg) {
 // CONFIG
 // ============================================================
 function showConfigSetup() {
-  document.getElementById('cfgSheetId').value = SHEET_ID;
-  document.getElementById('cfgScriptUrl').value = SCRIPT_URL;
+  // Hanya admin yang bisa akses
+  if (!currentUser || currentUser.status !== 'Admin') {
+    alert('⛔ Akses ditolak. Konfigurasi hanya dapat diubah oleh Administrator.');
+    return;
+  }
+  document.getElementById('cfgSheetId').value  = SHEET_ID  || '';
+  document.getElementById('cfgScriptUrl').value = SCRIPT_URL || '';
   document.getElementById('configModal').classList.add('open');
 }
 function closeConfigModal() { document.getElementById('configModal').classList.remove('open'); }
 function saveConfig() {
-  SHEET_ID = document.getElementById('cfgSheetId').value.trim();
+  SHEET_ID   = document.getElementById('cfgSheetId').value.trim();
   SCRIPT_URL = document.getElementById('cfgScriptUrl').value.trim();
-  localStorage.setItem('ppnpn_sheet_id', SHEET_ID);
-  localStorage.setItem('ppnpn_script_url', SCRIPT_URL);
+  localStorage.setItem('ppnpn_sheet_id',    SHEET_ID);
+  localStorage.setItem('ppnpn_script_url',  SCRIPT_URL);
   closeConfigModal();
-  showAlert('loginError', 'success', '✅ Konfigurasi tersimpan!');
-  document.getElementById('loginError').style.display = 'block';
+  // Tampilkan notifikasi di dalam app
+  var notif = document.createElement('div');
+  notif.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;background:#16a34a;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.2);animation:fadeIn 0.3s';
+  notif.textContent = '✅ Konfigurasi berhasil disimpan!';
+  document.body.appendChild(notif);
+  setTimeout(function(){ notif.remove(); }, 3000);
 }
 function quickSaveUrl(val) {
   SCRIPT_URL = val;
