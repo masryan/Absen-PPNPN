@@ -301,15 +301,150 @@
   .shift-select:focus { border-color:var(--primary-light) }
 
   /* Responsive */
+  /* ========= MOBILE OVERLAY ========= */
+  .sidebar-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 199;
+    backdrop-filter: blur(2px);
+  }
+  .sidebar-overlay.show { display: block; }
+
+  /* ========= HAMBURGER ========= */
+  .btn-hamburger {
+    display: none; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--primary); border: none; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .btn-hamburger span {
+    display: block; width: 20px; height: 2px; background: #fff;
+    border-radius: 2px; transition: all 0.3s;
+    box-shadow: 0 6px 0 #fff, 0 -6px 0 #fff;
+  }
+
+  /* ========= BOTTOM NAV (mobile only) ========= */
+  .bottom-nav {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--primary); z-index: 150;
+    padding: 6px 0 env(safe-area-inset-bottom, 6px);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+  }
+  .bottom-nav-items {
+    display: flex; justify-content: space-around; align-items: center;
+  }
+  .bottom-nav-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding: 6px 10px; cursor: pointer; border: none;
+    background: none; color: rgba(255,255,255,0.5);
+    font-size: 10px; font-weight: 600; font-family: inherit;
+    border-radius: 10px; transition: all 0.2s; flex: 1; min-width: 0;
+  }
+  .bottom-nav-item svg { width: 22px; height: 22px; }
+  .bottom-nav-item.active { color: var(--accent); }
+  .bottom-nav-item .bnav-dot {
+    width: 6px; height: 6px; background: var(--danger);
+    border-radius: 50%; position: absolute; top: 4px; right: 8px;
+  }
+  .bottom-nav-item-wrap { position: relative; flex: 1; display: flex; justify-content: center; }
+
+  /* ========= RESPONSIVE ========= */
   @media (max-width: 768px) {
     :root { --sidebar-w: 0px; }
-    .sidebar { transform: translateX(-260px); transition: transform 0.3s; width: 260px; }
+
+    /* Sidebar slides in as drawer */
+    .sidebar {
+      transform: translateX(-280px); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      width: 280px; z-index: 200; box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+    }
     .sidebar.open { transform: translateX(0); }
-    .main-content { margin-left: 0; }
-    .form-row { grid-template-columns: 1fr; }
-    .form-row.triple { grid-template-columns: 1fr; }
+
+    /* Main content full width */
+    .main-content { margin-left: 0; padding-bottom: 72px; }
+
+    /* Topbar mobile */
+    .topbar {
+      padding: 0 14px; height: 56px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar h1 { font-size: 15px; }
+    .date-badge { display: none; }
+    .btn-topbar-logout { display: none; }
+    .btn-hamburger { display: flex; }
+
+    /* Bottom nav visible */
+    .bottom-nav { display: block; }
+
+    /* Page body */
+    .page-body { padding: 12px; }
+
+    /* Cards */
+    .card { padding: 14px; border-radius: 14px; margin-bottom: 12px; }
+    .card-title { font-size: 14px; margin-bottom: 12px; }
+
+    /* Stats grid: 2 columns */
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .stat-card { padding: 12px; border-radius: 12px; }
+    .stat-card .value { font-size: 26px; }
+    .stat-card .label { font-size: 10px; }
+    .stat-card .sub { font-size: 10px; }
+
+    /* Forms */
+    .form-row, .form-row.triple { grid-template-columns: 1fr; gap: 10px; }
+    .absen-info { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .absen-info .info-item:last-child { grid-column: 1 / -1; }
+
+    /* Filter bar stacks vertically */
+    .filter-bar {
+      flex-direction: column; align-items: stretch; gap: 8px;
+    }
+    .filter-bar .field { width: 100%; }
+    .filter-bar .field input,
+    .filter-bar .field select { width: 100%; }
+    .filter-bar .btn, .filter-bar button { width: 100%; justify-content: center; }
+
+    /* Tables: horizontal scroll with sticky first col */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
+    table { min-width: 500px; font-size: 12px; }
+    th, td { padding: 8px 10px; white-space: nowrap; }
+    table th:first-child, table td:first-child {
+      position: sticky; left: 0; z-index: 1;
+      background: #fff;
+    }
+    table thead th:first-child { background: var(--primary); }
+
+    /* Absensi page camera */
+    .absen-camera-wrap { height: 220px; border-radius: 14px; }
+    #videoPreview { border-radius: 14px; }
+
+    /* Clock */
+    #absenClock { font-size: 40px; }
+
+    /* Buttons full width on mobile */
+    #btnAbsenMasuk, #btnAbsenPulang {
+      width: 100%; padding: 14px; font-size: 15px; border-radius: 14px;
+    }
+
+    /* Modal */
+    .logout-modal { width: 92vw; padding: 24px 18px; }
+
+    /* Shift table */
+    #shiftTable { min-width: 400px; }
+
+    /* Potongan & rekap table */
+    #potonganTable { min-width: 900px; }
+    #adminAbsenBody tr td, #adminAbsenBody tr th { font-size: 11px; }
+
+    /* Hak cuti info banner */
+    .card[style*="linear-gradient"] > div { flex-direction: column; gap: 12px; }
+    .card[style*="linear-gradient"] > div > div[style*="width:1px"] { width: 100% !important; height: 1px !important; }
+  }
+
+  @media (max-width: 400px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-card .value { font-size: 22px; }
     .absen-info { grid-template-columns: 1fr; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
+    #btnAbsenMasuk, #btnAbsenPulang { font-size: 14px; }
+    .page-body { padding: 8px; }
   }
 
   .config-banner {
@@ -505,7 +640,12 @@
   <!-- MAIN -->
   <div class="main-content">
     <div class="topbar">
-      <h1 id="topbarTitle">Dashboard</h1>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn-hamburger" onclick="toggleSidebar()" aria-label="Menu">
+          <span></span>
+        </button>
+        <h1 id="topbarTitle">Dashboard</h1>
+      </div>
       <div style="display:flex;align-items:center;gap:12px">
         <div class="date-badge" id="topbarDate"></div>
         <button class="btn-topbar-logout" onclick="confirmLogout()" title="Keluar dari aplikasi">
@@ -1010,6 +1150,16 @@
 
     </div><!-- end page-body -->
   </div><!-- end main-content -->
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Bottom Navigation (mobile only) -->
+<nav class="bottom-nav" id="bottomNav" style="display:none">
+  <div class="bottom-nav-items" id="bottomNavItems">
+    <!-- items injected by JS based on role -->
+  </div>
+</nav>
 </div>
 
 <!-- Modal Konfirmasi Logout -->
@@ -1317,6 +1467,7 @@ function initApp() {
     officeRadius = DEMO_RADIUS.radiusTolerance;
   }
 
+  buildBottomNav();
   showPage('dashboard');
 }
 
@@ -1450,6 +1601,12 @@ function showPage(name) {
   if (name === 'adminHakCuti') loadAdminHakCuti();
   if (name === 'adminPotongan') initAdminPotongan();
   if (name === 'dashboard') loadDashboard();
+
+  // Mobile: update bottom nav & close sidebar drawer
+  updateBottomNavActive(name);
+  closeSidebar();
+  // Scroll to top on page change
+  window.scrollTo(0, 0);
 }
 
 // ============================================================
@@ -3120,6 +3277,63 @@ function exportAbsensiExcel() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+// ============================================================
+// MOBILE: SIDEBAR TOGGLE & BOTTOM NAV
+// ============================================================
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  var isOpen  = sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', !isOpen);
+  overlay.classList.toggle('show', !isOpen);
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+function buildBottomNav() {
+  var u       = currentUser;
+  var isAdmin = u && u.status === 'Admin';
+  var nav     = document.getElementById('bottomNavItems');
+  var bnav    = document.getElementById('bottomNav');
+
+  if (isAdmin) {
+    nav.innerHTML =
+      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-dashboard" onclick="showPage(\'dashboard\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</button></div>' +
+      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-adminAbsensi" onclick="showPage(\'adminAbsensi\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Absensi</button></div>' +
+      '<div class="bottom-nav-item-wrap" style="position:relative"><button class="bottom-nav-item" id="bn-adminCuti" onclick="showPage(\'adminCuti\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Cuti</button><span class="bnav-dot" id="bnavDot" style="display:none;position:absolute;top:4px;right:14px"></span></div>' +
+      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-adminPegawai" onclick="showPage(\'adminPegawai\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Pegawai</button></div>' +
+      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-more" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Menu</button></div>';
+  } else {
+    nav.innerHTML =
+      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-dashboard" onclick="showPage(\'dashboard\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Beranda</button></div>' +
+      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-absensi" onclick="showPage(\'absensi\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>Absensi</button></div>' +
+      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-cuti" onclick="showPage(\'cuti\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Cuti</button></div>' +
+      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-profil" onclick="showPage(\'profil\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profil</button></div>' +
+      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-more" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Menu</button></div>';
+  }
+  bnav.style.display = window.innerWidth <= 768 ? 'block' : 'none';
+}
+
+function updateBottomNavActive(pageName) {
+  document.querySelectorAll('.bottom-nav-item').forEach(function(btn){
+    btn.classList.remove('active');
+  });
+  var key = pageName;
+  // map sub-pages to bottom nav items
+  if (pageName === 'keluarga') key = 'profil';
+  if (pageName === 'adminShift' || pageName === 'adminHakCuti' || pageName === 'adminPotongan') key = 'more';
+  var target = document.getElementById('bn-' + key);
+  if (target) target.classList.add('active');
+}
+
+window.addEventListener('resize', function(){
+  var bnav = document.getElementById('bottomNav');
+  if (bnav) bnav.style.display = window.innerWidth <= 768 ? 'block' : 'none';
+});
 
 // ============================================================
 // INIT ON LOAD
