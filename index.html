@@ -746,21 +746,27 @@
         </div>
 
         <div id="absensiFormWrap">
-          <!-- Kamera -->
+          <!-- Kamera & Status -->
           <div class="card" style="margin-bottom:16px">
-            <div class="card-title">📷 Kamera</div>
+            <div class="card-title">📷 Kamera & Lokasi</div>
             <div class="cam-container">
               <video id="videoPreview" playsinline></video>
               <canvas id="captureCanvas"></canvas>
               <div class="cam-overlay" id="camOverlay">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                <p class="cam-placeholder-text">Kamera belum aktif</p>
-                <button class="btn btn-amber" onclick="startCamera()">Aktifkan Kamera</button>
+                <p class="cam-placeholder-text" id="camPlaceholderText">⏳ Memulai kamera...</p>
+                <button class="btn btn-amber" id="btnStartCamera" onclick="startCamera()" style="display:none">📷 Aktifkan Kamera</button>
               </div>
             </div>
-            <div id="locationStatus" class="location-status loading">
-              ⏳ Mendapatkan lokasi...
+            <!-- Status bar kamera + lokasi -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+              <div id="cameraStatus" class="location-status loading">⏳ Memuat kamera...</div>
+              <div id="locationStatus" class="location-status loading">⏳ Mendapatkan lokasi...</div>
             </div>
+            <button class="btn btn-outline btn-sm" onclick="lanjutTanpaKamera()" id="btnSkipCamera"
+              style="width:100%;margin-top:8px;font-size:12px;display:none">
+              ✅ Lanjut Tanpa Kamera
+            </button>
           </div>
 
           <!-- Tombol Absen -->
@@ -782,6 +788,8 @@
             <div class="field"><label>Sampai Tanggal</label><input type="date" id="filterAbsenTo"></div>
             <button class="btn btn-primary" onclick="loadAbsenHistory()">🔍 Filter</button>
           </div>
+          <!-- Mini summary -->
+          <div id="absenHistorySummary" style="display:none;margin-bottom:12px"></div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Tanggal</th><th>Masuk</th><th>Status</th><th>Pulang</th><th>Status Pulang</th><th>Durasi</th><th>Lokasi Masuk</th></tr></thead>
@@ -1930,6 +1938,8 @@ async function initAbsensiPage() {
 
   updateAbsenButtons();
   getLocation();
+  // Auto-start kamera saat halaman absensi dibuka
+  startCamera();
 
   const d = new Date();
   d.setDate(d.getDate()-30);
@@ -1963,44 +1973,52 @@ function updateClock() {
 function updateAbsenButtons() {
   const btnMasuk  = document.getElementById('btnAbsenMasuk');
   const btnPulang = document.getElementById('btnAbsenPulang');
-  const cameraOk  = !!cameraStream; // true juga jika cameraStream === 'skip'
-  const allOk     = cameraOk && locationOk;
+  if (!btnMasuk || !btnPulang) return;
+  const cameraOk = !!cameraStream;
+  const allOk    = cameraOk && locationOk;
 
-  if (todayAbsenData) {
-    if (todayAbsenData.absenMasuk) {
-      btnMasuk.disabled = true;
-      btnMasuk.textContent = '✅ Sudah Masuk (' + fmtTime(todayAbsenData.absenMasuk) + ')';
-    } else {
-      btnMasuk.disabled = !allOk;
-      btnMasuk.textContent = '✅ Absen Masuk';
-    }
-    if (todayAbsenData.absenPulang) {
-      btnPulang.disabled = true;
-      btnPulang.textContent = '🏠 Sudah Pulang (' + fmtTime(todayAbsenData.absenPulang) + ')';
-    } else {
-      btnPulang.disabled = !allOk || !todayAbsenData.absenMasuk;
-      btnPulang.textContent = '🏠 Absen Pulang';
-    }
+  // Tombol MASUK — hanya bisa 1x
+  if (todayAbsenData && todayAbsenData.absenMasuk) {
+    btnMasuk.disabled    = true;
+    btnMasuk.textContent = '✅ Sudah Masuk (' + fmtTime(todayAbsenData.absenMasuk) + ')';
   } else {
-    btnMasuk.disabled  = !allOk;
-    btnMasuk.textContent  = '✅ Absen Masuk';
-    btnPulang.disabled = true;
+    btnMasuk.disabled    = !allOk;
+    btnMasuk.textContent = allOk ? '✅ Absen Masuk' : '⏳ Menunggu kamera & lokasi...';
+  }
+
+  // Tombol PULANG — bisa berkali-kali, selalu pakai jam terakhir
+  const sudahMasuk = todayAbsenData && todayAbsenData.absenMasuk;
+  if (sudahMasuk) {
+    btnPulang.disabled    = !allOk;
+    btnPulang.textContent = todayAbsenData.absenPulang
+      ? '🔄 Perbarui Jam Pulang (terakhir: ' + fmtTime(todayAbsenData.absenPulang) + ')'
+      : '🏠 Absen Pulang';
+  } else {
+    btnPulang.disabled    = true;
     btnPulang.textContent = '🏠 Absen Pulang';
   }
 }
 
 async function startCamera() {
-  const btn = document.querySelector('.btn-amber[onclick="startCamera()"]');
-  if (btn) { btn.textContent = '⏳ Membuka kamera...'; btn.disabled = true; }
+  // Update status kamera
+  var camStatus = document.getElementById('cameraStatus');
+  var overlay   = document.getElementById('camOverlay');
+  var skipBtn   = document.getElementById('btnSkipCamera');
+  var placeholderText = document.getElementById('camPlaceholderText');
+  var startBtn  = document.getElementById('btnStartCamera');
 
-  // Hentikan stream lama jika masih ada
-  if (cameraStream) {
-    cameraStream.getTracks().forEach(function(t){ t.stop(); });
+  if (camStatus) { camStatus.className = 'location-status loading'; camStatus.textContent = '⏳ Membuka kamera...'; }
+  if (placeholderText) placeholderText.textContent = '⏳ Membuka kamera...';
+  if (startBtn) startBtn.style.display = 'none';
+  if (skipBtn)  skipBtn.style.display  = 'none';
+
+  // Hentikan stream lama
+  if (cameraStream && cameraStream !== 'skip') {
+    try { cameraStream.getTracks().forEach(function(t){ t.stop(); }); } catch(e){}
     cameraStream = null;
-    await new Promise(function(r){ setTimeout(r, 500); }); // jeda 500ms
+    await new Promise(function(r){ setTimeout(r, 400); });
   }
 
-  // Coba beberapa konfigurasi kamera
   var configs = [
     { video: { facingMode: 'user' }, audio: false },
     { video: { facingMode: 'environment' }, audio: false },
@@ -2015,37 +2033,39 @@ async function startCamera() {
       var video = document.getElementById('videoPreview');
       video.srcObject = stream;
       await video.play();
-      document.getElementById('camOverlay').style.display = 'none';
-      if (btn) { btn.textContent = '🔄 Ganti Kamera'; btn.disabled = false; }
+      // Kamera berhasil — sembunyikan overlay, update status
+      if (overlay) overlay.style.display = 'none';
+      if (camStatus) { camStatus.className = 'location-status ok'; camStatus.textContent = '✅ Kamera aktif'; }
+      if (skipBtn)  skipBtn.style.display = 'none';
+      if (startBtn) { startBtn.textContent = '🔄 Ganti Kamera'; startBtn.style.display = 'inline-flex'; }
       updateAbsenButtons();
-      return; // berhasil
+      return;
     } catch(e) {
       lastError = e;
       await new Promise(function(r){ setTimeout(r, 300); });
     }
   }
 
-  // Semua config gagal — tampilkan opsi lanjut tanpa kamera
-  if (btn) { btn.textContent = '🔄 Coba Lagi'; btn.disabled = false; }
-
-  var pesanError = lastError ? lastError.message : 'Tidak diketahui';
-  var overlay = document.getElementById('camOverlay');
-  overlay.innerHTML =
-    '<div style="text-align:center;padding:16px">' +
-      '<div style="font-size:32px;margin-bottom:8px">📷</div>' +
-      '<div style="color:#dc2626;font-weight:700;margin-bottom:8px">Kamera tidak tersedia</div>' +
-      '<div style="font-size:12px;color:#666;margin-bottom:16px">' + pesanError + '</div>' +
-      '<button class="btn btn-amber" onclick="startCamera()" style="margin-bottom:8px;width:100%">🔄 Coba Lagi</button>' +
-      '<button class="btn btn-outline" onclick="lanjutTanpaKamera()" style="width:100%;font-size:13px">✅ Lanjut Tanpa Kamera</button>' +
-    '</div>';
-  overlay.style.display = 'flex';
+  // Semua gagal — tampilkan status error + tombol skip
+  var pesanError = lastError ? (lastError.name === 'NotAllowedError' ? 'Izin kamera ditolak' : lastError.message) : 'Kamera tidak tersedia';
+  if (camStatus) { camStatus.className = 'location-status error'; camStatus.textContent = '❌ ' + pesanError; }
+  if (placeholderText) placeholderText.textContent = '❌ ' + pesanError;
+  if (startBtn) { startBtn.textContent = '🔄 Coba Lagi'; startBtn.style.display = 'inline-flex'; }
+  if (skipBtn)  skipBtn.style.display = 'block';
+  if (overlay)  overlay.style.display = 'flex';
+  updateAbsenButtons();
 }
 
 function lanjutTanpaKamera() {
-  cameraStream = 'skip'; // flag khusus: absen tanpa foto
-  document.getElementById('camOverlay').style.display = 'none';
+  cameraStream = 'skip';
+  var overlay  = document.getElementById('camOverlay');
+  var skipBtn  = document.getElementById('btnSkipCamera');
+  var camStatus = document.getElementById('cameraStatus');
+  if (overlay)   overlay.style.display  = 'none';
+  if (skipBtn)   skipBtn.style.display  = 'none';
+  if (camStatus) { camStatus.className = 'location-status warn'; camStatus.textContent = '⚠ Mode tanpa foto'; }
   updateAbsenButtons();
-  showAlert('absenAlert', 'warn', '⚠ Mode tanpa kamera — absensi tetap tercatat tanpa foto.');
+  showAlert('absenAlert', 'warn', '⚠ Mode tanpa kamera aktif — absensi tetap tercatat tanpa foto.');
 }
 
 function getLocation() {
@@ -2194,10 +2214,7 @@ async function doAbsen(type) {
     if (!todayAbsenData || !todayAbsenData.absenMasuk) {
       showAlert('absenAlert', 'error', '❌ Harus absen masuk terlebih dahulu!'); return;
     }
-    if (todayAbsenData.absenPulang) {
-      showAlert('absenAlert', 'warn', '⚠ Anda sudah absen pulang hari ini pukul ' + fmtTime(todayAbsenData.absenPulang));
-      updateAbsenButtons(); return;
-    }
+    // Tidak diblokir meski sudah pulang sebelumnya — jam terakhir yang dipakai
 
     const statusPulang = jamPulangEl !== '-' ? getStatusPulang(jamPulangEl) : 'Tepat Waktu';
     const [hm, mm2]    = todayAbsenData.absenMasuk.split(':').map(Number);
@@ -2206,7 +2223,9 @@ async function doAbsen(type) {
     if (diff < 0) diff += 24*60;
     const durasi = Math.floor(diff/60) + 'j ' + (diff%60) + 'm';
 
-    // Mutasi objek yang SAMA — tidak buat objek baru
+    const sudahPulangSebelumnya = !!todayAbsenData.absenPulang;
+
+    // Selalu overwrite dengan jam terbaru
     todayAbsenData.absenPulang       = nowStr;
     todayAbsenData.statusAbsenPulang = statusPulang;
     todayAbsenData.lokasiPulang      = lokasi;
@@ -2215,7 +2234,10 @@ async function doAbsen(type) {
     todayAbsenData.durasiKerja       = durasi;
 
     upsertLocalAbsen(todayAbsenData);
-    showAlert('absenAlert', 'success', '🏠 Absen pulang berhasil! ' + nowStr + ' — Durasi: ' + durasi);
+    const pesanPulang = sudahPulangSebelumnya
+      ? '🔄 Jam pulang diperbarui: ' + nowStr + ' — Durasi: ' + durasi
+      : '🏠 Absen pulang berhasil! ' + nowStr + ' — Durasi: ' + durasi;
+    showAlert('absenAlert', 'success', pesanPulang);
     if (SCRIPT_URL) await postAPI('saveAbsensi', todayAbsenData);
   }
 
@@ -2251,6 +2273,26 @@ async function loadAbsenHistory() {
   const data = localAbsensi
     .filter(function(a){ return a.idPegawai===u.idPegawai && (!from||a.tanggal>=from) && (!to||a.tanggal<=to); })
     .sort(function(a,b){ return b.tanggal.localeCompare(a.tanggal); });
+
+  // Mini summary
+  var summaryEl = document.getElementById('absenHistorySummary');
+  if (summaryEl) {
+    if (data.length > 0) {
+      var hadir    = data.length;
+      var lambat   = data.filter(function(a){ return a.statusAbsenMasuk === 'Terlambat'; }).length;
+      var cepat    = data.filter(function(a){ return a.statusAbsenPulang === 'Pulang Cepat'; }).length;
+      var tepat    = hadir - lambat;
+      summaryEl.style.display = 'flex';
+      summaryEl.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px';
+      summaryEl.innerHTML =
+        '<span style="background:#dcfce7;color:#16a34a;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">✅ Hadir: ' + hadir + ' hari</span>' +
+        '<span style="background:#fee2e2;color:#dc2626;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">🔴 Terlambat: ' + lambat + '×</span>' +
+        '<span style="background:#fef3c7;color:#d97706;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">🟡 Pulang Cepat: ' + cepat + '×</span>' +
+        '<span style="background:#dbeafe;color:#1d4ed8;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">🟢 Tepat Waktu: ' + tepat + ' hari</span>';
+    } else {
+      summaryEl.style.display = 'none';
+    }
+  }
 
   if (!data.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data</td></tr>'; return;
