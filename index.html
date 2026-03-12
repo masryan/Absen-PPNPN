@@ -1878,17 +1878,42 @@ async function initAbsensiPage() {
   // Determine shift
   let jamMasuk = '-', jamPulang = '-';
   if (u.pekerjaan === 'Security') {
-    const shiftInfo = getSecurityShiftToday(u.Tim);
-    if (shiftInfo === '-') {
+    // Pastikan shiftData hari ini sudah ada — fetch dari Sheets jika belum
+    var shiftVal = getSecurityShiftToday();
+    if (shiftVal === null && SCRIPT_URL) {
+      // Belum ada di cache — ambil dari Sheets
+      var sRes = await callAPI('getShift', { from: today(), to: today() });
+      if (sRes && sRes.success && sRes.data.length > 0) {
+        sRes.data.forEach(function(r) {
+          var tgl = r['Tanggal'] || r['tanggal'] || '';
+          if (!tgl) return;
+          if (!shiftData[tgl]) shiftData[tgl] = {};
+          ['TIM 1','TIM 2','TIM 3','TIM 4'].forEach(function(t){
+            if (r[t]) shiftData[tgl][t] = r[t];
+          });
+        });
+        localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
+        shiftVal = getSecurityShiftToday();
+      }
+    }
+    // Tampilkan hasil
+    if (shiftVal === null || shiftVal === undefined) {
+      // Data shift tidak tersedia
       document.getElementById('offDayNotice').style.display='block';
+      document.getElementById('offDayNotice').textContent='⚠ Data jadwal shift hari ini belum tersedia. Hubungi admin.';
+      document.getElementById('absensiFormWrap').style.display='none';
+    } else if (shiftVal === '-') {
+      document.getElementById('offDayNotice').style.display='block';
+      document.getElementById('offDayNotice').textContent='😴 Anda sedang OFF hari ini sesuai jadwal shift. Tidak perlu absensi.';
       document.getElementById('absensiFormWrap').style.display='none';
     } else {
       document.getElementById('offDayNotice').style.display='none';
       document.getElementById('absensiFormWrap').style.display='block';
-      if (shiftInfo === 'P') { jamMasuk='07:00'; jamPulang='19:00'; }
-      else { jamMasuk='19:00'; jamPulang='07:00'; }
+      if (shiftVal === 'P') { jamMasuk='07:00'; jamPulang='19:00'; }
+      else                  { jamMasuk='19:00'; jamPulang='07:00'; }
       document.getElementById('absenShiftInfo').style.display='block';
-      document.getElementById('absenShiftLabel').textContent = shiftInfo==='P' ? 'Pagi (07:00 - 19:00)' : 'Malam (19:00 - 07:00)';
+      document.getElementById('absenShiftLabel').textContent =
+        shiftVal === 'P' ? 'Pagi (07:00 - 19:00)' : 'Malam (19:00 - 07:00)';
     }
   } else {
     const dayOfWeek = new Date().getDay();
@@ -1949,17 +1974,21 @@ async function initAbsensiPage() {
 }
 
 function getSecurityShiftToday() {
-  // Simple rotation logic: find from local data or use pattern
-  // In real app this would come from Shift Satpam sheet
-  const tim = currentUser.Tim;
-  const d = new Date();
-  const dayOfYear = Math.floor((d - new Date(d.getFullYear(),0,0)) / 86400000);
-  // 4-tim rotation: P P M - (pagi pagi malam off)
-  const tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
-  const idx = tims.indexOf(tim);
-  if (idx < 0) return 'P';
-  const shift = (dayOfYear + idx) % 4;
-  return shift === 0 ? 'P' : shift === 1 ? 'P' : shift === 2 ? 'M' : '-';
+  const tim    = currentUser.Tim;          // e.g. "TIM 4"
+  const tgl    = today();                  // "YYYY-MM-DD"
+
+  // Baca dari shiftData (sudah di-sync dari sheet Shift Satpam)
+  var val = shiftData[tgl] && shiftData[tgl][tim]
+    ? String(shiftData[tgl][tim]).trim().toUpperCase()
+    : null;
+
+  // Normalisasi: PAGI/P → 'P', MALAM/M → 'M', LIBUR/L/- → '-'
+  if (val === 'PAGI'  || val === 'P') return 'P';
+  if (val === 'MALAM' || val === 'M') return 'M';
+  if (val === 'LIBUR' || val === 'L') return '-';
+
+  // Tidak ada data shift hari ini di localStorage → coba muat dari Sheets
+  return null; // ditangani di initAbsensiPage
 }
 
 function updateClock() {
