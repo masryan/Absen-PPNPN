@@ -50,7 +50,7 @@
   /* ========= LOGIN ========= */
   #loginPage {
     min-height: 100vh;
-    background: linear-gradient(120deg, #4887f3 0%, #14356e 22%, #1e56a0 45%, #16fa01 72%, #f4cd6b 100%);
+    background: linear-gradient(120deg, #0157ec 0%, #14356e 22%, #1e56a0 45%, #2b0224 72%, #f4cd6b 100%);
     background-size: 240% 240%;
     animation: loginBgShift 14s ease-in-out infinite;
     display: flex; align-items: center; justify-content: center;
@@ -182,6 +182,24 @@
   .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(244,205,107,0.45); }
   .btn-login:active { transform: translateY(0); }
   .login-error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; border-radius: 10px; padding: 12px; font-size: 13px; margin-top: 12px; display: none; text-align: center; }
+  .btn-login-userlist {
+    width: 100%; padding: 12px; margin-top: 12px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 12px; color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-login-userlist:hover { background: rgba(255,255,255,0.14); border-color: rgba(244,205,107,0.4); color: #fff; }
+  .userlist-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px;
+  }
+  .userlist-row .userlist-nama { font-weight: 700; font-size: 13px; color: var(--text); }
+  .userlist-row .userlist-username { font-size: 12px; color: var(--text-muted); font-family: 'Space Mono', monospace; }
+  .userlist-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 0 12px 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border); margin-bottom: 8px;
+  }
 
   /* ========= LAYOUT ========= */
   #appPage { display: none; min-height: 100vh; }
@@ -466,6 +484,30 @@
   .task-foto-btn:disabled { opacity: 0.6; cursor: default; }
   .cd-catatan-input:focus { outline: none; border-color: var(--primary-light); }
   .foto-besar-backdrop { background: rgba(0,0,0,0.85) !important; }
+
+  /* ========= PEMILIH PEGAWAI (checkbox picker, mis. Penugasan Lembur) ========= */
+  .peg-pick-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr));
+    gap: 10px; max-height: 340px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px; background: var(--surface); margin-bottom: 14px;
+  }
+  .peg-pick-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+    cursor: pointer; transition: all 0.15s; background: #fff;
+  }
+  .peg-pick-item:hover { border-color: var(--primary-light); }
+  .peg-pick-item:has(input:checked) {
+    border-color: var(--primary-light); background: rgba(26,122,82,0.07);
+    box-shadow: 0 0 0 1px var(--primary-light) inset;
+  }
+  .peg-pick-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
+  .peg-pick-item .ppi-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .peg-pick-item .ppi-nama { font-size: 13.5px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .peg-pick-item .ppi-sub { font-size: 11px; color: var(--text-muted); }
+  .lb-selected-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .lb-selected-count { font-size: 13px; font-weight: 700; color: var(--primary); background: #eafaf1; padding: 6px 14px; border-radius: 20px; }
 
   /* ========= FORMS ========= */
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
@@ -913,7 +955,7 @@
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.6/pizzip.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/pizzip@3.1.6/dist/pizzip.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.44.0/docxtemplater.min.js" defer></script>
 </head>
 <body>
@@ -947,6 +989,30 @@
       <span id="loginBtnText">Masuk</span>
     </button>
     <div class="login-error" id="loginError"></div>
+    <button type="button" class="btn-login-userlist" onclick="openLoginUserListModal()">📋 Lihat Daftar User</button>
+  </div>
+</div>
+
+<!-- ========== MODAL: DAFTAR USER (dari halaman login) ========== -->
+<div class="modal-backdrop" id="loginUserListModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3>📋 Daftar User</h3>
+      <button class="modal-close" onclick="closeModal('loginUserListModal')">✕</button>
+    </div>
+    <div class="alert alert-info" style="font-size:13px;margin-bottom:14px;">
+      💡 Password awal menggunakan bulan &amp; tahun lahir, contoh: <strong>012020</strong>
+    </div>
+    <div class="userlist-header">
+      <span>Nama Pegawai</span>
+      <span>Username</span>
+    </div>
+    <div id="loginUserListBody" style="max-height:50vh;overflow-y:auto">
+      <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:20px 0">Memuat daftar user...</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('loginUserListModal')">Tutup</button>
+    </div>
   </div>
 </div>
 
@@ -1074,12 +1140,9 @@
       </a>
       <a class="nav-item" onclick="showPage('adminLembur')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-        Penugasan Lembur
+        Penugasan & SPK Lembur
       </a>
-      <a class="nav-item" onclick="showPage('adminSpkLembur')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-        SPK Lembur
-      </a>
+      
       <a class="nav-item" onclick="showPage('adminLibur')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
         Jadwal Hari Libur
@@ -1471,6 +1534,8 @@
         </div>
       </div>
 
+
+
       <!-- ===== IJIN KELUAR ===== -->
       <div class="page" id="page-ijinKeluar">
         <div class="tabs">
@@ -1839,78 +1904,8 @@
         </div>
       </div>
 
-      <!-- ===== ADMIN: PENUGASAN LEMBUR ===== -->
-      <div class="page" id="page-adminLembur">
-        <div class="card">
-          <div class="card-title">🔥 Penugasan Lembur Pegawai</div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Tunjuk pegawai yang bertugas lembur pada hari libur/off. Saat pegawai yang ditunjuk melakukan absen pada tanggal tsb, absensinya otomatis ditandai <strong>Lembur</strong> dan tidak dihitung sebagai potongan keterlambatan/pulang cepat pada Rekapitulasi Potongan.</p>
+    
 
-          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
-            <div class="field"><label>Tanggal Lembur</label><input type="date" id="lb-tanggal"></div>
-            <div class="field"><label>Pegawai</label>
-              <select id="lb-pegawai"><option value="">Pilih pegawai...</option></select>
-            </div>
-            <div class="field"><label>Jam Mulai</label><input type="time" id="lb-jam-mulai" value="08:00"></div>
-            <div class="field"><label>Jam Selesai</label><input type="time" id="lb-jam-selesai" value="16:00"></div>
-            <div class="field" style="min-width:220px"><label>Keterangan / Uraian Tugas</label><input type="text" id="lb-keterangan" placeholder="mis. Pengamanan acara kantor"></div>
-            <button class="btn btn-primary" onclick="tambahPenugasanLembur()">➕ Tugaskan</button>
-          </div>
-
-          <div class="filter-bar" style="margin-top:4px">
-            <div class="field"><label>Filter Dari</label><input type="date" id="lbFilterFrom"></div>
-            <div class="field"><label>Filter Sampai</label><input type="date" id="lbFilterTo"></div>
-            <button class="btn btn-outline" onclick="loadAdminLembur()">🔍 Tampilkan</button>
-          </div>
-
-          <div class="table-wrap" style="margin-top:10px">
-            <table>
-              <thead><tr><th>Tanggal</th><th>ID Pegawai</th><th>Nama</th><th>Jam</th><th>Keterangan</th><th>Aksi</th></tr></thead>
-              <tbody id="adminLemburBody"></tbody>
-            </table>
-          </div>
-          <div class="pagination" id="pgAdminLembur"></div>
-        </div>
-      </div>
-
-      <!-- ===== ADMIN: SPK LEMBUR (Surat Perintah Kerja Lembur) ===== -->
-      <div class="page" id="page-adminSpkLembur">
-        <div class="card">
-          <div class="card-title">📄 Buat SPK Lembur (Surat Perintah Kerja Lembur)</div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Pilih data Penugasan Lembur pegawai PPNPN yang sudah diinput pada menu <strong>Penugasan Lembur</strong>, lalu terbitkan dokumen SPK Lembur (Word) secara otomatis dari template.</p>
-
-          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
-            <div class="field"><label>Dari Tanggal</label><input type="date" id="spk-from"></div>
-            <div class="field"><label>Sampai Tanggal</label><input type="date" id="spk-to"></div>
-            <button class="btn btn-outline" onclick="loadSpkLemburCandidates()">🔍 Tampilkan Data</button>
-          </div>
-
-          <div class="table-wrap" style="margin-top:10px">
-            <table>
-              <thead><tr><th style="width:32px"><input type="checkbox" id="spk-select-all" onchange="toggleSpkSelectAll(this)"></th><th>Tanggal</th><th>Nama</th><th>Jam</th><th>Uraian Tugas</th></tr></thead>
-              <tbody id="spkLemburCandidatesBody"><tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Pilih rentang tanggal lalu klik Tampilkan Data.</td></tr></tbody>
-            </table>
-          </div>
-
-          <div class="settings-grid" style="margin-top:20px">
-            <div class="card" style="box-shadow:none;border:1px solid var(--border)">
-              <div class="card-title" style="font-size:15px">Data Surat</div>
-              <div class="field" style="margin-bottom:12px"><label>Nomor Surat</label><input type="text" id="spk-nomor" placeholder="mis. 029/WPJ.09/KP.0507/2026"></div>
-              <div class="field" style="margin-bottom:12px"><label>Tanggal Surat</label><input type="date" id="spk-tanggal-surat"></div>
-              <div class="field"><label>Tahun Anggaran</label><input type="text" id="spk-tahun-anggaran" placeholder="2026"></div>
-            </div>
-            <div class="card" style="box-shadow:none;border:1px solid var(--border)">
-              <div class="card-title" style="font-size:15px">Penandatangan</div>
-              <div class="field" style="margin-bottom:12px"><label>Nama Pejabat</label><input type="text" id="spk-nama-ttd" placeholder="mis. Faisal Fatahillah"></div>
-              <div class="field"><label>Jabatan</label><input type="text" id="spk-jabatan-ttd" placeholder="mis. Kepala Kantor Pelayanan Pajak Pratama Subang"></div>
-              <div class="import-hint" style="margin-top:10px">Nilai default diambil dari Pengaturan → SPK Lembur. Bisa diubah manual sebelum diterbitkan.</div>
-            </div>
-          </div>
-
-          <div style="margin-top:18px">
-            <button class="btn btn-success" onclick="generateSpkLemburDocx()">📥 Terbitkan SPK Lembur (Word)</button>
-          </div>
-        </div>
-      </div>
 
       <!-- ===== ADMIN: HAK CUTI ===== -->
       <div class="page" id="page-adminHakCuti">
@@ -1956,6 +1951,89 @@
             </table>
           </div>
           <div class="pagination" id="pgAdminHakCuti"></div>
+        </div>
+      </div>
+
+      <!-- ===== ADMIN: PENUGASAN & SPK LEMBUR ===== -->
+      <div class="page" id="page-adminLembur">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">1️⃣ Pilih Pegawai yang Akan Lembur</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-top:-10px;margin-bottom:18px">Centang satu atau beberapa pegawai pada daftar di bawah, isi tanggal &amp; uraian tugas lembur, lalu klik <strong>Tugaskan Lembur</strong>. Setelah tersimpan, centang pegawai yang dimaksud pada tabel <strong>Daftar Penugasan</strong> untuk menerbitkan SPK-nya.</p>
+
+          <div class="filter-bar" style="margin-bottom:14px">
+            <div class="field" style="min-width:220px;flex:1">
+              <label>Cari Pegawai</label>
+              <input type="text" id="lb-peg-search" placeholder="Ketik nama pegawai..." oninput="filterLbPegawaiList()">
+            </div>
+            <div class="field">
+              <label>Pekerjaan</label>
+              <select id="lb-peg-filter-job" onchange="filterLbPegawaiList()">
+                <option value="">Semua</option>
+                <option>Cleaning Service</option>
+                <option>Pramubakti</option>
+                <option>Security</option>
+                <option>Pengemudi</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="lbSelectAllVisible(true)">☑ Pilih Semua</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="lbSelectAllVisible(false)">☐ Batal Pilih</button>
+          </div>
+
+          <div class="peg-pick-grid" id="lb-pegawai-list">
+            <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat daftar pegawai...</div>
+          </div>
+
+          <div class="lb-selected-bar">
+            <span class="lb-selected-count" id="lbSelectedCount">0 pegawai dipilih</span>
+          </div>
+
+          <div class="form-row triple">
+            <div class="field"><label>Tanggal Lembur</label><input type="date" id="lb-tanggal"></div>
+            <div class="field"><label>Jam Mulai</label><input type="time" id="lb-jam-mulai" value="17:00"></div>
+            <div class="field"><label>Jam Selesai</label><input type="time" id="lb-jam-selesai" value="20:00"></div>
+          </div>
+          <div class="field" style="margin-bottom:18px">
+            <label>Uraian Tugas</label>
+            <textarea id="lb-keterangan" placeholder="Contoh: Pengamanan lembur acara serah terima jabatan..."></textarea>
+          </div>
+          <div id="lbLemburAlert"></div>
+          <button class="btn btn-primary" onclick="tambahPenugasanLemburBulk()" style="width:100%;justify-content:center;padding:13px">🔥 Tugaskan Lembur</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">2️⃣ Daftar Penugasan Lembur</div>
+          <div class="filter-bar">
+            <div class="field"><label>Dari</label><input type="date" id="lbFilterFrom"></div>
+            <div class="field"><label>Sampai</label><input type="date" id="lbFilterTo"></div>
+            <button class="btn btn-primary btn-sm" onclick="loadAdminLembur()">🔍 Filter</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" onclick="toggleAllLembur(this)"></th>
+                  <th>Tanggal</th><th>ID Pegawai</th><th>Nama</th><th>Jam</th><th>Uraian Tugas</th><th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="adminLemburBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pgAdminLembur"></div>
+
+          <div style="border-top:1px solid var(--border);margin:26px 0 18px;padding-top:22px">
+            <div class="card-title" style="margin-bottom:6px">📄 3️⃣ Terbitkan SPK Lembur (.docx)</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-top:-4px;margin-bottom:18px">Centang pegawai yang dimaksud pada tabel di atas (kolom paling kiri), lengkapi data surat di bawah, lalu klik <strong>Generate SPK Lembur</strong>.</p>
+            <div class="form-row triple">
+              <div class="field"><label>Nomor Surat</label><input type="text" id="spk-nomor" placeholder="mis. 123/WPJ.09/KP.0507/2026"></div>
+              <div class="field"><label>Tanggal Surat</label><input type="date" id="spk-tanggal-surat"></div>
+              <div class="field"><label>Tahun Anggaran</label><input type="text" id="spk-tahun-anggaran"></div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label>Nama Penandatangan</label><input type="text" id="spk-nama-ttd" placeholder="mis. Faisal Fatahillah"></div>
+              <div class="field"><label>Jabatan Penandatangan</label><input type="text" id="spk-jabatan-ttd" placeholder="mis. Kepala Kantor Pelayanan Pajak Pratama Subang"></div>
+            </div>
+            <button class="btn btn-success" onclick="generateSpkLemburDocx()" style="width:100%;justify-content:center;padding:13px">📄 Generate SPK Lembur</button>
+          </div>
         </div>
       </div>
 
@@ -3264,6 +3342,10 @@ function genId(prefix) {
   return prefix + Date.now().toString(36).toUpperCase();
 }
 
+
+
+
+
 // ============================================================
 // PERIODE HAK CUTI — RESET OTOMATIS TIAP 1 JANUARI & 1 JULI
 // ------------------------------------------------------------
@@ -3378,6 +3460,12 @@ function pgPageList(current, total) {
   }
   return out;
 }
+
+
+// Catatan: fungsi pilih-semua & generate SPK Lembur yang aktif ada di
+// toggleAllLembur() dan generateSpkLemburDocx() (lihat bagian "ADMIN:
+// PENUGASAN & SPK LEMBUR" di bawah).
+
 
 function renderPaginationBar(containerId, key, total, page, perPage) {
   var el = document.getElementById(containerId);
@@ -4915,6 +5003,35 @@ function loadRememberedLogin() {
   } catch(e) {}
 }
 
+// Modal daftar user di halaman login — membantu pegawai yang lupa
+// username/format password awal sebelum berhasil masuk aplikasi.
+async function openLoginUserListModal() {
+  document.getElementById('loginUserListModal').classList.add('open');
+  var body = document.getElementById('loginUserListBody');
+  body.innerHTML = '<p style="font-size:13px;color:var(--text-muted);text-align:center;padding:20px 0">Memuat daftar user...</p>';
+
+  if (!supabaseClient) { initSupabaseClient(); SCRIPT_URL = supabaseClient ? 'supabase' : ''; }
+  if (!SCRIPT_URL) {
+    body.innerHTML = '<p style="font-size:13px;color:var(--danger);text-align:center;padding:20px 0">❌ Tidak dapat terhubung ke database.</p>';
+    return;
+  }
+
+  var res = await callAPI('getPegawai', {});
+  if (!res || !res.success || !res.data || !res.data.length) {
+    body.innerHTML = '<p style="font-size:13px;color:var(--danger);text-align:center;padding:20px 0">❌ Gagal memuat daftar user.</p>';
+    return;
+  }
+
+  body.innerHTML = res.data.map(function(p){
+    var nama = p['NAMA'] || '-';
+    var username = p['USERNAME'] || '-';
+    return '<div class="userlist-row">' +
+             '<span class="userlist-nama">' + nama + '</span>' +
+             '<span class="userlist-username">' + username + '</span>' +
+           '</div>';
+  }).join('');
+}
+
 async function doLogin() {
   const username = document.getElementById('loginUsername').value.trim().toLowerCase();
   const password = document.getElementById('loginPassword').value.trim();
@@ -5185,7 +5302,7 @@ function showPage(name) {
   var isAdmin = u && u.status === 'Admin';
 
   // Access guard — pegawai tidak bisa akses halaman admin
-  var adminPages = ['adminAbsensi','adminCuti','adminIjinKeluar','adminPegawai','adminShift','adminHakCuti','adminPotongan','adminPengaturan', 'adminChecklistCS', 'adminLibur', 'adminLembur', 'adminSpkLembur']; 
+  var adminPages = ['adminAbsensi','adminCuti','adminIjinKeluar','adminPegawai','adminShift','adminHakCuti','adminPotongan','adminPengaturan', 'adminChecklistCS', 'adminLibur', 'adminLembur']; 
   var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga'];
   if (!isAdmin && adminPages.indexOf(name) >= 0) {
     alert('Akses ditolak. Halaman ini hanya untuk admin.');
@@ -5217,8 +5334,7 @@ function showPage(name) {
     adminPegawai: '👥 Data Seluruh Pegawai',
     adminShift: '🔄 Jadwal Shift Security',
     adminHakCuti: '🏖 Hak Cuti Pegawai',
-    adminLembur: '🔥 Penugasan Lembur',
-    adminSpkLembur: '📄 SPK Lembur',
+    adminLembur: '🔥 Penugasan & SPK Lembur',
     adminPotongan: '💰 Rekapitulasi Potongan',
     adminPengaturan: '⏰ Jam Kerja & Radius Absensi',
     adminLibur: '🗓 Jadwal Hari Libur',
@@ -5251,7 +5367,6 @@ function showPage(name) {
   if (name === 'adminShift') { initShiftFilter(); switchShiftTab('generator'); loadShiftData(); renderShiftTimRoster(); }
   if (name === 'adminHakCuti') loadAdminHakCuti();
   if (name === 'adminLembur') initAdminLembur();
-  if (name === 'adminSpkLembur') initAdminSpkLembur();
   if (name === 'adminPotongan') initAdminPotongan();
   if (name === 'adminPengaturan') loadPengaturanPage();
   if (name === 'adminLibur') loadAdminLibur();
@@ -5282,6 +5397,10 @@ function goToAdminAbsensiByJob(job) {
   if (toEl) toEl.value = today();
   loadAdminAbsensi();
 }
+
+
+// (Implementasi tambahPenugasanLemburBulk() ada di bagian "ADMIN: PENUGASAN
+// LEMBUR" di bawah, bersama initAdminLembur() & checkbox picker pegawai.)
 
 // ============================================================
 // DASHBOARD
@@ -5625,6 +5744,9 @@ function resetDashAbsen() {
   filterDashAbsen();
 }
 
+
+
+
 // ============================================================
 // PEGAWAI DASHBOARD (baru) — FILTER RIWAYAT ABSENSI
 // ============================================================
@@ -5907,6 +6029,8 @@ function renderPiketOverviewHtml(groups) {
   html += '</div>';
   return html;
 }
+
+
 
 // Isi kartu "Piket Security Hari Ini" di dashboard admin.
 async function renderAdminPiketHariIni() {
@@ -7969,32 +8093,105 @@ function exportShiftExcel() {
 // ADMIN: PENUGASAN LEMBUR
 // ============================================================
 async function initAdminLembur() {
-  document.getElementById('lb-tanggal').value = today();
-  var now = new Date();
-  var firstDay = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
-  document.getElementById('lbFilterFrom').value = firstDay;
-  document.getElementById('lbFilterTo').value   = today();
+  try {
+    // 1. Set default tanggal ke hari ini
+    if (document.getElementById('lb-tanggal')) document.getElementById('lb-tanggal').value = today();
+    if (document.getElementById('lbFilterFrom')) document.getElementById('lbFilterFrom').value = today();
+    if (document.getElementById('lbFilterTo')) document.getElementById('lbFilterTo').value = today();
+    if (document.getElementById('spk-tanggal-surat') && !document.getElementById('spk-tanggal-surat').value) document.getElementById('spk-tanggal-surat').value = today();
+    if (document.getElementById('spk-tahun-anggaran') && !document.getElementById('spk-tahun-anggaran').value) document.getElementById('spk-tahun-anggaran').value = String(new Date().getFullYear());
 
-  // Isi dropdown pegawai
-  var pegawaiList = [];
-  if (SCRIPT_URL) {
-    var pRes = await callAPI('getPegawai', {});
-    if (pRes && pRes.success) pegawaiList = pRes.data;
+    // 1b. Isi default Nama & Jabatan Penandatangan dari Pengaturan SPK Lembur
+    if (SCRIPT_URL) {
+      var sres = await callAPI('getSpkSettings', {});
+      if (sres && sres.success && sres.data) {
+        spkSetting = Object.assign({}, SPK_SETTING_DEFAULT, sres.data);
+        localStorage.setItem('ppnpn_spk_setting', JSON.stringify(spkSetting));
+      }
+    }
+    if (document.getElementById('spk-nama-ttd'))    document.getElementById('spk-nama-ttd').value    = spkSetting.namaTtd || '';
+    if (document.getElementById('spk-jabatan-ttd')) document.getElementById('spk-jabatan-ttd').value = spkSetting.jabatanTtd || '';
+
+    const listEl = document.getElementById('lb-pegawai-list');
+    if (!listEl) return; // Mencegah error jika elemen HTML belum ada
+
+    // Beri indikator loading di dalam kotak
+    listEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted)">⏳ Sedang menarik data pegawai...</div>';
+
+    // 2. Tarik data pegawai langsung dari API/Database
+    let pegawaiList = [];
+    if (SCRIPT_URL) {
+      const result = await callAPI('getPegawai', {});
+      if (result && result.success) {
+        pegawaiList = result.data;
+      }
+    }
+
+    if (!pegawaiList || pegawaiList.length === 0) {
+      listEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted)">⚠ Data pegawai kosong / periksa koneksi internet.</div>';
+    } else {
+      // Ambil hanya yang berstatus 'Pegawai' aktif, lalu urutkan sesuai abjad (A-Z)
+      const pegawaiAktif = pegawaiList
+        .filter(p => (p['STATUS'] || 'Pegawai') === 'Pegawai')
+        .sort((a, b) => (a['NAMA'] || '').localeCompare(b['NAMA'] || ''));
+
+      listEl.innerHTML = pegawaiAktif.map(function(p){
+        var id   = p['ID PEGAWAI'] || p['idPegawai'] || '';
+        var nama = p['NAMA'] || '-';
+        var job  = p['PEKERJAAN'] || '-';
+        var tim  = p['Tim'] || p['TIM'] || '';
+        return '<label class="peg-pick-item" data-nama="'+nama.toLowerCase()+'" data-job="'+job+'">'+
+          '<input type="checkbox" class="lb-peg-checkbox" value="'+id+'" data-id="'+id+'" data-nama="'+encodeURIComponent(nama)+'" onchange="lbUpdateSelectedCount()">'+
+          '<span class="ppi-info"><span class="ppi-nama">'+nama+'</span><span class="ppi-sub">'+job+(tim?(' • '+tim):'')+'</span></span>'+
+        '</label>';
+      }).join('');
+    }
+    lbUpdateSelectedCount();
+
+    // 3. Muat ulang tabel jika fungsinya ada
+    if (typeof loadAdminLembur === 'function') {
+      loadAdminLembur();
+    }
+
+  } catch (err) {
+    console.error("Error saat inisiasi halaman lembur:", err);
+    const listEl = document.getElementById('lb-pegawai-list');
+    if (listEl) listEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--danger)">❌ Terjadi kesalahan sistem. Cek konsol (F12).</div>';
   }
-  if (!pegawaiList.length) pegawaiList = DEMO_USERS.map(function(u){ return { 'ID PEGAWAI':u.idPegawai, NAMA:u.namaPegawai, PEKERJAAN:u.pekerjaan }; });
-  var sel = document.getElementById('lb-pegawai');
-  sel.innerHTML = '<option value="">Pilih pegawai...</option>' + pegawaiList
-    .filter(function(p){ return (p['STATUS']||'Pegawai')==='Pegawai'; })
-    .map(function(p){ return '<option value="'+p['ID PEGAWAI']+'" data-nama="'+(p['NAMA']||'')+'">'+p['NAMA']+' ('+p['PEKERJAAN']+')</option>'; }).join('');
+}
 
-  await loadAdminLembur();
+// Filter daftar pegawai (checkbox picker) berdasarkan kata kunci nama & pekerjaan
+function filterLbPegawaiList() {
+  var q = (document.getElementById('lb-peg-search').value || '').toLowerCase().trim();
+  var job = document.getElementById('lb-peg-filter-job').value;
+  document.querySelectorAll('#lb-pegawai-list .peg-pick-item').forEach(function(item){
+    var matchNama = !q || (item.getAttribute('data-nama')||'').indexOf(q) >= 0;
+    var matchJob  = !job || item.getAttribute('data-job') === job;
+    item.style.display = (matchNama && matchJob) ? 'flex' : 'none';
+  });
+}
+
+// Centang / batal-centang semua pegawai yang sedang tampil (setelah difilter)
+function lbSelectAllVisible(checked) {
+  document.querySelectorAll('#lb-pegawai-list .peg-pick-item').forEach(function(item){
+    if (item.style.display === 'none') return;
+    var cb = item.querySelector('.lb-peg-checkbox');
+    if (cb) cb.checked = checked;
+  });
+  lbUpdateSelectedCount();
+}
+
+function lbUpdateSelectedCount() {
+  var n = document.querySelectorAll('.lb-peg-checkbox:checked').length;
+  var el = document.getElementById('lbSelectedCount');
+  if (el) el.textContent = n + ' pegawai dipilih';
 }
 
 async function loadAdminLembur() {
   var from = document.getElementById('lbFilterFrom').value;
   var to   = document.getElementById('lbFilterTo').value;
   var tbody = document.getElementById('adminLemburBody');
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
 
   if (SCRIPT_URL) {
     var params = {};
@@ -8015,40 +8212,74 @@ async function loadAdminLembur() {
 
   renderPaged('adminLembur', data, 'adminLemburBody', 'pgAdminLembur', function(l){
     var jam = (l.jamMulai || l.jamSelesai) ? ((l.jamMulai||'-')+'–'+(l.jamSelesai||'-')) : '-';
-    return '<tr>' +
-      '<td>'+fmtDate(l.tanggal)+'</td>' +
-      '<td style="font-family:Space Mono,monospace;font-size:12px">'+l.idPegawai+'</td>' +
-      '<td><strong>'+(l.namaPegawai||'-')+'</strong></td>' +
-      '<td>'+jam+'</td>' +
-      '<td>'+(l.keterangan||'-')+'</td>' +
-      '<td><button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:12px" onclick="hapusPenugasanLembur(\''+l.tanggal+'\',\''+l.idPegawai+'\')">🗑 Hapus</button></td>' +
-    '</tr>';
-  }, 5, 'Belum ada penugasan lembur');
+    // Checkbox di kolom pertama dipakai untuk memilih pegawai yang akan
+    // dimasukkan ke dokumen SPK Lembur (lihat generateSpkLemburDocx()).
+return `<tr>
+  <td><input type="checkbox" class="row-chk-lembur" value="${encodeURIComponent(JSON.stringify(l))}"></td>
+  <td>${fmtDate(l.tanggal)}</td>
+  <td>${l.idPegawai}</td>
+  <td>${l.namaPegawai}</td>
+  <td>${jam}</td>
+  <td>${l.keterangan||'-'}</td>
+  <td><button class="btn btn-outline btn-sm" onclick="hapusPenugasanLembur('${l.tanggal}','${l.idPegawai}')">🗑 Hapus</button></td>
+</tr>`;
+  }, 7, 'Belum ada penugasan lembur');
 }
 
-async function tambahPenugasanLembur() {
-  var tgl = document.getElementById('lb-tanggal').value;
-  var selEl = document.getElementById('lb-pegawai');
-  var idPeg = selEl.value;
-  var nama  = selEl.options[selEl.selectedIndex] ? selEl.options[selEl.selectedIndex].getAttribute('data-nama') : '';
-  var jamMulai   = document.getElementById('lb-jam-mulai').value;
-  var jamSelesai = document.getElementById('lb-jam-selesai').value;
-  var ket   = document.getElementById('lb-keterangan').value.trim();
+function toggleAllLembur(cb) {
+  document.querySelectorAll('.row-chk-lembur').forEach(el => el.checked = cb.checked);
+}
 
-  if (!tgl || !idPeg) { alert('Tanggal dan pegawai wajib dipilih.'); return; }
+// Menugaskan lembur ke seluruh pegawai yang dicentang pada daftar pemilihan
+// (checkbox picker) sekaligus, dengan tanggal & uraian tugas yang sama.
+async function tambahPenugasanLemburBulk() {
+  const checks = Array.from(document.querySelectorAll('.lb-peg-checkbox:checked'));
+  const tgl = document.getElementById('lb-tanggal').value;
+  const jMulai = document.getElementById('lb-jam-mulai').value;
+  const jSelesai = document.getElementById('lb-jam-selesai').value;
+  const ket = document.getElementById('lb-keterangan').value.trim();
 
-  var row = { tanggal: tgl, idPegawai: idPeg, namaPegawai: nama, jamMulai: jamMulai, jamSelesai: jamSelesai, keterangan: ket };
+  if (checks.length === 0) { alert('⚠ Pilih minimal satu pegawai terlebih dahulu.'); return; }
+  if (!tgl) { alert('⚠ Tanggal lembur wajib diisi.'); return; }
+  if (!ket) { alert('⚠ Uraian tugas wajib diisi.'); return; }
+
+  const rows = checks.map(function(cb){
+    return {
+      tanggal: tgl,
+      idPegawai: cb.getAttribute('data-id'),
+      namaPegawai: decodeURIComponent(cb.getAttribute('data-nama')),
+      jamMulai: jMulai,
+      jamSelesai: jSelesai,
+      keterangan: ket
+    };
+  });
+
+  var btn = (typeof event !== 'undefined' && event) ? event.currentTarget : null;
+  var btnOrig = btn ? btn.innerHTML : null;
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Menyimpan...'; }
+
   if (SCRIPT_URL) {
-    var res = await callAPI('saveLembur', row);
-    if (!(res && res.success)) { alert('❌ Gagal menyimpan: ' + (res && res.error || 'Unknown error')); return; }
-  }
-  localLembur = (localLembur||[]).filter(function(l){ return !(l.tanggal===tgl && l.idPegawai===idPeg); });
-  localLembur.push(row);
-  localStorage.setItem('ppnpn_lembur', JSON.stringify(localLembur));
+    const res = await callAPI('saveLembur', { rows: rows });
+    if (res && res.success) {
+      rows.forEach(function(r){
+        localLembur = (localLembur||[]).filter(function(l){ return !(l.idPegawai===r.idPegawai && l.tanggal===r.tanggal); });
+        localLembur.push(r);
+      });
+      localStorage.setItem('ppnpn_lembur', JSON.stringify(localLembur));
+      showAlert('lbLemburAlert','success','✅ '+rows.length+' pegawai berhasil ditugaskan lembur pada '+fmtDate(tgl)+'.');
 
-  document.getElementById('lb-keterangan').value = '';
-  showAlert('absenAlert','success','✅ Pegawai berhasil ditugaskan lembur pada '+fmtDate(tgl)+'.');
-  loadAdminLembur();
+      // Bersihkan form & pilihan
+      document.getElementById('lb-keterangan').value = '';
+      checks.forEach(function(cb){ cb.checked = false; });
+      lbUpdateSelectedCount();
+      loadAdminLembur();
+    } else {
+      alert('❌ Gagal menyimpan penugasan: ' + (res ? res.error : 'Unknown error'));
+    }
+  } else {
+    alert('⚠ Supabase belum dikonfigurasi!');
+  }
+  if (btn) { btn.disabled = false; btn.innerHTML = btnOrig || '🔥 Tugaskan Lembur'; }
 }
 
 async function hapusPenugasanLembur(tgl, idPeg) {
@@ -8064,7 +8295,6 @@ async function hapusPenugasanLembur(tgl, idPeg) {
 // ============================================================
 var SPK_SETTING_DEFAULT = { namaTtd: '', jabatanTtd: 'Kepala Kantor Pelayanan Pajak Pratama Subang', kota: 'Subang', formatNomor: '' };
 var spkSetting = JSON.parse(localStorage.getItem('ppnpn_spk_setting') || 'null') || SPK_SETTING_DEFAULT;
-var spkLemburCandidates = [];
 
 function fmtHariTanggalIndo(isoDateStr) {
   if (!isoDateStr) return '-';
@@ -8076,73 +8306,10 @@ function fmtHariTanggalIndo(isoDateStr) {
   return days[dt.getDay()] + ', ' + dt.getDate() + ' ' + months[dt.getMonth()] + ' ' + dt.getFullYear();
 }
 
-async function initAdminSpkLembur() {
-  var now = new Date();
-  var firstDay = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
-  document.getElementById('spk-from').value = firstDay;
-  document.getElementById('spk-to').value   = today();
-  document.getElementById('spk-tanggal-surat').value = today();
-  document.getElementById('spk-tahun-anggaran').value = String(now.getFullYear());
-
-  // Isi default dari Pengaturan SPK Lembur
-  if (SCRIPT_URL) {
-    var res = await callAPI('getSpkSettings', {});
-    if (res && res.success && res.data) {
-      spkSetting = Object.assign({}, SPK_SETTING_DEFAULT, res.data);
-      localStorage.setItem('ppnpn_spk_setting', JSON.stringify(spkSetting));
-    }
-  }
-  document.getElementById('spk-nama-ttd').value    = spkSetting.namaTtd || '';
-  document.getElementById('spk-jabatan-ttd').value = spkSetting.jabatanTtd || '';
-
-  var tbody = document.getElementById('spkLemburCandidatesBody');
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Pilih rentang tanggal lalu klik Tampilkan Data.</td></tr>';
-}
-
-async function loadSpkLemburCandidates() {
-  var from = document.getElementById('spk-from').value;
-  var to   = document.getElementById('spk-to').value;
-  var tbody = document.getElementById('spkLemburCandidatesBody');
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
-
-  if (SCRIPT_URL) {
-    var params = {};
-    if (from) params.from = from;
-    if (to)   params.to   = to;
-    var res = await callAPI('getLembur', params);
-    if (res && res.success) {
-      localLembur = res.data;
-      localStorage.setItem('ppnpn_lembur', JSON.stringify(localLembur));
-    }
-  }
-
-  spkLemburCandidates = (localLembur||[]).filter(function(l){
-    if (from && l.tanggal < from) return false;
-    if (to   && l.tanggal > to)   return false;
-    return true;
-  }).sort(function(a,b){ return a.tanggal.localeCompare(b.tanggal) || String(a.namaPegawai).localeCompare(String(b.namaPegawai)); });
-
-  if (!spkLemburCandidates.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Tidak ada data Penugasan Lembur pada rentang tanggal ini.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = spkLemburCandidates.map(function(l, idx){
-    var jam = (l.jamMulai||l.jamSelesai) ? ((l.jamMulai||'-')+'–'+(l.jamSelesai||'-')) : '-';
-    return '<tr>' +
-      '<td><input type="checkbox" class="spk-row-check" data-idx="'+idx+'" checked></td>' +
-      '<td>'+fmtDate(l.tanggal)+'</td>' +
-      '<td><strong>'+(l.namaPegawai||'-')+'</strong></td>' +
-      '<td>'+jam+'</td>' +
-      '<td>'+(l.keterangan||'-')+'</td>' +
-    '</tr>';
-  }).join('');
-  document.getElementById('spk-select-all').checked = true;
-}
-
-function toggleSpkSelectAll(cb) {
-  document.querySelectorAll('.spk-row-check').forEach(function(el){ el.checked = cb.checked; });
-}
+// Catatan: pemilihan tanggal & pengambilan kandidat pegawai untuk SPK Lembur
+// sekarang memakai tabel "Daftar Penugasan Lembur" (checkbox .row-chk-lembur)
+// pada halaman Penugasan Lembur — lihat initAdminLembur()/loadAdminLembur()
+// di atas, dan generateSpkLemburDocx() di bawah.
 
 async function fetchSpkTemplateArrayBuffer() {
   if (!supabaseClient) throw new Error('Supabase belum terhubung.');
@@ -8158,8 +8325,11 @@ async function fetchSpkTemplateArrayBuffer() {
 }
 
 async function generateSpkLemburDocx() {
-  var checks = Array.from(document.querySelectorAll('.spk-row-check:checked'));
-  if (!checks.length) { alert('⚠ Pilih minimal satu pegawai dari daftar Penugasan Lembur di atas.'); return; }
+  // Sumber data pegawai = baris yang dicentang pada tabel "Daftar Penugasan
+  // Lembur" (kolom checkbox paling kiri, class .row-chk-lembur), bukan lagi
+  // daftar kandidat terpisah — jadi cukup 1 tabel untuk pilih & generate SPK.
+  var checks = Array.from(document.querySelectorAll('.row-chk-lembur:checked'));
+  if (!checks.length) { alert('⚠ Centang minimal satu pegawai pada tabel Daftar Penugasan Lembur di atas.'); return; }
 
   var nomor   = document.getElementById('spk-nomor').value.trim();
   var tglSurat = document.getElementById('spk-tanggal-surat').value;
@@ -8172,16 +8342,39 @@ async function generateSpkLemburDocx() {
   if (!tglSurat){ alert('⚠ Tanggal Surat wajib diisi.'); return; }
   if (!namaTtd || !jabatanTtd) { alert('⚠ Nama & Jabatan Penandatangan wajib diisi.'); return; }
 
-  var pegawaiRows = checks.map(function(cb, i){
-    var l = spkLemburCandidates[parseInt(cb.getAttribute('data-idx'),10)];
+  // Kelompokkan pegawai yang punya hari/tanggal, waktu, & uraian tugas yang
+  // sama persis ke dalam satu baris (nama-nama digabung), supaya tabel SPK
+  // tidak menampilkan baris duplikat untuk penugasan yang identik.
+  var groupMap = {};
+  var groupedList = [];
+  checks.forEach(function(cb){
+    var l = JSON.parse(decodeURIComponent(cb.value));
+    var hariTgl = fmtHariTanggalIndo(l.tanggal);
+    var waktu = (l.jamMulai||l.jamSelesai) ? ((l.jamMulai||'-')+'-'+(l.jamSelesai||'-')+' WIB') : '-';
+    var uraian = l.keterangan || '-';
+    var key = hariTgl + '||' + waktu + '||' + uraian;
+    if (!groupMap[key]) {
+      groupMap[key] = { hari_tanggal: hariTgl, waktu: waktu, uraian_tugas: uraian, namaList: [] };
+      groupedList.push(groupMap[key]);
+    }
+    groupMap[key].namaList.push(l.namaPegawai || '-');
+  });
+  // Penomoran tetap mengikuti jumlah pegawai (bukan jumlah baris hasil
+  // merge) — tiap nama tetap dapat nomor urutnya sendiri, ditumpuk sejajar
+  // dengan namanya di baris yang sama.
+  var nomorUrut = 0;
+  var pegawaiRows = groupedList.map(function(row){
+    var noList = row.namaList.map(function(){ nomorUrut++; return nomorUrut; });
     return {
-      no: i+1,
-      nama: l.namaPegawai || '-',
-      hari_tanggal: fmtHariTanggalIndo(l.tanggal),
-      waktu: (l.jamMulai||l.jamSelesai) ? ((l.jamMulai||'-')+'-'+(l.jamSelesai||'-')+' WIB') : '-',
-      uraian_tugas: l.keterangan || '-'
+      no: noList.join('\n'),
+      nama: row.namaList.join('\n'),
+      hari_tanggal: row.hari_tanggal,
+      waktu: row.waktu,
+      uraian_tugas: row.uraian_tugas
     };
   });
+
+  var tglSuratFormatted = fmtHariTanggalIndo(tglSurat).split(', ')[1] || tglSurat;
 
   try {
     var arrBuf = await fetchSpkTemplateArrayBuffer();
@@ -8191,7 +8384,7 @@ async function generateSpkLemburDocx() {
       nomor_surat: nomor,
       tahun_anggaran: tahun,
       kota: kota,
-      tanggal_surat: fmtHariTanggalIndo(tglSurat).split(', ')[1] || tglSurat,
+      tanggal_surat: tglSuratFormatted,
       jabatan_penandatangan: jabatanTtd,
       nama_penandatangan: namaTtd,
       pegawai: pegawaiRows
@@ -8200,12 +8393,12 @@ async function generateSpkLemburDocx() {
       type: 'blob',
       mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     });
-    var fileName = 'SPK Lembur - ' + nomor.replace(/[\\/:*?"<>|]/g,'-') + '.docx';
+    var fileName = 'SPK Lembur - ' + nomor.replace(/[\\/:*?"<>|]/g,'-') + ' - ' + tglSuratFormatted.replace(/[\\/:*?"<>|]/g,'-') + '.docx';
     var a = document.createElement('a');
     a.href = URL.createObjectURL(out);
     a.download = fileName;
     document.body.appendChild(a); a.click(); a.remove();
-    showAlert && showAlert('absenAlert','success','✅ SPK Lembur berhasil diterbitkan: '+fileName);
+    showAlert && showAlert('lbLemburAlert','success','✅ SPK Lembur berhasil diterbitkan: '+fileName);
   } catch (err) {
     alert('❌ Gagal membuat SPK Lembur: ' + err.message);
   }
@@ -9453,6 +9646,10 @@ window.onload = () => {
 document.addEventListener('keypress', e => {
   if (e.key==='Enter' && document.getElementById('loginPage').style.display!=='none') doLogin();
 });
+
+
+
+
 </script>
 </body>
 </html>
