@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -49,7 +50,7 @@
   /* ========= LOGIN ========= */
   #loginPage {
     min-height: 100vh;
-    background: linear-gradient(120deg, #0a1f44 0%, #14356e 22%, #1e56a0 45%, #d9a441 72%, #f4cd6b 100%);
+    background: linear-gradient(120deg, #4887f3 0%, #14356e 22%, #1e56a0 45%, #16fa01 72%, #f4cd6b 100%);
     background-size: 240% 240%;
     animation: loginBgShift 14s ease-in-out infinite;
     display: flex; align-items: center; justify-content: center;
@@ -64,7 +65,7 @@
   #loginPage::before {
     content: '';
     position: absolute; inset: 0;
-    background-image: radial-gradient(circle at 15% 25%, rgba(244,205,107,0.28) 0%, transparent 45%),
+    background-image: radial-gradient(circle at 15% 25%, rgba(49, 163, 4, 0.28) 0%, transparent 45%),
                       radial-gradient(circle at 85% 15%, rgba(30,86,160,0.35) 0%, transparent 50%),
                       radial-gradient(circle at 75% 85%, rgba(217,164,65,0.20) 0%, transparent 45%),
                       radial-gradient(circle at 10% 90%, rgba(10,31,68,0.30) 0%, transparent 45%);
@@ -571,8 +572,7 @@
   .filter-bar .field label { margin-bottom: 6px; }
 
   /* Shift indicator */
-  .shift-badge-P { background:#dcfce7;color:#16a34a;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:inherit }
-  .shift-badge-M { background:#ede9fe;color:#7c3aed;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:inherit }
+  .shift-badge-J { background:#dcfce7;color:#16a34a;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:inherit }
   .shift-badge-L, .shift-badge-- { background:#f1f5f9;color:#6b7280;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:inherit }
   .shift-edit-cell { display:flex;align-items:center;justify-content:center;gap:6px }
   .shift-select { padding:4px 8px;border-radius:8px;border:2px solid #e2e8f0;font-size:12px;font-weight:700;cursor:pointer;outline:none;background:#fff }
@@ -913,6 +913,8 @@
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.6/pizzip.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.44.0/docxtemplater.min.js" defer></script>
 </head>
 <body>
 
@@ -1073,6 +1075,10 @@
       <a class="nav-item" onclick="showPage('adminLembur')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
         Penugasan Lembur
+      </a>
+      <a class="nav-item" onclick="showPage('adminSpkLembur')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+        SPK Lembur
       </a>
       <a class="nav-item" onclick="showPage('adminLibur')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
@@ -1241,7 +1247,7 @@
             <div id="pdTimBody"></div>
           </div>
 
-          <!-- ===== OVERVIEW SEMUA TIM: PAGI / MALAM / LIBUR (khusus Security) ===== -->
+          <!-- ===== OVERVIEW SEMUA TIM: JAGA 24 JAM / LIBUR (khusus Security) ===== -->
           <div class="card" id="pdPiketOverviewWrap" style="margin-top:16px;display:none">
             <div class="card-title">🛡️ Piket Security Hari Ini — Semua Tim</div>
             <div id="pdPiketOverviewBody"><div class="alert alert-info">⏳ Memuat data...</div></div>
@@ -1726,60 +1732,110 @@
           <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
             <div style="font-weight:700;font-size:14px">Kode Shift:</div>
             <div style="display:flex;gap:12px;flex-wrap:wrap">
-              <span style="background:#16a34a;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">P = PAGI (07:00–19:00)</span>
-              <span style="background:#7c3aed;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">M = MALAM (19:00–07:00)</span>
+              <span style="background:#16a34a;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">J = JAGA 24 JAM (07:00–07:00 keesokan hari)</span>
               <span style="background:#6b7280;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">L = LIBUR / OFF</span>
             </div>
           </div>
           <div style="margin-top:10px;font-size:12.5px;opacity:0.85">
-            🪄 Pola Generator Otomatis: <strong>Hari kerja</strong> → 2 TIM Pagi, 1 TIM Malam, 1 TIM Libur. <strong>Hari libur</strong> → 1 TIM Pagi, 1 TIM Malam, 2 TIM Libur. Giliran tim dirotasi tiap hari.
+            🪄 Pola Generator Otomatis: setiap hari <strong>1 TIM Jaga 24 Jam</strong> (07:00–07:00 keesokan hari), <strong>3 TIM lainnya Libur</strong>. Giliran tim yang jaga dirotasi tiap hari secara merata.
           </div>
         </div>
 
-        <div class="card">
+        <!-- Daftar Anggota Tim (per TIM) -->
+        <div class="card" style="margin-bottom:16px">
           <div class="card-title">🔄 Jadwal Shift Security</div>
+          <div id="shiftTimRoster"></div>
+        </div>
 
-          <!-- Daftar Anggota Tim (per TIM) -->
-          <div id="shiftTimRoster" style="margin-bottom:20px"></div>
+        <!-- Tab: Generator Jadwal | Data Jadwal (Database) -->
+        <div class="tabs">
+          <div class="tab active" onclick="switchShiftTab('generator')">🪄 Generator Jadwal</div>
+          <div class="tab" onclick="switchShiftTab('data')">📋 Data Jadwal</div>
+        </div>
 
-          <!-- Filter & Aksi -->
-          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
-            <div class="field"><label>Bulan</label><input type="month" id="filterShiftMonth"></div>
-            <button class="btn btn-primary" onclick="loadShiftData()">🔍 Tampilkan</button>
-            <button class="btn" style="background:#8b5cf6;border-color:#8b5cf6;color:#fff" onclick="generateJadwalShiftOtomatis()" title="Buat jadwal 1 bulan penuh otomatis berdasarkan rotasi, lalu bisa disesuaikan sebelum disimpan">🪄 Generator Jadwal</button>
-            <button class="btn btn-success" onclick="toggleEditShift()" id="btnEditShift" style="background:#16a34a;border-color:#16a34a">✏️ Mode Edit</button>
-            <button class="btn btn-primary" onclick="simpanJadwalShift()" id="btnSimpanShift" style="display:none;background:#7c3aed;border-color:#7c3aed">💾 Simpan Jadwal</button>
-            <button class="btn btn-outline" onclick="batalEditShift()" id="btnBatalShift" style="display:none">✕ Batal</button>
-            <label class="btn" style="background:#f59e0b;border:none;color:#fff;cursor:pointer;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600">
-              📤 Upload Excel
-              <input type="file" id="shiftFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadJadwalShift(event)">
-            </label>
-            <button class="btn btn-outline" onclick="downloadTemplateShift()">⬇ Template Excel</button>
-            <button class="btn btn-success" onclick="exportShiftExcel()" style="background:#16a34a;border-color:#16a34a">📊 Export Excel</button>
-          </div>
+        <!-- ===== TAB 1: GENERATOR JADWAL ===== -->
+        <div id="shiftTabGenerator">
+          <div class="card">
+            <div class="card-title">🪄 Generator Jadwal Otomatis</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+              Pilih bulan lalu klik <strong>Generate Otomatis</strong> untuk membuat jadwal 1 bulan penuh sebagai <strong>pratinjau</strong> di bawah ini. Pratinjau ini masih bisa Anda sesuaikan. Selama Anda belum klik <strong>💾 Simpan ke Database</strong>, jadwal ini <u>belum masuk ke database</u> dan belum terlihat oleh pegawai atau di tab "Data Jadwal".
+            </p>
 
-          <!-- Petunjuk upload -->
-          <div id="shiftUploadInfo" style="display:none;margin:10px 0">
-            <div class="alert alert-info" style="font-size:13px">
-              📋 <strong>Format upload:</strong> Kolom: Tanggal (YYYY-MM-DD) | TIM 1 | TIM 2 | TIM 3 | TIM 4 — Isi dengan <strong>P</strong> (Pagi), <strong>M</strong> (Malam), atau <strong>L</strong> (Libur)
+            <!-- Notifikasi khusus tab Generator -->
+            <div id="shiftGenAlert"></div>
+
+            <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+              <div class="field"><label>Bulan</label><input type="month" id="filterShiftGenMonth"></div>
+              <button class="btn" style="background:#8b5cf6;border-color:#8b5cf6;color:#fff" onclick="generateJadwalShiftOtomatis()">🪄 Generate Otomatis</button>
+              <button class="btn btn-primary" onclick="simpanJadwalShiftGenerator()" id="btnSimpanShiftGen" style="display:none;background:#7c3aed;border-color:#7c3aed">💾 Simpan ke Database</button>
+              <button class="btn btn-outline" onclick="batalGeneratorShift()" id="btnBatalShiftGen" style="display:none">✕ Batal</button>
             </div>
-          </div>
 
-          <div class="table-wrap">
-            <table id="shiftTable">
-              <thead>
-                <tr>
-                  <th style="min-width:100px">Tanggal</th>
-                  <th style="min-width:90px">TIM 1</th>
-                  <th style="min-width:90px">TIM 2</th>
-                  <th style="min-width:90px">TIM 3</th>
-                  <th style="min-width:90px">TIM 4</th>
-                </tr>
-              </thead>
-              <tbody id="shiftBody"></tbody>
-            </table>
+            <div class="table-wrap" id="shiftGenTableWrap" style="display:none;margin-top:14px">
+              <table id="shiftGenTable">
+                <thead>
+                  <tr>
+                    <th style="min-width:100px">Tanggal</th>
+                    <th style="min-width:90px">TIM 1</th>
+                    <th style="min-width:90px">TIM 2</th>
+                    <th style="min-width:90px">TIM 3</th>
+                    <th style="min-width:90px">TIM 4</th>
+                  </tr>
+                </thead>
+                <tbody id="shiftGenBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="pgShiftGen"></div>
           </div>
-          <div class="pagination" id="pgAdminShift"></div>
+        </div>
+
+        <!-- ===== TAB 2: DATA JADWAL (DATABASE) ===== -->
+        <div id="shiftTabData" style="display:none">
+          <div class="card">
+            <div class="card-title">📋 Data Jadwal (tersimpan di database)</div>
+
+            <!-- Notifikasi khusus tab Data Jadwal -->
+            <div id="shiftAlert"></div>
+
+            <!-- Filter & Aksi -->
+            <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+              <div class="field"><label>Bulan</label><input type="month" id="filterShiftMonth"></div>
+              <button class="btn btn-primary" onclick="loadShiftData()">🔍 Tampilkan</button>
+              <button class="btn btn-success" onclick="toggleEditShift()" id="btnEditShift" style="background:#16a34a;border-color:#16a34a">✏️ Mode Edit</button>
+              <button class="btn btn-primary" onclick="simpanJadwalShift()" id="btnSimpanShift" style="display:none;background:#7c3aed;border-color:#7c3aed">💾 Simpan Jadwal</button>
+              <button class="btn btn-outline" onclick="batalEditShift()" id="btnBatalShift" style="display:none">✕ Batal</button>
+              <label class="btn" style="background:#f59e0b;border:none;color:#fff;cursor:pointer;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600">
+                📤 Upload Excel
+                <input type="file" id="shiftFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadJadwalShift(event)">
+              </label>
+              <button class="btn btn-outline" onclick="downloadTemplateShift()">⬇ Template Excel</button>
+              <button class="btn btn-success" onclick="exportShiftExcel()" style="background:#16a34a;border-color:#16a34a">📊 Export Excel</button>
+              <button class="btn" style="background:#ef4444;border-color:#ef4444;color:#fff" onclick="hapusJadwalShiftBulan()">🗑️ Hapus Jadwal Bulan Ini</button>
+            </div>
+
+            <!-- Petunjuk upload -->
+            <div id="shiftUploadInfo" style="display:none;margin:10px 0">
+              <div class="alert alert-info" style="font-size:13px">
+                📋 <strong>Format upload:</strong> Kolom: Tanggal (YYYY-MM-DD) | TIM 1 | TIM 2 | TIM 3 | TIM 4 — Isi dengan <strong>J</strong> (Jaga 24 Jam) atau <strong>L</strong> (Libur)
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table id="shiftTable">
+                <thead>
+                  <tr>
+                    <th style="min-width:100px">Tanggal</th>
+                    <th style="min-width:90px">TIM 1</th>
+                    <th style="min-width:90px">TIM 2</th>
+                    <th style="min-width:90px">TIM 3</th>
+                    <th style="min-width:90px">TIM 4</th>
+                  </tr>
+                </thead>
+                <tbody id="shiftBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="pgAdminShift"></div>
+          </div>
         </div>
       </div>
 
@@ -1794,7 +1850,9 @@
             <div class="field"><label>Pegawai</label>
               <select id="lb-pegawai"><option value="">Pilih pegawai...</option></select>
             </div>
-            <div class="field"><label>Keterangan</label><input type="text" id="lb-keterangan" placeholder="mis. Pengamanan acara kantor"></div>
+            <div class="field"><label>Jam Mulai</label><input type="time" id="lb-jam-mulai" value="08:00"></div>
+            <div class="field"><label>Jam Selesai</label><input type="time" id="lb-jam-selesai" value="16:00"></div>
+            <div class="field" style="min-width:220px"><label>Keterangan / Uraian Tugas</label><input type="text" id="lb-keterangan" placeholder="mis. Pengamanan acara kantor"></div>
             <button class="btn btn-primary" onclick="tambahPenugasanLembur()">➕ Tugaskan</button>
           </div>
 
@@ -1806,7 +1864,7 @@
 
           <div class="table-wrap" style="margin-top:10px">
             <table>
-              <thead><tr><th>Tanggal</th><th>ID Pegawai</th><th>Nama</th><th>Keterangan</th><th>Aksi</th></tr></thead>
+              <thead><tr><th>Tanggal</th><th>ID Pegawai</th><th>Nama</th><th>Jam</th><th>Keterangan</th><th>Aksi</th></tr></thead>
               <tbody id="adminLemburBody"></tbody>
             </table>
           </div>
@@ -1814,10 +1872,62 @@
         </div>
       </div>
 
+      <!-- ===== ADMIN: SPK LEMBUR (Surat Perintah Kerja Lembur) ===== -->
+      <div class="page" id="page-adminSpkLembur">
+        <div class="card">
+          <div class="card-title">📄 Buat SPK Lembur (Surat Perintah Kerja Lembur)</div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Pilih data Penugasan Lembur pegawai PPNPN yang sudah diinput pada menu <strong>Penugasan Lembur</strong>, lalu terbitkan dokumen SPK Lembur (Word) secara otomatis dari template.</p>
+
+          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+            <div class="field"><label>Dari Tanggal</label><input type="date" id="spk-from"></div>
+            <div class="field"><label>Sampai Tanggal</label><input type="date" id="spk-to"></div>
+            <button class="btn btn-outline" onclick="loadSpkLemburCandidates()">🔍 Tampilkan Data</button>
+          </div>
+
+          <div class="table-wrap" style="margin-top:10px">
+            <table>
+              <thead><tr><th style="width:32px"><input type="checkbox" id="spk-select-all" onchange="toggleSpkSelectAll(this)"></th><th>Tanggal</th><th>Nama</th><th>Jam</th><th>Uraian Tugas</th></tr></thead>
+              <tbody id="spkLemburCandidatesBody"><tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Pilih rentang tanggal lalu klik Tampilkan Data.</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="settings-grid" style="margin-top:20px">
+            <div class="card" style="box-shadow:none;border:1px solid var(--border)">
+              <div class="card-title" style="font-size:15px">Data Surat</div>
+              <div class="field" style="margin-bottom:12px"><label>Nomor Surat</label><input type="text" id="spk-nomor" placeholder="mis. 029/WPJ.09/KP.0507/2026"></div>
+              <div class="field" style="margin-bottom:12px"><label>Tanggal Surat</label><input type="date" id="spk-tanggal-surat"></div>
+              <div class="field"><label>Tahun Anggaran</label><input type="text" id="spk-tahun-anggaran" placeholder="2026"></div>
+            </div>
+            <div class="card" style="box-shadow:none;border:1px solid var(--border)">
+              <div class="card-title" style="font-size:15px">Penandatangan</div>
+              <div class="field" style="margin-bottom:12px"><label>Nama Pejabat</label><input type="text" id="spk-nama-ttd" placeholder="mis. Faisal Fatahillah"></div>
+              <div class="field"><label>Jabatan</label><input type="text" id="spk-jabatan-ttd" placeholder="mis. Kepala Kantor Pelayanan Pajak Pratama Subang"></div>
+              <div class="import-hint" style="margin-top:10px">Nilai default diambil dari Pengaturan → SPK Lembur. Bisa diubah manual sebelum diterbitkan.</div>
+            </div>
+          </div>
+
+          <div style="margin-top:18px">
+            <button class="btn btn-success" onclick="generateSpkLemburDocx()">📥 Terbitkan SPK Lembur (Word)</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== ADMIN: HAK CUTI ===== -->
       <div class="page" id="page-adminHakCuti">
         <div class="card">
           <div class="card-title">🏖 Hak Cuti Seluruh Pegawai</div>
+
+          <!-- Info periode aktif & reset otomatis -->
+          <div class="alert alert-info" id="hakCutiPeriodeInfo" style="margin-bottom:16px;font-size:13px"></div>
+
+          <!-- Kartu ringkasan -->
+          <div class="stats-grid" id="hakCutiStats" style="margin-bottom:16px">
+            <div class="stat-card blue"><div class="label">Total Pegawai</div><div class="value" id="hc-total">-</div><div class="sub">Pada periode berjalan</div></div>
+            <div class="stat-card amber"><div class="label">Total Terpakai</div><div class="value" id="hc-pakai">-</div><div class="sub">Hari, periode berjalan</div></div>
+            <div class="stat-card green"><div class="label">Total Sisa</div><div class="value" id="hc-sisa">-</div><div class="sub">Hari, seluruh pegawai</div></div>
+            <div class="stat-card red"><div class="label">Perlu Perhatian</div><div class="value" id="hc-warn">-</div><div class="sub">Sisa ≤ 2 hari / habis</div></div>
+          </div>
+
           <div class="filter-bar">
             <div class="field"><label>Pekerjaan</label>
               <select id="filterHakCutiJab">
@@ -1828,7 +1938,11 @@
                 <option>Pengemudi</option>
               </select>
             </div>
+            <div class="field"><label>Periode Hak Cuti</label>
+              <select id="filterHakCutiPeriode"></select>
+            </div>
             <button class="btn btn-primary" onclick="loadAdminHakCuti()">🔍 Filter</button>
+            <button class="btn btn-outline" onclick="exportHakCutiExcel()">📥 Export Excel</button>
           </div>
           <div class="table-wrap">
             <table>
@@ -2011,6 +2125,30 @@
             <div id="storageStatus" style="font-size:12.5px;color:var(--text-muted);margin:12px 0"></div>
 
             <button class="btn btn-success" onclick="saveStorageSettings()">💾 Simpan Pengaturan Penyimpanan</button>
+          </div>
+
+          <!-- PENGATURAN SPK LEMBUR -->
+          <div class="card">
+            <div class="card-title">📄 Pengaturan SPK Lembur</div>
+            <div class="import-hint">Nilai default ini akan otomatis terisi setiap kali admin membuat dokumen SPK Lembur baru pada menu <strong>SPK Lembur</strong>.</div>
+            <div class="field" style="margin:14px 0">
+              <label>Nama Pejabat Penandatangan</label>
+              <input type="text" id="setSpkNamaTtd" placeholder="mis. Faisal Fatahillah">
+            </div>
+            <div class="field" style="margin-bottom:14px">
+              <label>Jabatan Penandatangan</label>
+              <input type="text" id="setSpkJabatanTtd" placeholder="mis. Kepala Kantor Pelayanan Pajak Pratama Subang">
+            </div>
+            <div class="field" style="margin-bottom:14px">
+              <label>Kota (kop tanda tangan)</label>
+              <input type="text" id="setSpkKota" placeholder="Subang">
+            </div>
+            <div class="field" style="margin-bottom:6px">
+              <label>Template Nomor Surat (opsional)</label>
+              <input type="text" id="setSpkFormatNomor" placeholder="mis. {n}/WPJ.09/KP.0507/{tahun}">
+              <div class="import-hint" style="margin-top:6px">Gunakan <code>{n}</code> untuk nomor urut &amp; <code>{tahun}</code> untuk tahun berjalan. Nomor tetap bisa diedit manual saat membuat SPK.</div>
+            </div>
+            <button class="btn btn-success" onclick="saveSpkLemburSettings()">💾 Simpan Pengaturan SPK Lembur</button>
           </div>
         </div>
       </div>
@@ -2542,22 +2680,14 @@ var selectedAbsensi = new Set();
 var selectedCuti    = new Set();
 
 // ============================================================
-// DATA DEMO (fallback jika tidak ada Google Sheets)
+// STATE PEGAWAI, JAM KERJA & RADIUS
+// Diisi murni dari Supabase saat runtime (bukan data statis/demo lagi).
+// Nama variabel dipertahankan agar kode lama yang mereferensikannya
+// tetap berfungsi tanpa perlu diubah satu per satu.
 // ============================================================
-var DEMO_USERS = [
-  {idPegawai:'CS1',namaPegawai:'Abdul Rojak',username:'cs1',password:'051973',status:'Pegawai',pekerjaan:'Cleaning Service',Tim:'CS'},
-  {idPegawai:'SC1',namaPegawai:'Oman',username:'sc1',password:'031973',status:'Pegawai',pekerjaan:'Security',Tim:'TIM 1'},
-  {idPegawai:'HR1',namaPegawai:'Yanuar Tri Aquarista',username:'hr1',password:'061991',status:'Pegawai',pekerjaan:'Pramubakti',Tim:'HR'},
-  {idPegawai:'ADM1',namaPegawai:'HARYANTO',username:'adm1',password:'admin408',status:'Admin',pekerjaan:'Admin',Tim:'Admin'},
-];
-var DEMO_JAM_KERJA = [
-  {PEKERJAAN:'Cleaning Service',JAM_MASUK:'06:00',JAM_PULANG:'17:30',SHIFT:'Pagi'},
-  {PEKERJAAN:'Pramubakti',JAM_MASUK:'06:00',JAM_PULANG:'17:30',SHIFT:'Pagi'},
-  {PEKERJAAN:'Security',JAM_MASUK:'07:00',JAM_PULANG:'19:00',SHIFT:'Pagi'},
-  {PEKERJAAN:'Security',JAM_MASUK:'19:00',JAM_PULANG:'07:00',SHIFT:'Malam'},
-  {PEKERJAAN:'Pengemudi',JAM_MASUK:'06:00',JAM_PULANG:'17:30',SHIFT:'Pagi'},
-];
-var DEMO_RADIUS = {radiusTolerance:100, officeLat:-6.3016851, officeLon:107.2999075};
+var DEMO_USERS = [];
+var DEMO_JAM_KERJA = [];
+var DEMO_RADIUS = {radiusTolerance: 100, officeLat: null, officeLon: null};
 
 // ============================================================
 // DAFTAR TUGAS DEFAULT (Cek List Tugas Cleaning Service / Pramubakti)
@@ -3060,7 +3190,8 @@ var DEFAULT_LIBUR = [
   { tanggal: '2026-01-01', keterangan: 'Tahun Baru' }
 ];
 
-// Terapkan pengaturan Jam Kerja & Radius yang pernah disimpan admin (localStorage)
+// Terapkan cache Jam Kerja & Radius terakhir (localStorage) sebagai tampilan
+// sementara sebelum data terbaru dari Supabase selesai dimuat saat login
 (function applySavedSettings(){
   try {
     var savedJK = JSON.parse(localStorage.getItem('ppnpn_jamkerja_setting') || 'null');
@@ -3079,7 +3210,7 @@ var DEFAULT_LIBUR = [
   } catch(e) {}
 })();
 
-// Absensi & permohonan tersimpan lokal untuk demo
+// Cache lokal absensi & permohonan (disinkronkan dari Supabase)
 var localAbsensi = JSON.parse(localStorage.getItem('ppnpn_absensi') || '[]');
 var localPermohonan = JSON.parse(localStorage.getItem('ppnpn_permohonan') || '[]');
 var localAllPegawai = JSON.parse(localStorage.getItem('ppnpn_all_pegawai') || 'null');
@@ -3131,6 +3262,78 @@ function haversine(lat1,lon1,lat2,lon2) {
 }
 function genId(prefix) {
   return prefix + Date.now().toString(36).toUpperCase();
+}
+
+// ============================================================
+// PERIODE HAK CUTI — RESET OTOMATIS TIAP 1 JANUARI & 1 JULI
+// ------------------------------------------------------------
+// Status kepegawaian PPNPN adalah kontrak yang diperbarui tiap 6 bulan,
+// sehingga saldo hak cuti tahunan (6 hari) ikut direset otomatis mengikuti
+// siklus kontrak tsb: Semester 1 (1 Jan - 30 Jun) dan Semester 2
+// (1 Jul - 31 Des). Reset ini TIDAK memerlukan aksi manual/cron — saldo
+// selalu dihitung ulang dari permohonan cuti yang tanggalnya jatuh di
+// periode berjalan saja, jadi begitu tanggal sistem masuk 1 Jan / 1 Jul,
+// pemakaian periode sebelumnya otomatis tidak lagi mengurangi saldo baru.
+// ============================================================
+function getPeriodeCuti(tanggalRef) {
+  var d = tanggalRef ? new Date(tanggalRef) : new Date();
+  var tahun = d.getFullYear();
+  var bulan = d.getMonth() + 1; // 1-12
+  if (bulan <= 6) {
+    return {
+      semester: 1,
+      tahun: tahun,
+      start: tahun + '-01-01',
+      end: tahun + '-06-30',
+      label: 'Semester 1 ' + tahun + ' (Jan–Jun)',
+      resetBerikutnya: tahun + '-07-01'
+    };
+  }
+  return {
+    semester: 2,
+    tahun: tahun,
+    start: tahun + '-07-01',
+    end: tahun + '-12-31',
+    label: 'Semester 2 ' + tahun + ' (Jul–Des)',
+    resetBerikutnya: (tahun + 1) + '-01-01'
+  };
+}
+
+// Daftar beberapa periode terakhir (terbaru lebih dulu) — dipakai untuk
+// filter riwayat saldo cuti per semester di menu Hak Cuti Pegawai.
+function getDaftarPeriodeCuti(jumlah) {
+  jumlah = jumlah || 4;
+  var out = [];
+  var d = new Date();
+  for (var i = 0; i < jumlah; i++) {
+    out.push(getPeriodeCuti(d));
+    d.setMonth(d.getMonth() - 6);
+  }
+  return out;
+}
+
+function hariMenujuReset(periode) {
+  periode = periode || getPeriodeCuti();
+  var msPerHari = 24 * 60 * 60 * 1000;
+  var sisaHari = Math.ceil((new Date(periode.resetBerikutnya) - new Date(today())) / msPerHari);
+  return Math.max(0, sisaHari);
+}
+
+// Hitung saldo cuti tahunan 1 pegawai untuk 1 periode (default: periode
+// aktif saat ini). Hanya permohonan "Cuti Tahunan" berstatus "Disetujui"
+// dengan Tanggal_Mulai di dalam rentang periode yang dihitung, sehingga
+// saldo otomatis kembali menjadi 6 hari setiap awal periode baru.
+function hitungSaldoCuti(idPegawai, periode) {
+  periode = periode || getPeriodeCuti();
+  var HAK = 6;
+  var pakai = (localPermohonan || []).filter(function(pm) {
+    return pm.ID_Karyawan === idPegawai &&
+           pm.Jenis_Cuti && pm.Jenis_Cuti.indexOf('Cuti Tahunan') >= 0 &&
+           pm.Status === 'Disetujui' &&
+           pm.Tanggal_Mulai && pm.Tanggal_Mulai >= periode.start && pm.Tanggal_Mulai <= periode.end;
+  }).reduce(function(s, pm) { return s + Number(pm.Jumlah_Hari || 0); }, 0);
+  var sisa = Math.max(0, HAK - pakai);
+  return { hak: HAK, pakai: pakai, sisa: sisa, periode: periode };
 }
 
 // ============================================================
@@ -3397,13 +3600,13 @@ async function callAPI(action, params={}) {
         const { data, error } = await q;
         if (error) return { success:false, error: error.message };
         return { success:true, data: (data||[]).map(function(r){
-          return { tanggal: r.tanggal, idPegawai: r.id_pegawai, namaPegawai: r.nama_pegawai, keterangan: r.keterangan };
+          return { tanggal: r.tanggal, idPegawai: r.id_pegawai, namaPegawai: r.nama_pegawai, jamMulai: r.jam_mulai, jamSelesai: r.jam_selesai, keterangan: r.keterangan };
         })};
       }
 
       case 'saveLembur': {
         const rows = (Array.isArray(params.rows) ? params.rows : [params]).map(function(r){
-          return { tanggal: r.tanggal, id_pegawai: r.idPegawai, nama_pegawai: r.namaPegawai, keterangan: r.keterangan || '' };
+          return { tanggal: r.tanggal, id_pegawai: r.idPegawai, nama_pegawai: r.namaPegawai, jam_mulai: r.jamMulai || null, jam_selesai: r.jamSelesai || null, keterangan: r.keterangan || '' };
         });
         const { error } = await supabaseClient.from('lembur_penugasan').upsert(rows, { onConflict: 'tanggal,id_pegawai' });
         return { success: !error, error: error?error.message:null };
@@ -3537,6 +3740,15 @@ async function callAPI(action, params={}) {
         return { success: !error, error: error?error.message:null };
       }
 
+      case 'deleteShift': {
+        // Menghapus seluruh baris jadwal shift (semua TIM) dalam rentang
+        // tanggal tertentu — dipakai untuk "Hapus Jadwal" per bulan.
+        if (!params.from || !params.to) return { success:false, error:'Rentang tanggal tidak lengkap' };
+        const { error } = await supabaseClient.from('shift_jadwal').delete()
+          .gte('tanggal', params.from).lte('tanggal', params.to);
+        return { success: !error, error: error?error.message:null };
+      }
+
       case 'getRadius': {
         const { data, error } = await supabaseClient.from('konfigurasi').select('*').eq('id',1).limit(1);
         if (error || !data || !data.length) return { success:false };
@@ -3552,6 +3764,28 @@ async function callAPI(action, params={}) {
           office_lat: params.officeLat,
           office_lon: params.officeLon,
           radius_tolerance: params.radiusTolerance
+        };
+        const { error } = await supabaseClient.from('konfigurasi').upsert(row, { onConflict: 'id' });
+        return { success: !error, error: error?error.message:null };
+      }
+
+      case 'getSpkSettings': {
+        const { data, error } = await supabaseClient.from('konfigurasi').select('*').eq('id',1).limit(1);
+        if (error || !data || !data.length) return { success:false };
+        const r = data[0];
+        return { success:true, data: {
+          namaTtd: r.spk_nama_ttd || '', jabatanTtd: r.spk_jabatan_ttd || '',
+          kota: r.spk_kota || 'Subang', formatNomor: r.spk_format_nomor || ''
+        }};
+      }
+
+      case 'saveSpkSettings': {
+        const row = {
+          id: 1,
+          spk_nama_ttd: params.namaTtd || null,
+          spk_jabatan_ttd: params.jabatanTtd || null,
+          spk_kota: params.kota || null,
+          spk_format_nomor: params.formatNomor || null
         };
         const { error } = await supabaseClient.from('konfigurasi').upsert(row, { onConflict: 'id' });
         return { success: !error, error: error?error.message:null };
@@ -4695,17 +4929,15 @@ async function doLogin() {
 
   document.getElementById('loginBtnText').innerHTML = '<span class="loading-spinner"></span> Memuat...';
 
-  // Try API first
-  let user = null;
-  if (SCRIPT_URL) {
-    const result = await callAPI('login', {username, password});
-    if (result && result.success) user = result.user;
+  if (!SCRIPT_URL) {
+    document.getElementById('loginBtnText').textContent = 'Masuk';
+    errEl.textContent = '❌ Tidak dapat terhubung ke database. Periksa koneksi internet Anda.';
+    errEl.style.display = 'block'; return;
   }
 
-  // Fallback demo
-  if (!user) {
-    user = DEMO_USERS.find(u => u.username === username && u.password === password);
-  }
+  let user = null;
+  const result = await callAPI('login', {username, password});
+  if (result && result.success) user = result.user;
 
   document.getElementById('loginBtnText').textContent = 'Masuk';
 
@@ -4784,17 +5016,22 @@ var menuCS = document.getElementById('menuChecklistCS');
   // Preload jadwal hari libur & daftar tugas (dipakai lintas halaman)
   ensureLiburLoaded();
   ensureDaftarTugasLoaded();
-  // Load radius dari Sheets, fallback ke demo
+  // Load radius kantor & jam kerja murni dari Supabase (tidak ada fallback demo)
   if (SCRIPT_URL) {
     callAPI('getRadius', {}).then(function(r) {
       if (r && r.success && r.data) {
         var d = r.data;
-        officeLat    = parseFloat(d['officeLat'])        || DEMO_RADIUS.officeLat;
-        officeLon    = parseFloat(d['officeLon'])        || DEMO_RADIUS.officeLon;
-        officeRadius = parseFloat(d['radiusTolerance'])  || DEMO_RADIUS.radiusTolerance;
+        officeLat    = parseFloat(d['officeLat']);
+        officeLon    = parseFloat(d['officeLon']);
+        officeRadius = parseFloat(d['radiusTolerance']) || 100;
         // Koordinat di sheet disimpan sebagai integer (dikali 1e7), normalisasi jika perlu
         if (Math.abs(officeLat) > 180) officeLat = officeLat / 1e7;
         if (Math.abs(officeLon) > 180) officeLon = officeLon / 1e7;
+        DEMO_RADIUS.officeLat = officeLat;
+        DEMO_RADIUS.officeLon = officeLon;
+        DEMO_RADIUS.radiusTolerance = officeRadius;
+      } else {
+        console.warn('Lokasi kantor belum dikonfigurasi di database. Admin perlu mengatur di menu Pengaturan.');
       }
     });
 
@@ -4802,15 +5039,15 @@ var menuCS = document.getElementById('menuChecklistCS');
       if (r && r.success && r.data && r.data.length > 0) {
         DEMO_JAM_KERJA.length = 0;
         r.data.forEach(function(d) { DEMO_JAM_KERJA.push(d); });
+      } else {
+        console.warn('Jam kerja belum dikonfigurasi di database. Admin perlu mengatur di menu Pengaturan.');
       }
     });
 
-    // Preload absensi & permohonan dari Sheets ke localCache
+    // Preload absensi & permohonan dari Supabase ke cache lokal
     syncFromSheets();
   } else {
-    officeLat    = DEMO_RADIUS.officeLat;
-    officeLon    = DEMO_RADIUS.officeLon;
-    officeRadius = DEMO_RADIUS.radiusTolerance;
+    console.error('Tidak dapat terhubung ke database Supabase.');
   }
 
   buildBottomNav();
@@ -4927,8 +5164,8 @@ async function refreshAllPegawai() {
   }
 }
 
-// Kembalikan daftar pegawai yang siap dipakai untuk perhitungan dashboard:
-// pakai data real dari database jika tersedia, fallback ke DEMO_USERS.
+// Kembalikan daftar pegawai yang siap dipakai untuk perhitungan dashboard.
+// Murni dari data real Supabase (localAllPegawai); tidak ada lagi fallback demo.
 function getPegawaiListForStats() {
   if (localAllPegawai && localAllPegawai.length) {
     return localAllPegawai
@@ -4937,7 +5174,7 @@ function getPegawaiListForStats() {
         return { idPegawai: p['ID PEGAWAI'], namaPegawai: p['NAMA'], pekerjaan: p['PEKERJAAN'], Tim: p['Tim']||p['TIM'] };
       });
   }
-  return DEMO_USERS.filter(function(u){ return u.status==='Pegawai'; });
+  return [];
 }
 
 // ============================================================
@@ -4948,7 +5185,7 @@ function showPage(name) {
   var isAdmin = u && u.status === 'Admin';
 
   // Access guard — pegawai tidak bisa akses halaman admin
-  var adminPages = ['adminAbsensi','adminCuti','adminIjinKeluar','adminPegawai','adminShift','adminHakCuti','adminPotongan','adminPengaturan', 'adminChecklistCS', 'adminLibur', 'adminLembur']; 
+  var adminPages = ['adminAbsensi','adminCuti','adminIjinKeluar','adminPegawai','adminShift','adminHakCuti','adminPotongan','adminPengaturan', 'adminChecklistCS', 'adminLibur', 'adminLembur', 'adminSpkLembur']; 
   var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga'];
   if (!isAdmin && adminPages.indexOf(name) >= 0) {
     alert('Akses ditolak. Halaman ini hanya untuk admin.');
@@ -4981,6 +5218,7 @@ function showPage(name) {
     adminShift: '🔄 Jadwal Shift Security',
     adminHakCuti: '🏖 Hak Cuti Pegawai',
     adminLembur: '🔥 Penugasan Lembur',
+    adminSpkLembur: '📄 SPK Lembur',
     adminPotongan: '💰 Rekapitulasi Potongan',
     adminPengaturan: '⏰ Jam Kerja & Radius Absensi',
     adminLibur: '🗓 Jadwal Hari Libur',
@@ -5010,9 +5248,10 @@ function showPage(name) {
   if (name === 'adminAbsensi') { initAdminAbsensiFilter(); loadAdminAbsensi(); }
   if (name === 'adminCuti') { adminCutiCurrentTab='pending'; loadAdminCuti(); }
   if (name === 'adminPegawai') loadAdminPegawai();
-  if (name === 'adminShift') { initShiftFilter(); loadShiftData(); renderShiftTimRoster(); }
+  if (name === 'adminShift') { initShiftFilter(); switchShiftTab('generator'); loadShiftData(); renderShiftTimRoster(); }
   if (name === 'adminHakCuti') loadAdminHakCuti();
   if (name === 'adminLembur') initAdminLembur();
+  if (name === 'adminSpkLembur') initAdminSpkLembur();
   if (name === 'adminPotongan') initAdminPotongan();
   if (name === 'adminPengaturan') loadPengaturanPage();
   if (name === 'adminLibur') loadAdminLibur();
@@ -5182,10 +5421,9 @@ async function loadDashboard() {
 
     // ---- PEGAWAI DASHBOARD (desain baru) ----
     var todayAbsen = localAbsensi.find(function(a){ return a.idPegawai===u.idPegawai && a.tanggal===today(); });
-    var pakai = localPermohonan.filter(function(p){
-      return p.ID_Karyawan===u.idPegawai && p.Jenis_Cuti && p.Jenis_Cuti.includes('Cuti Tahunan') && p.Status==='Disetujui';
-    }).reduce(function(s,p){ return s+Number(p.Jumlah_Hari||0); }, 0);
-    var sisa = Math.max(0, 6 - pakai);
+    var saldoCutiPd = hitungSaldoCuti(u.idPegawai);
+    var pakai = saldoCutiPd.pakai;
+    var sisa = saldoCutiPd.sisa;
 
     // ---- Hero: sapaan & status ----
     var jamSekarang = new Date().getHours();
@@ -5498,12 +5736,11 @@ async function initAbsensiPage() {
     } else {
       document.getElementById('offDayNotice').style.display='none';
       document.getElementById('absensiFormWrap').style.display='block';
-      var jkSec = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN==='Security' && j.SHIFT===(shiftVal==='P'?'Pagi':'Malam'); });
-      if (shiftVal === 'P') { jamMasuk = jkSec ? jkSec.JAM_MASUK : '07:00'; jamPulang = jkSec ? jkSec.JAM_PULANG : '19:00'; }
-      else                  { jamMasuk = jkSec ? jkSec.JAM_MASUK : '19:00'; jamPulang = jkSec ? jkSec.JAM_PULANG : '07:00'; }
+      var jkSec = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN==='Security' && j.SHIFT==='Jaga'; });
+      jamMasuk  = jkSec ? jkSec.JAM_MASUK  : '07:00';
+      jamPulang = jkSec ? jkSec.JAM_PULANG : '07:00';
       document.getElementById('absenShiftInfo').style.display='block';
-      document.getElementById('absenShiftLabel').textContent =
-        shiftVal === 'P' ? 'Pagi (07:00 - 19:00)' : 'Malam (19:00 - 07:00)';
+      document.getElementById('absenShiftLabel').textContent = 'Jaga 24 Jam (07:00 - 07:00 keesokan hari)';
     }
   } else {
     await ensureLiburLoaded();
@@ -5574,9 +5811,8 @@ function getSecurityShiftToday() {
     ? String(shiftData[tgl][tim]).trim().toUpperCase()
     : null;
 
-  // Normalisasi: PAGI/P → 'P', MALAM/M → 'M', LIBUR/L/- → '-'
-  if (val === 'PAGI'  || val === 'P') return 'P';
-  if (val === 'MALAM' || val === 'M') return 'M';
+  // Normalisasi: JAGA/J → 'J', LIBUR/L/- → '-'
+  if (val === 'JAGA'  || val === 'J') return 'J';
   if (val === 'LIBUR' || val === 'L') return '-';
 
   // Tidak ada data shift hari ini di localStorage → coba muat dari Sheets
@@ -5606,7 +5842,7 @@ async function ensureShiftTodayLoaded() {
   } catch(err) { console.log('Gagal memuat shift hari ini:', err); }
 }
 
-// Kode shift (P/M/L) sebuah TIM untuk hari ini, dari cache shiftData atau
+// Kode shift (J/L) sebuah TIM untuk hari ini, dari cache shiftData atau
 // hasil hitung rotasi otomatis bila belum diatur manual.
 function getTimShiftToday(tim) {
   var tgl = today();
@@ -5615,20 +5851,19 @@ function getTimShiftToday(tim) {
   var val = (shiftData[tgl] && shiftData[tgl][tim])
     ? String(shiftData[tgl][tim]).toUpperCase()
     : (idx >= 0 ? hitungShiftOtomatis(tgl, idx) : 'L');
-  if (val === 'PAGI') val = 'P';
-  if (val === 'MALAM') val = 'M';
+  if (val === 'JAGA') val = 'J';
   if (val === 'LIBUR') val = 'L';
   return val;
 }
 
 // Kumpulkan seluruh TIM security & anggotanya, dikelompokkan berdasarkan
-// shift hari ini: Pagi (P), Malam (M), Libur (L).
+// shift hari ini: Jaga 24 Jam (J), Libur (L).
 async function buildPiketOverviewHariIni() {
   await ensureShiftTodayLoaded();
   if (SCRIPT_URL) await refreshAllPegawai();
   var pegawaiList = getPegawaiListForStats().filter(function(p){ return p.pekerjaan === 'Security'; });
   var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
-  var groups = { P: [], M: [], L: [] };
+  var groups = { J: [], L: [] };
   tims.forEach(function(tim){
     var val = getTimShiftToday(tim);
     if (!groups[val]) groups[val] = [];
@@ -5638,12 +5873,11 @@ async function buildPiketOverviewHariIni() {
   return groups;
 }
 
-// Render HTML 3 kolom (Pagi / Malam / Libur) berisi tim & anggotanya,
+// Render HTML 2 kolom (Jaga 24 Jam / Libur) berisi tim & anggotanya,
 // dipakai bersama oleh dashboard admin & dashboard security.
 function renderPiketOverviewHtml(groups) {
   var sections = [
-    { key:'P', label:'☀️ Shift Pagi', sub:'07:00–19:00', color:'#16a34a' },
-    { key:'M', label:'🌙 Shift Malam', sub:'19:00–07:00', color:'#7c3aed' },
+    { key:'J', label:'🔒 Jaga 24 Jam', sub:'07:00–07:00 keesokan hari', color:'#16a34a' },
     { key:'L', label:'😴 Libur', sub:'Tidak piket hari ini', color:'#6b7280' }
   ];
   var html = '<div class="tim-roster-grid">';
@@ -5698,7 +5932,7 @@ async function renderPiketOverviewSecurity() {
 // Menampilkan daftar anggota tim security yang piket (sesuai jadwal shift)
 // pada hari ini di dashboard user security. Anggota satu tim selalu
 // mendapat shift yang sama tiap harinya, jadi cukup tampilkan seluruh
-// anggota tim milik user beserta info shift (Pagi/Malam/Libur) hari ini.
+// anggota tim milik user beserta info shift (Jaga 24 Jam/Libur) hari ini.
 async function renderTimPiketHariIni(u) {
   var wrap  = document.getElementById('pdTimWrap');
   var body  = document.getElementById('pdTimBody');
@@ -5738,7 +5972,7 @@ async function renderTimPiketHariIni(u) {
     return p.pekerjaan === 'Security' && (p.Tim||'').trim().toUpperCase() === (tim||'').trim().toUpperCase();
   });
 
-  var shiftLabelTxt = shiftVal === 'P' ? 'Pagi (07:00–19:00)' : (shiftVal === 'M' ? 'Malam (19:00–07:00)' : 'Libur');
+  var shiftLabelTxt = shiftVal === 'J' ? 'Jaga 24 Jam (07:00–07:00 keesokan hari)' : 'Libur';
   title.textContent = '👥 ' + (tim || 'Tim Anda') + ' — Piket ' + shiftLabelTxt + ' Hari Ini';
 
   if (shiftVal === '-') {
@@ -5765,8 +5999,8 @@ function getJamPulangHariIni(u) {
   if (u.pekerjaan === 'Security') {
     var shiftVal = getSecurityShiftToday();
     if (!shiftVal || shiftVal === '-') return null;
-    var jkSec = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN==='Security' && j.SHIFT===(shiftVal==='P'?'Pagi':'Malam'); });
-    return jkSec ? jkSec.JAM_PULANG : (shiftVal==='P' ? '19:00' : '07:00');
+    var jkSec = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN==='Security' && j.SHIFT==='Jaga'; });
+    return jkSec ? jkSec.JAM_PULANG : '07:00';
   }
   if (isHariLibur(today())) return null;
   var jk = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN===u.pekerjaan; });
@@ -5898,16 +6132,14 @@ function getLocation() {
       el.textContent = `✅ Dalam radius kantor (${Math.round(dist)}m dari ${officeRadius}m)`;
     } else {
       locationOk = false;
-      el.className = 'location-status warn';
-      el.textContent = `⚠ Di luar radius kantor: ${Math.round(dist)}m (batas ${officeRadius}m) — Mode Demo: tetap bisa absen`;
-      locationOk = true; // Allow in demo mode
+      el.className = 'location-status error';
+      el.textContent = `❌ Di luar radius kantor: ${Math.round(dist)}m (batas ${officeRadius}m) — absen tidak diizinkan`;
     }
     updateAbsenButtons();
   }, err => {
-    el.className = 'location-status warn';
-    el.textContent = '⚠ Lokasi tidak tersedia — Mode Demo: tetap bisa absen';
-    locationOk = true; // Demo mode
-    userLat = officeLat; userLon = officeLon;
+    locationOk = false;
+    el.className = 'location-status error';
+    el.textContent = '❌ Lokasi GPS tidak tersedia — aktifkan izin lokasi untuk bisa absen';
     updateAbsenButtons();
   });
 }
@@ -6194,10 +6426,10 @@ async function loadCutiPage() {
   // permohonan yang baru saja disetujui/ditolak admin.
   await refreshPermohonan();
 
-  // Saldo info
-  const pakai = localPermohonan.filter(p => p.ID_Karyawan===u.idPegawai && p.Jenis_Cuti && p.Jenis_Cuti.includes('Cuti Tahunan') && p.Status==='Disetujui').reduce((s,p)=>s+Number(p.Jumlah_Hari||0),0);
-  const sisa = Math.max(0, 6-pakai);
-  elSaldo.textContent = `🏖 Saldo Cuti Tahunan: ${sisa} hari tersisa (${pakai} terpakai dari 6 hari)`;
+  // Saldo info (otomatis reset tiap 1 Jan / 1 Jul mengikuti periode kontrak)
+  const saldoCuti = hitungSaldoCuti(u.idPegawai);
+  const pakai = saldoCuti.pakai, sisa = saldoCuti.sisa;
+  elSaldo.textContent = `🏖 Saldo Cuti Tahunan: ${sisa} hari tersisa (${pakai} terpakai dari 6 hari) — Periode ${saldoCuti.periode.label}, reset otomatis ${fmtDate(saldoCuti.periode.resetBerikutnya)}`;
   elSaldo.className = `alert alert-${sisa>0?'info':'warn'}`;
 }
 
@@ -6290,10 +6522,9 @@ async function ajukanCuti() {
 
   // Check saldo
   if (jenis==='Cuti Tahunan') {
-    const pakai = localPermohonan.filter(p => p.ID_Karyawan===u.idPegawai && p.Jenis_Cuti && p.Jenis_Cuti.includes('Cuti Tahunan') && p.Status==='Disetujui').reduce((s,p)=>s+Number(p.Jumlah_Hari||0),0);
-    const sisa = 6 - pakai;
-    if (hari > sisa) {
-      showAlert('cutiFormAlert','error',`❌ Saldo cuti tidak cukup! Sisa: ${sisa} hari, Diajukan: ${hari} hari`); return;
+    const saldoCek = hitungSaldoCuti(u.idPegawai);
+    if (hari > saldoCek.sisa) {
+      showAlert('cutiFormAlert','error',`❌ Saldo cuti tidak cukup! Sisa: ${saldoCek.sisa} hari (periode ${saldoCek.periode.label}), Diajukan: ${hari} hari`); return;
     }
   }
 
@@ -6464,8 +6695,8 @@ async function loadAdminAbsensi() {
     if (from && a.tanggal < from) return false;
     if (to   && a.tanggal > to)   return false;
     if (jab) {
-      var peg = DEMO_USERS.find(function(u){ return u.idPegawai===a.idPegawai; });
-      if (!peg || peg.pekerjaan !== jab) return false;
+      var pegJab = a.pekerjaan || (DEMO_USERS.find(function(u){ return u.idPegawai===a.idPegawai; })||{}).pekerjaan;
+      if (pegJab !== jab) return false;
     }
     if (statusMasukF && a.statusAbsenMasuk !== statusMasukF) return false;
     if (statusPulangF) {
@@ -6479,8 +6710,9 @@ async function loadAdminAbsensi() {
   var todayData = data.filter(function(a){ return a.tanggal===today(); });
   document.getElementById('adm-hadir').textContent  = todayData.length;
   document.getElementById('adm-late').textContent   = todayData.filter(function(a){ return a.statusAbsenMasuk==='Terlambat'; }).length;
-  document.getElementById('adm-absent').textContent = DEMO_USERS.filter(function(u){ return u.status==='Pegawai'; }).length - todayData.length;
-  document.getElementById('adm-total').textContent  = DEMO_USERS.filter(function(u){ return u.status==='Pegawai'; }).length;
+  var pegawaiListDbAdm = getPegawaiListForStats();
+  document.getElementById('adm-absent').textContent = pegawaiListDbAdm.length - todayData.length;
+  document.getElementById('adm-total').textContent  = pegawaiListDbAdm.length;
 
   if (!data.length) { tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data</td></tr>'; document.getElementById('pgAdminAbsensi').innerHTML=''; return; }
   renderPaged('adminAbsensi', data, 'adminAbsenBody', 'pgAdminAbsensi', function(a){
@@ -6491,7 +6723,7 @@ async function loadAdminAbsensi() {
       <td><input type="checkbox" class="row-chk-absensi" value="${rid}" onchange="toggleSelectAbsensi('${rid}', this.checked)" ${selectedAbsensi.has(rid)?'checked':''}></td>
       <td>${fmtDate(a.tanggal)}</td>
       <td><strong>${a.namaPegawai||a['namaPegawai']||'-'}</strong></td>
-      <td><span class="badge badge-blue">${peg?peg.pekerjaan:(a.pekerjaan||'-')}</span></td>
+      <td><span class="badge badge-blue">${a.pekerjaan||(peg?peg.pekerjaan:'-')}</span></td>
       <td>${fmtTime(a.absenMasuk)||'-'}</td>
       <td>${a.statusAbsenMasuk?`<span class="badge ${a.statusAbsenMasuk==='Terlambat'?'badge-red':'badge-green'}">${a.statusAbsenMasuk}</span>`:'-'}${lemburTag}</td>
       <td>${fmtTime(a.absenPulang)||'-'}</td>
@@ -7005,7 +7237,7 @@ async function loadAdminPegawai() {
     if (result && result.success) pegawaiList = result.data;
   }
 
-  // Fallback ke DEMO_USERS jika Sheets kosong
+  // Kosong jika data pegawai di Supabase belum tersedia
   if (!pegawaiList.length) {
     pegawaiList = DEMO_USERS.filter(function(u){ return u.status==='Pegawai' && (!filter||u.pekerjaan===filter); })
       .map(function(u){ return { 'ID PEGAWAI': u.idPegawai, 'NAMA': u.namaPegawai, 'NIK': '-', 'PEKERJAAN': u.pekerjaan, 'Tim': u.Tim, 'NO HP': '-' }; });
@@ -7033,11 +7265,10 @@ async function loadAdminPegawai() {
   renderPaged('adminPegawai', pegawaiList, 'adminPegawaiBody', 'pgAdminPegawai', function(p){
     var idPeg = p['ID PEGAWAI'] || p['idPegawai'] || '';
     
-    // Perbaiki hitung saldo cuti dengan .includes
-    var pakai = localPermohonan.filter(function(pm){ 
-      return pm.ID_Karyawan===idPeg && pm.Jenis_Cuti && pm.Jenis_Cuti.includes('Cuti Tahunan') && pm.Status==='Disetujui'; 
-    }).reduce(function(s,pm){ return s+Number(pm.Jumlah_Hari||0); }, 0);
-    var sisa  = Math.max(0, 6-pakai);
+    // Saldo cuti periode berjalan (reset otomatis tiap 1 Jan / 1 Jul)
+    var saldoAdmPeg = hitungSaldoCuti(idPeg);
+    var pakai = saldoAdmPeg.pakai;
+    var sisa  = saldoAdmPeg.sisa;
     
     // Konversi object ke string yang aman untuk fungsi edit
     var dataSafe = encodeURIComponent(JSON.stringify(p));
@@ -7065,7 +7296,18 @@ async function loadAdminPegawai() {
 // ============================================================
 function initShiftFilter() {
   var now = new Date();
-  document.getElementById('filterShiftMonth').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  var monthVal = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('filterShiftMonth').value = monthVal;
+  if (document.getElementById('filterShiftGenMonth')) document.getElementById('filterShiftGenMonth').value = monthVal;
+}
+
+// Pindah antar tab "Generator Jadwal" dan "Data Jadwal" pada halaman Jadwal Shift
+function switchShiftTab(tab) {
+  document.querySelectorAll('#page-adminShift .tab').forEach(function(t,i){
+    t.classList.toggle('active', (tab==='generator'&&i===0)||(tab==='data'&&i===1));
+  });
+  document.getElementById('shiftTabGenerator').style.display = tab==='generator' ? 'block' : 'none';
+  document.getElementById('shiftTabData').style.display = tab==='data' ? 'block' : 'none';
 }
 
 // Daftar anggota tim security, dikelompokkan per TIM (TIM 1-4), ditampilkan
@@ -7103,19 +7345,22 @@ async function renderShiftTimRoster() {
 var shiftData = JSON.parse(localStorage.getItem('ppnpn_shift') || '{}');
 var shiftEditMode = false;
 var shiftOriginalData = {};
+// true = bulan yang sedang ditampilkan di tab "Data Jadwal" memang punya baris
+// di database (tabel shift_jadwal). false = belum ada satu pun baris tersimpan
+// untuk bulan ini, jadi tabel tidak boleh menampilkan hasil hitung rotasi
+// otomatis seolah-olah itu data asli — harus tampil pesan "belum dibuat".
+var shiftMonthHasData = true;
 
 function shiftLabel(s) {
   s = (s||'L').toUpperCase();
-  if (s === 'P') return '<span class="shift-badge-P">PAGI</span>';
-  if (s === 'M') return '<span class="shift-badge-M">MALAM</span>';
+  if (s === 'J') return '<span class="shift-badge-J">JAGA 24 JAM</span>';
   return '<span class="shift-badge-L">LIBUR</span>';
 }
 
 function shiftSelect(dateStr, tim, val) {
   val = (val||'L').toUpperCase();
   return '<select class="shift-select" data-date="'+dateStr+'" data-tim="'+tim+'" onchange="onShiftChange(this)">' +
-    '<option value="P"'+(val==='P'?' selected':'')+'>PAGI</option>' +
-    '<option value="M"'+(val==='M'?' selected':'')+'>MALAM</option>' +
+    '<option value="J"'+(val==='J'?' selected':'')+'>JAGA 24 JAM</option>' +
     '<option value="L"'+(val==='L'?' selected':'')+'>LIBUR</option>' +
   '</select>';
 }
@@ -7128,31 +7373,20 @@ function onShiftChange(el) {
 }
 
 // Hitung otomatis shift berdasarkan rotasi
-// Hitung jadwal 1 hari untuk seluruh TIM sekaligus, mengikuti pola:
-//   - Hari kerja : 2 TIM Pagi, 1 TIM Malam, 1 TIM Libur
-//   - Hari libur : 1 TIM Pagi, 1 TIM Malam, 2 TIM Libur (shift malam tetap
-//     sama, cukup 1 tim, baik hari kerja maupun hari libur)
-// Urutan tim yang kebagian giliran dirotasi tiap hari supaya adil bergantian.
+// Hitung jadwal 1 hari untuk seluruh TIM sekaligus, mengikuti pola shift
+// 24 jam: setiap hari hanya 1 TIM yang Jaga (24 jam penuh, 07:00–07:00
+// keesokan hari), 3 TIM lainnya Libur. Giliran tim yang kebagian jaga
+// dirotasi tiap hari (round-robin) supaya adil bergantian, dan berlaku
+// sama baik hari kerja maupun hari libur.
 function hitungShiftHarianOtomatis(dateStr) {
   var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
   var d = new Date(dateStr + 'T00:00:00');
   var dayOfYear = Math.floor((d - new Date(d.getFullYear(),0,0)) / 86400000);
-  var liburHariItu = isHariLibur(dateStr);
-
-  var rot = dayOfYear % 4;
-  var order = [];
-  for (var i = 0; i < 4; i++) order.push((i + rot) % 4);
-
-  var jumlahPagi  = liburHariItu ? 1 : 2;
-  var jumlahMalam = 1;
+  var timJagaIdx = dayOfYear % tims.length;
 
   var hasil = {};
-  order.forEach(function(timIdx, pos) {
-    var kode;
-    if (pos < jumlahPagi) kode = 'P';
-    else if (pos < jumlahPagi + jumlahMalam) kode = 'M';
-    else kode = 'L';
-    hasil[tims[timIdx]] = kode;
+  tims.forEach(function(tim, idx) {
+    hasil[tim] = (idx === timJagaIdx) ? 'J' : 'L';
   });
   return hasil;
 }
@@ -7173,22 +7407,33 @@ async function loadShiftData() {
   var tbody = document.getElementById('shiftBody');
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
 
+  shiftMonthHasData = true; // default aman kalau Supabase belum dikonfigurasi
+
   // Ambil dari Sheets jika tersedia
   if (SCRIPT_URL) {
     var from = year+'-'+String(month).padStart(2,'0')+'-01';
     var to   = year+'-'+String(month).padStart(2,'0')+'-'+String(daysInMonth).padStart(2,'0');
     var res  = await callAPI('getShift', { from: from, to: to });
-    if (res && res.success && res.data.length > 0) {
-      res.data.forEach(function(r) {
-        var tgl = r['Tanggal'] || r['tanggal'] || '';
-        if (!tgl) return;
-        if (!shiftData[tgl]) shiftData[tgl] = {};
-        if (r['TIM 1']) shiftData[tgl]['TIM 1'] = r['TIM 1'];
-        if (r['TIM 2']) shiftData[tgl]['TIM 2'] = r['TIM 2'];
-        if (r['TIM 3']) shiftData[tgl]['TIM 3'] = r['TIM 3'];
-        if (r['TIM 4']) shiftData[tgl]['TIM 4'] = r['TIM 4'];
-      });
-      localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
+    if (res && res.success) {
+      // Bulan ini benar-benar belum punya baris di database sama sekali
+      shiftMonthHasData = res.data.length > 0;
+      if (res.data.length > 0) {
+        res.data.forEach(function(r) {
+          var tgl = r['Tanggal'] || r['tanggal'] || '';
+          if (!tgl) return;
+          if (!shiftData[tgl]) shiftData[tgl] = {};
+          if (r['TIM 1']) shiftData[tgl]['TIM 1'] = r['TIM 1'];
+          if (r['TIM 2']) shiftData[tgl]['TIM 2'] = r['TIM 2'];
+          if (r['TIM 3']) shiftData[tgl]['TIM 3'] = r['TIM 3'];
+          if (r['TIM 4']) shiftData[tgl]['TIM 4'] = r['TIM 4'];
+        });
+        localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
+      }
+    } else {
+      // Gagal memuat (bukan berarti kosong) — jangan tampilkan pesan "belum
+      // dibuat" yang menyesatkan, tampilkan alert error saja.
+      shiftMonthHasData = true;
+      showAlert('shiftAlert','error','❌ Gagal memuat data jadwal dari database: '+(res && res.error ? res.error : 'Tidak ada respons dari server.'));
     }
   }
 
@@ -7196,6 +7441,15 @@ async function loadShiftData() {
 }
 
 function renderShiftTable(year, month, daysInMonth) {
+  // Bulan ini belum punya data tersimpan di database sama sekali, dan kita
+  // sedang di mode lihat (bukan sedang Mode Edit) — jangan tampilkan hasil
+  // hitung rotasi otomatis seolah itu data asli. Tampilkan pesan yang jelas
+  // dan arahkan admin ke tab Generator Jadwal.
+  if (!shiftEditMode && !shiftMonthHasData) {
+    renderShiftEmptyState(year, month);
+    return;
+  }
+
   var tims  = ['TIM 1','TIM 2','TIM 3','TIM 4'];
   var days  = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
 
@@ -7228,37 +7482,184 @@ function renderShiftTable(year, month, daysInMonth) {
   }, 5, 'Tidak ada data');
 }
 
-// Generator jadwal shift otomatis: mengisi seluruh hari di bulan terpilih
-// dengan rotasi otomatis (hitungShiftOtomatis), langsung masuk Mode Edit
-// supaya admin bisa menyesuaikan sebelum disimpan / diekspor untuk diedit.
-async function generateJadwalShiftOtomatis() {
+// Tampilan khusus saat bulan yang dipilih di tab "Data Jadwal" belum punya
+// satu pun baris jadwal di database — supaya admin tidak salah kira jadwal
+// hasil hitungan otomatis di layar ini sudah tersimpan, padahal belum.
+function renderShiftEmptyState(year, month) {
+  var namaBulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][month-1] + ' ' + year;
+  var tbody = document.getElementById('shiftBody');
+  if (tbody) {
+    tbody.innerHTML =
+      '<tr><td colspan="5" style="text-align:center;padding:40px 20px">' +
+        '<div style="font-size:32px;margin-bottom:8px">📭</div>' +
+        '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Jadwal shift bulan ' + namaBulan + ' belum dibuat</div>' +
+        '<div style="font-size:13px;color:var(--text-muted);max-width:420px;margin:0 auto 16px">Belum ada data jadwal shift bulan ini yang tersimpan di database. Silakan buat terlebih dahulu di tab Generator Jadwal.</div>' +
+        '<button class="btn" style="background:#8b5cf6;border-color:#8b5cf6;color:#fff" onclick="bukaGeneratorUntukBulanIni()">🪄 Buka Generator Jadwal</button>' +
+      '</td></tr>';
+  }
+  var pg = document.getElementById('pgAdminShift');
+  if (pg) pg.innerHTML = '';
+}
+
+// Pindah ke tab Generator dengan bulan yang sama seperti yang sedang dipilih
+// di tab Data Jadwal, supaya admin tidak perlu memilih ulang bulannya.
+function bukaGeneratorUntukBulanIni() {
   var monthVal = document.getElementById('filterShiftMonth').value;
+  if (monthVal && document.getElementById('filterShiftGenMonth')) {
+    document.getElementById('filterShiftGenMonth').value = monthVal;
+  }
+  switchShiftTab('generator');
+}
+
+// ============================================================
+// TAB 1: GENERATOR JADWAL (pratinjau — belum tersimpan ke database)
+// ============================================================
+// Hasil generate ditampung di variabel terpisah (shiftGenData), TIDAK
+// langsung ditulis ke shiftData/localStorage seperti sebelumnya. Ini supaya
+// jadwal hasil generate tidak "keliru dianggap tersimpan" padahal baru
+// tersimpan di memori browser. Baru setelah admin klik tombol
+// "💾 Simpan ke Database" (simpanJadwalShiftGenerator), data ini benar-benar
+// dikirim ke Supabase lewat callAPI('saveShift', ...).
+var shiftGenData = {};
+
+function shiftSelectGen(dateStr, tim, val) {
+  val = (val||'L').toUpperCase();
+  return '<select class="shift-gen-select" data-date="'+dateStr+'" data-tim="'+tim+'" onchange="onShiftGenChange(this)">' +
+    '<option value="J"'+(val==='J'?' selected':'')+'>JAGA 24 JAM</option>' +
+    '<option value="L"'+(val==='L'?' selected':'')+'>LIBUR</option>' +
+  '</select>';
+}
+
+function onShiftGenChange(el) {
+  var date = el.getAttribute('data-date');
+  var tim  = el.getAttribute('data-tim');
+  if (!shiftGenData[date]) shiftGenData[date] = {};
+  shiftGenData[date][tim] = el.value;
+}
+
+function renderShiftGenTable(year, month, daysInMonth) {
+  var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
+  var days = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+  var dayList = [];
+  for (var day = 1; day <= daysInMonth; day++) dayList.push(day);
+
+  renderPaged('shiftGen', dayList, 'shiftGenBody', 'pgShiftGen', function(day) {
+    var d       = new Date(year, month-1, day);
+    var dateStr = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    var dayName = days[d.getDay()];
+    var isWeekend = d.getDay()===0 || d.getDay()===6;
+    var bgStyle = isWeekend ? 'background:#fef9c3' : '';
+
+    var row = '<tr style="'+bgStyle+'">';
+    row += '<td><strong>'+day+'</strong> <span style="font-size:12px;color:var(--text-muted)">'+dayName+'</span></td>';
+    tims.forEach(function(tim, idx) {
+      var val = (shiftGenData[dateStr] && shiftGenData[dateStr][tim])
+        ? shiftGenData[dateStr][tim].toUpperCase()
+        : hitungShiftOtomatis(dateStr, idx);
+      row += '<td style="text-align:center">'+shiftSelectGen(dateStr, tim, val)+'</td>';
+    });
+    row += '</tr>';
+    return row;
+  }, 5, 'Tidak ada data');
+}
+
+// Menghitung rotasi 1 bulan penuh dan menampilkannya sebagai PRATINJAU.
+// Belum menyentuh database maupun shiftData — murni tampilan sementara.
+async function generateJadwalShiftOtomatis() {
+  var monthVal = document.getElementById('filterShiftGenMonth').value;
   if (!monthVal) { alert('Pilih bulan terlebih dahulu'); return; }
   await ensureLiburLoaded();
   var p = monthVal.split('-').map(Number);
   var year = p[0], month = p[1];
   var daysInMonth = new Date(year, month, 0).getDate();
 
-  if (!confirm('Buat ulang jadwal shift otomatis untuk bulan ini? Data yang sudah pernah diedit manual untuk bulan ini akan ditimpa dengan rotasi otomatis (P/M/L), dan hasilnya bisa Anda sesuaikan sebelum disimpan.')) return;
-
   var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
+  shiftGenData = {};
   for (var day = 1; day <= daysInMonth; day++) {
     var dateStr = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-    if (!shiftData[dateStr]) shiftData[dateStr] = {};
+    shiftGenData[dateStr] = {};
     tims.forEach(function(tim, idx) {
-      shiftData[dateStr][tim] = hitungShiftOtomatis(dateStr, idx);
+      shiftGenData[dateStr][tim] = hitungShiftOtomatis(dateStr, idx);
     });
   }
-  localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
 
-  // Masuk mode edit otomatis supaya bisa langsung disesuaikan
-  shiftEditMode = true;
-  shiftOriginalData = JSON.parse(JSON.stringify(shiftData));
-  document.getElementById('btnEditShift').style.display   = 'none';
-  document.getElementById('btnSimpanShift').style.display = 'inline-flex';
-  document.getElementById('btnBatalShift').style.display  = 'inline-flex';
-  renderShiftTable(year, month, daysInMonth);
-  showAlert('absenAlert','success','🪄 Jadwal shift 1 bulan berhasil digenerate otomatis. Sesuaikan bila perlu, lalu klik Simpan Jadwal (atau Export Excel untuk diedit di luar sistem).');
+  document.getElementById('shiftGenTableWrap').style.display = 'block';
+  document.getElementById('btnSimpanShiftGen').style.display = 'inline-flex';
+  document.getElementById('btnBatalShiftGen').style.display  = 'inline-flex';
+  renderShiftGenTable(year, month, daysInMonth);
+  showAlert('shiftGenAlert','warn','🪄 Pratinjau jadwal 1 bulan berhasil dibuat. Ini <strong>belum tersimpan ke database</strong> — sesuaikan bila perlu, lalu klik "Simpan ke Database".');
+}
+
+// Membatalkan pratinjau generator (tidak menghapus apa pun di database,
+// karena pratinjau memang belum pernah dikirim ke database).
+function batalGeneratorShift() {
+  shiftGenData = {};
+  document.getElementById('shiftGenTableWrap').style.display = 'none';
+  document.getElementById('btnSimpanShiftGen').style.display = 'none';
+  document.getElementById('btnBatalShiftGen').style.display  = 'none';
+  document.getElementById('shiftGenBody').innerHTML = '';
+  document.getElementById('pgShiftGen').innerHTML = '';
+}
+
+// Mengirim hasil pratinjau generator ke database (tabel shift_jadwal di
+// Supabase) lewat callAPI('saveShift', ...) — ini langkah yang sebelumnya
+// terlewat kalau admin cuma klik "Generator Jadwal" tanpa klik "Simpan".
+async function simpanJadwalShiftGenerator() {
+  if (!SCRIPT_URL) { alert('⚠ Supabase belum dikonfigurasi!'); return; }
+
+  var btn = document.getElementById('btnSimpanShiftGen');
+  btn.textContent = '⏳ Menyimpan...';
+  btn.disabled = true;
+
+  // Kumpulkan nilai terbaru dari select pratinjau yang ada di DOM
+  document.querySelectorAll('.shift-gen-select').forEach(function(sel) {
+    var date = sel.getAttribute('data-date');
+    var tim  = sel.getAttribute('data-tim');
+    if (!shiftGenData[date]) shiftGenData[date] = {};
+    shiftGenData[date][tim] = sel.value;
+  });
+
+  var rows = [];
+  Object.keys(shiftGenData).forEach(function(tgl) {
+    rows.push({
+      Tanggal: tgl,
+      'TIM 1': shiftGenData[tgl]['TIM 1'] || 'L',
+      'TIM 2': shiftGenData[tgl]['TIM 2'] || 'L',
+      'TIM 3': shiftGenData[tgl]['TIM 3'] || 'L',
+      'TIM 4': shiftGenData[tgl]['TIM 4'] || 'L'
+    });
+  });
+
+  if (!rows.length) {
+    showAlert('shiftGenAlert','warn','⚠ Belum ada pratinjau untuk disimpan. Klik "Generate Otomatis" dulu.');
+    btn.textContent = '💾 Simpan ke Database';
+    btn.disabled = false;
+    return;
+  }
+
+  var res = await callAPI('saveShift', { rows: rows });
+  btn.textContent = '💾 Simpan ke Database';
+  btn.disabled = false;
+
+  if (res && res.success) {
+    // Gabungkan ke cache lokal (shiftData) supaya tab "Data Jadwal" ikut ter-update
+    Object.keys(shiftGenData).forEach(function(tgl) {
+      shiftData[tgl] = Object.assign({}, shiftData[tgl], shiftGenData[tgl]);
+    });
+    localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
+
+    showAlert('shiftGenAlert','success','✅ Jadwal berhasil disimpan ke database!');
+    batalGeneratorShift();
+
+    // Sinkronkan bulan di tab "Data Jadwal" lalu langsung tampilkan hasilnya
+    // supaya admin bisa langsung lihat buktinya sudah masuk database.
+    var monthVal = document.getElementById('filterShiftGenMonth').value;
+    document.getElementById('filterShiftMonth').value = monthVal;
+    switchShiftTab('data');
+    loadShiftData();
+  } else {
+    showAlert('shiftGenAlert','error','❌ Gagal menyimpan ke database: '+(res && res.error ? res.error : 'Tidak ada respons dari server. Silakan coba lagi.'));
+  }
 }
 
 function toggleEditShift() {
@@ -7317,12 +7718,13 @@ async function simpanJadwalShift() {
     });
     var res = await callAPI('saveShift', { rows: rows });
     if (res && res.success) {
-      showAlert('absenAlert','success','✅ Jadwal shift berhasil disimpan ke Google Sheets!');
+      shiftMonthHasData = true; // bulan yang sedang dilihat sekarang sudah punya data di database
+      showAlert('shiftAlert','success','✅ Jadwal shift berhasil disimpan ke database!');
     } else {
-      showAlert('absenAlert','warn','⚠ Tersimpan lokal, gagal sync ke Sheets: '+(res?res.error:'no response'));
+      showAlert('shiftAlert','warn','⚠ Tersimpan lokal, gagal sync ke database: '+(res?res.error:'no response'));
     }
   } else {
-    showAlert('absenAlert','success','✅ Jadwal shift tersimpan secara lokal!');
+    showAlert('shiftAlert','success','✅ Jadwal shift tersimpan secara lokal!');
   }
 
   shiftEditMode = false;
@@ -7336,6 +7738,50 @@ async function simpanJadwalShift() {
   if (monthVal) {
     var p = monthVal.split('-').map(Number);
     renderShiftTable(p[0], p[1], new Date(p[0], p[1], 0).getDate());
+  }
+}
+
+// Menghapus SELURUH jadwal shift (TIM 1-4) untuk bulan yang dipilih di tab
+// "Data Jadwal" — baik dari database maupun cache lokal. Dipakai kalau
+// misalnya jadwal sebulan penuh perlu digenerate ulang dari awal.
+async function hapusJadwalShiftBulan() {
+  var monthVal = document.getElementById('filterShiftMonth').value;
+  if (!monthVal) { alert('Pilih bulan terlebih dahulu'); return; }
+  if (!SCRIPT_URL) { alert('⚠ Supabase belum dikonfigurasi!'); return; }
+
+  var p = monthVal.split('-').map(Number);
+  var year = p[0], month = p[1];
+  var daysInMonth = new Date(year, month, 0).getDate();
+  var namaBulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][month-1] + ' ' + year;
+
+  if (!shiftMonthHasData) {
+    alert('Tidak ada jadwal tersimpan di database untuk bulan ' + namaBulan + '.');
+    return;
+  }
+
+  if (!confirm('Hapus SELURUH jadwal shift (TIM 1-4) bulan ' + namaBulan + ' dari database? Tindakan ini tidak bisa dibatalkan.')) return;
+
+  var from = year+'-'+String(month).padStart(2,'0')+'-01';
+  var to   = year+'-'+String(month).padStart(2,'0')+'-'+String(daysInMonth).padStart(2,'0');
+
+  var res = await callAPI('deleteShift', { from: from, to: to });
+  if (res && res.success) {
+    // Bersihkan cache lokal untuk bulan ini juga supaya tidak nyangkut
+    for (var day = 1; day <= daysInMonth; day++) {
+      var dateStr = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      delete shiftData[dateStr];
+    }
+    localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
+
+    shiftEditMode = false;
+    document.getElementById('btnEditShift').style.display   = 'inline-flex';
+    document.getElementById('btnSimpanShift').style.display = 'none';
+    document.getElementById('btnBatalShift').style.display  = 'none';
+
+    showAlert('shiftAlert','success','🗑️ Jadwal shift bulan ' + namaBulan + ' berhasil dihapus dari database.');
+    loadShiftData(); // muat ulang -> otomatis tampil pesan "belum dibuat" karena sudah kosong
+  } else {
+    showAlert('shiftAlert','error','❌ Gagal menghapus jadwal: '+(res && res.error ? res.error : 'Tidak ada respons dari server.'));
   }
 }
 
@@ -7374,24 +7820,38 @@ function uploadJadwalShift(event) {
 }
 
 function parseShiftCSV(csv) {
-  var lines = csv.trim().split('\n');
+  var lines = csv.replace(/\r/g,'').trim().split('\n');
   if (lines.length < 2) { alert('File kosong atau format tidak valid'); return; }
 
-  var headers = lines[0].split(',').map(function(h){ return h.trim().replace(/"/g,''); });
+  // Deteksi otomatis pemisah kolom: koma (,) atau titik-koma (;).
+  // File CSV hasil "Save As" dari Excel versi region Indonesia biasanya
+  // memakai titik-koma, bukan koma — kalau ini tidak dideteksi, seluruh
+  // baris akan "menempel" jadi satu kolom dan gagal disimpan ke database.
+  var headerLine = lines[0];
+  var countComma = (headerLine.match(/,/g) || []).length;
+  var countSemi  = (headerLine.match(/;/g) || []).length;
+  var delim = countSemi > countComma ? ';' : ',';
+
+  var headers = headerLine.split(delim).map(function(h){ return h.trim().replace(/"/g,''); });
   var tglIdx  = headers.findIndex(function(h){ return h.toLowerCase().includes('tanggal') || h.toLowerCase().includes('date'); });
   var tim1Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim1'; });
   var tim2Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim2'; });
   var tim3Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim3'; });
   var tim4Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim4'; });
 
-  if (tglIdx < 0) { alert('Kolom Tanggal tidak ditemukan'); return; }
+  if (tglIdx < 0) { alert('Kolom Tanggal tidak ditemukan. Pastikan format file sesuai template (kolom: Tanggal, TIM 1, TIM 2, TIM 3, TIM 4).'); return; }
 
   var count = 0;
+  var skipped = 0;
   lines.slice(1).forEach(function(line) {
     if (!line.trim()) return;
-    var cols = line.split(',').map(function(c){ return c.trim().replace(/"/g,''); });
-    var tgl  = cols[tglIdx];
-    if (!tgl || !tgl.match(/\d{4}-\d{2}-\d{2}/)) return;
+    var cols = line.split(delim).map(function(c){ return c.trim().replace(/"/g,''); });
+    var tglRaw = cols[tglIdx] || '';
+    // Ambil hanya pola YYYY-MM-DD murni, tolak baris yang tidak valid
+    // (mencegah key tanggal rusak masuk ke database).
+    var m = tglRaw.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (!m) { skipped++; return; }
+    var tgl = m[1];
     if (!shiftData[tgl]) shiftData[tgl] = {};
     if (tim1Idx >= 0 && cols[tim1Idx]) shiftData[tgl]['TIM 1'] = cols[tim1Idx].toUpperCase();
     if (tim2Idx >= 0 && cols[tim2Idx]) shiftData[tgl]['TIM 2'] = cols[tim2Idx].toUpperCase();
@@ -7401,7 +7861,15 @@ function parseShiftCSV(csv) {
   });
 
   localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
-  alert('✅ Berhasil memuat ' + count + ' baris jadwal. Klik Simpan Jadwal untuk menyimpan ke Google Sheets.');
+  var msg = '✅ Berhasil memuat ' + count + ' baris jadwal.';
+  if (skipped > 0) msg += ' (' + skipped + ' baris dilewati karena format tanggal tidak valid.)';
+  msg += ' Klik "💾 Simpan Jadwal" untuk menyimpan ke database.';
+  alert(msg);
+
+  // File yang diupload berisi baris untuk bulan ini -> tampilkan sebagai
+  // pratinjau (bukan pesan "belum dibuat"), supaya admin bisa cek lalu
+  // klik Simpan Jadwal.
+  if (count > 0) shiftMonthHasData = true;
 
   var monthVal = document.getElementById('filterShiftMonth').value;
   if (monthVal) {
@@ -7460,8 +7928,7 @@ function exportShiftExcel() {
   html += 'table{border-collapse:collapse;width:100%}';
   html += 'th{background:#0b3d2e;color:#fff;padding:8px;border:1px solid #888;text-align:center}';
   html += 'td{padding:6px 8px;border:1px solid #ccc;text-align:center}';
-  html += '.pagi{background:#dcfce7;color:#16a34a;font-weight:bold}';
-  html += '.malam{background:#ede9fe;color:#7c3aed;font-weight:bold}';
+  html += '.jaga{background:#dcfce7;color:#16a34a;font-weight:bold}';
   html += '.libur{background:#f1f5f9;color:#6b7280}';
   html += '.weekend{background:#fef9c3}';
   html += '<' + '/style><' + '/head><body>';
@@ -7480,8 +7947,8 @@ function exportShiftExcel() {
       var val = (shiftData[dateStr] && shiftData[dateStr][tim])
         ? shiftData[dateStr][tim].toUpperCase()
         : hitungShiftOtomatis(dateStr, idx);
-      var cls = val==='P' ? 'pagi' : val==='M' ? 'malam' : 'libur';
-      var label = val==='P' ? 'PAGI' : val==='M' ? 'MALAM' : 'LIBUR';
+      var cls = val==='J' ? 'jaga' : 'libur';
+      var label = val==='J' ? 'JAGA 24 JAM' : 'LIBUR';
       html += '<td class="'+cls+'">'+label+'</td>';
     });
     html += '</tr>';
@@ -7547,10 +8014,12 @@ async function loadAdminLembur() {
   }).sort(function(a,b){ return b.tanggal.localeCompare(a.tanggal); });
 
   renderPaged('adminLembur', data, 'adminLemburBody', 'pgAdminLembur', function(l){
+    var jam = (l.jamMulai || l.jamSelesai) ? ((l.jamMulai||'-')+'–'+(l.jamSelesai||'-')) : '-';
     return '<tr>' +
       '<td>'+fmtDate(l.tanggal)+'</td>' +
       '<td style="font-family:Space Mono,monospace;font-size:12px">'+l.idPegawai+'</td>' +
       '<td><strong>'+(l.namaPegawai||'-')+'</strong></td>' +
+      '<td>'+jam+'</td>' +
       '<td>'+(l.keterangan||'-')+'</td>' +
       '<td><button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:12px" onclick="hapusPenugasanLembur(\''+l.tanggal+'\',\''+l.idPegawai+'\')">🗑 Hapus</button></td>' +
     '</tr>';
@@ -7562,11 +8031,13 @@ async function tambahPenugasanLembur() {
   var selEl = document.getElementById('lb-pegawai');
   var idPeg = selEl.value;
   var nama  = selEl.options[selEl.selectedIndex] ? selEl.options[selEl.selectedIndex].getAttribute('data-nama') : '';
+  var jamMulai   = document.getElementById('lb-jam-mulai').value;
+  var jamSelesai = document.getElementById('lb-jam-selesai').value;
   var ket   = document.getElementById('lb-keterangan').value.trim();
 
   if (!tgl || !idPeg) { alert('Tanggal dan pegawai wajib dipilih.'); return; }
 
-  var row = { tanggal: tgl, idPegawai: idPeg, namaPegawai: nama, keterangan: ket };
+  var row = { tanggal: tgl, idPegawai: idPeg, namaPegawai: nama, jamMulai: jamMulai, jamSelesai: jamSelesai, keterangan: ket };
   if (SCRIPT_URL) {
     var res = await callAPI('saveLembur', row);
     if (!(res && res.success)) { alert('❌ Gagal menyimpan: ' + (res && res.error || 'Unknown error')); return; }
@@ -7589,12 +8060,222 @@ async function hapusPenugasanLembur(tgl, idPeg) {
 }
 
 // ============================================================
+// SPK LEMBUR (Surat Perintah Kerja Lembur) — generate .docx dari template
+// ============================================================
+var SPK_SETTING_DEFAULT = { namaTtd: '', jabatanTtd: 'Kepala Kantor Pelayanan Pajak Pratama Subang', kota: 'Subang', formatNomor: '' };
+var spkSetting = JSON.parse(localStorage.getItem('ppnpn_spk_setting') || 'null') || SPK_SETTING_DEFAULT;
+var spkLemburCandidates = [];
+
+function fmtHariTanggalIndo(isoDateStr) {
+  if (!isoDateStr) return '-';
+  var days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  var months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  var parts = isoDateStr.split('-');
+  var dt = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10));
+  if (isNaN(dt)) return isoDateStr;
+  return days[dt.getDay()] + ', ' + dt.getDate() + ' ' + months[dt.getMonth()] + ' ' + dt.getFullYear();
+}
+
+async function initAdminSpkLembur() {
+  var now = new Date();
+  var firstDay = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
+  document.getElementById('spk-from').value = firstDay;
+  document.getElementById('spk-to').value   = today();
+  document.getElementById('spk-tanggal-surat').value = today();
+  document.getElementById('spk-tahun-anggaran').value = String(now.getFullYear());
+
+  // Isi default dari Pengaturan SPK Lembur
+  if (SCRIPT_URL) {
+    var res = await callAPI('getSpkSettings', {});
+    if (res && res.success && res.data) {
+      spkSetting = Object.assign({}, SPK_SETTING_DEFAULT, res.data);
+      localStorage.setItem('ppnpn_spk_setting', JSON.stringify(spkSetting));
+    }
+  }
+  document.getElementById('spk-nama-ttd').value    = spkSetting.namaTtd || '';
+  document.getElementById('spk-jabatan-ttd').value = spkSetting.jabatanTtd || '';
+
+  var tbody = document.getElementById('spkLemburCandidatesBody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Pilih rentang tanggal lalu klik Tampilkan Data.</td></tr>';
+}
+
+async function loadSpkLemburCandidates() {
+  var from = document.getElementById('spk-from').value;
+  var to   = document.getElementById('spk-to').value;
+  var tbody = document.getElementById('spkLemburCandidatesBody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+
+  if (SCRIPT_URL) {
+    var params = {};
+    if (from) params.from = from;
+    if (to)   params.to   = to;
+    var res = await callAPI('getLembur', params);
+    if (res && res.success) {
+      localLembur = res.data;
+      localStorage.setItem('ppnpn_lembur', JSON.stringify(localLembur));
+    }
+  }
+
+  spkLemburCandidates = (localLembur||[]).filter(function(l){
+    if (from && l.tanggal < from) return false;
+    if (to   && l.tanggal > to)   return false;
+    return true;
+  }).sort(function(a,b){ return a.tanggal.localeCompare(b.tanggal) || String(a.namaPegawai).localeCompare(String(b.namaPegawai)); });
+
+  if (!spkLemburCandidates.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Tidak ada data Penugasan Lembur pada rentang tanggal ini.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = spkLemburCandidates.map(function(l, idx){
+    var jam = (l.jamMulai||l.jamSelesai) ? ((l.jamMulai||'-')+'–'+(l.jamSelesai||'-')) : '-';
+    return '<tr>' +
+      '<td><input type="checkbox" class="spk-row-check" data-idx="'+idx+'" checked></td>' +
+      '<td>'+fmtDate(l.tanggal)+'</td>' +
+      '<td><strong>'+(l.namaPegawai||'-')+'</strong></td>' +
+      '<td>'+jam+'</td>' +
+      '<td>'+(l.keterangan||'-')+'</td>' +
+    '</tr>';
+  }).join('');
+  document.getElementById('spk-select-all').checked = true;
+}
+
+function toggleSpkSelectAll(cb) {
+  document.querySelectorAll('.spk-row-check').forEach(function(el){ el.checked = cb.checked; });
+}
+
+async function fetchSpkTemplateArrayBuffer() {
+  if (!supabaseClient) throw new Error('Supabase belum terhubung.');
+  var dl = await supabaseClient.storage.from('templates-surat').download('spk-lembur.docx');
+  if (dl && dl.data) return await dl.data.arrayBuffer();
+  // fallback: coba lewat public URL jika bucket bersifat public
+  var pub = supabaseClient.storage.from('templates-surat').getPublicUrl('spk-lembur.docx');
+  if (pub && pub.data && pub.data.publicUrl) {
+    var r = await fetch(pub.data.publicUrl);
+    if (r.ok) return await r.arrayBuffer();
+  }
+  throw new Error((dl && dl.error && dl.error.message) || 'Template spk-lembur.docx tidak ditemukan di Storage (bucket templates-surat).');
+}
+
+async function generateSpkLemburDocx() {
+  var checks = Array.from(document.querySelectorAll('.spk-row-check:checked'));
+  if (!checks.length) { alert('⚠ Pilih minimal satu pegawai dari daftar Penugasan Lembur di atas.'); return; }
+
+  var nomor   = document.getElementById('spk-nomor').value.trim();
+  var tglSurat = document.getElementById('spk-tanggal-surat').value;
+  var tahun   = document.getElementById('spk-tahun-anggaran').value.trim();
+  var namaTtd = document.getElementById('spk-nama-ttd').value.trim();
+  var jabatanTtd = document.getElementById('spk-jabatan-ttd').value.trim();
+  var kota = spkSetting.kota || 'Subang';
+
+  if (!nomor)   { alert('⚠ Nomor Surat wajib diisi.'); return; }
+  if (!tglSurat){ alert('⚠ Tanggal Surat wajib diisi.'); return; }
+  if (!namaTtd || !jabatanTtd) { alert('⚠ Nama & Jabatan Penandatangan wajib diisi.'); return; }
+
+  var pegawaiRows = checks.map(function(cb, i){
+    var l = spkLemburCandidates[parseInt(cb.getAttribute('data-idx'),10)];
+    return {
+      no: i+1,
+      nama: l.namaPegawai || '-',
+      hari_tanggal: fmtHariTanggalIndo(l.tanggal),
+      waktu: (l.jamMulai||l.jamSelesai) ? ((l.jamMulai||'-')+'-'+(l.jamSelesai||'-')+' WIB') : '-',
+      uraian_tugas: l.keterangan || '-'
+    };
+  });
+
+  try {
+    var arrBuf = await fetchSpkTemplateArrayBuffer();
+    var zip = new PizZip(arrBuf);
+    var doc = new window.docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+    doc.render({
+      nomor_surat: nomor,
+      tahun_anggaran: tahun,
+      kota: kota,
+      tanggal_surat: fmtHariTanggalIndo(tglSurat).split(', ')[1] || tglSurat,
+      jabatan_penandatangan: jabatanTtd,
+      nama_penandatangan: namaTtd,
+      pegawai: pegawaiRows
+    });
+    var out = doc.getZip().generate({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+    var fileName = 'SPK Lembur - ' + nomor.replace(/[\\/:*?"<>|]/g,'-') + '.docx';
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(out);
+    a.download = fileName;
+    document.body.appendChild(a); a.click(); a.remove();
+    showAlert && showAlert('absenAlert','success','✅ SPK Lembur berhasil diterbitkan: '+fileName);
+  } catch (err) {
+    alert('❌ Gagal membuat SPK Lembur: ' + err.message);
+  }
+}
+
+async function saveSpkLemburSettings() {
+  var namaTtd    = document.getElementById('setSpkNamaTtd').value.trim();
+  var jabatanTtd = document.getElementById('setSpkJabatanTtd').value.trim();
+  var kota       = document.getElementById('setSpkKota').value.trim() || 'Subang';
+  var formatNomor= document.getElementById('setSpkFormatNomor').value.trim();
+
+  spkSetting = { namaTtd: namaTtd, jabatanTtd: jabatanTtd, kota: kota, formatNomor: formatNomor };
+  localStorage.setItem('ppnpn_spk_setting', JSON.stringify(spkSetting));
+
+  if (SCRIPT_URL) {
+    var res = await callAPI('saveSpkSettings', spkSetting);
+    if (!res || !res.success) {
+      alert('❌ Gagal menyimpan ke database: ' + (res?res.error:'Unknown Error'));
+      return;
+    }
+  }
+
+  var notif = document.createElement('div');
+  notif.textContent = '✅ Pengaturan SPK Lembur tersimpan';
+  notif.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;background:#16a34a;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.2)';
+  document.body.appendChild(notif);
+  setTimeout(function(){ notif.remove(); }, 2500);
+}
+
+// ============================================================
 // ADMIN: HAK CUTI
 // ============================================================
+// Isi dropdown filter periode (Semester berjalan + beberapa periode
+// sebelumnya) sekali saja, supaya pilihan admin tidak ke-reset tiap render.
+function isiFilterPeriodeHakCuti() {
+  var sel = document.getElementById('filterHakCutiPeriode');
+  if (!sel || sel.options.length) return; // sudah pernah diisi
+  var daftar = getDaftarPeriodeCuti(6); // periode aktif + 5 periode sebelumnya
+  daftar.forEach(function(pr, i) {
+    var opt = document.createElement('option');
+    opt.value = pr.start + '|' + pr.end;
+    opt.textContent = pr.label + (i === 0 ? ' — Aktif' : '');
+    sel.appendChild(opt);
+  });
+  sel.value = daftar[0].start + '|' + daftar[0].end;
+}
+
 async function loadAdminHakCuti() {
+  isiFilterPeriodeHakCuti();
+
   var filter = document.getElementById('filterHakCutiJab').value;
+  var periodeSel = document.getElementById('filterHakCutiPeriode').value.split('|');
+  var periodeAktif = getPeriodeCuti();
+  var periode = { start: periodeSel[0], end: periodeSel[1], label: '' };
+  // Cari label yang cocok dari daftar periode (untuk ditampilkan di banner/export)
+  getDaftarPeriodeCuti(6).forEach(function(pr) {
+    if (pr.start === periode.start && pr.end === periode.end) periode = pr;
+  });
+  var sedangLihatPeriodeAktif = periode.start === periodeAktif.start && periode.end === periodeAktif.end;
+
   var tbody  = document.getElementById('adminHakCutiBody');
   tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat data pegawai...</td></tr>';
+
+  // Banner info periode & reset otomatis
+  var infoEl = document.getElementById('hakCutiPeriodeInfo');
+  if (infoEl) {
+    infoEl.textContent = sedangLihatPeriodeAktif
+      ? '📅 Menampilkan periode aktif: ' + periodeAktif.label + '. Saldo direset otomatis menjadi 6 hari setiap 1 Januari & 1 Juli (mengikuti pembaharuan kontrak 6 bulanan) — reset berikutnya ' + fmtDate(periodeAktif.resetBerikutnya) + ' (' + hariMenujuReset(periodeAktif) + ' hari lagi).'
+      : '🕘 Menampilkan riwayat periode: ' + periode.label + '. Ini bukan periode aktif — saldo di bawah adalah rekap historis, bukan saldo yang bisa dipakai pegawai sekarang.';
+  }
 
   // Ambil semua pegawai dari Sheets
   var pegawaiList = [];
@@ -7613,20 +8294,39 @@ async function loadAdminHakCuti() {
   if (!pegawaiList.length) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data pegawai</td></tr>';
     document.getElementById('pgAdminHakCuti').innerHTML = '';
+    ['hc-total','hc-pakai','hc-sisa','hc-warn'].forEach(function(id){ document.getElementById(id).textContent = '0'; });
+    window._lastHakCutiRows = [];
+    window._lastHakCutiPeriode = periode;
     return;
   }
 
-  renderPaged('adminHakCuti', pegawaiList, 'adminHakCutiBody', 'pgAdminHakCuti', function(p) {
+  // Hitung saldo semua pegawai untuk periode terpilih + kumpulkan untuk kartu ringkasan & export
+  var totalPakai = 0, totalSisa = 0, totalWarn = 0;
+  var exportRows = [];
+  var dataRows = pegawaiList.map(function(p) {
+    var idPeg = p['ID PEGAWAI'] || '';
+    var saldo = hitungSaldoCuti(idPeg, periode);
+    totalPakai += saldo.pakai;
+    totalSisa  += saldo.sisa;
+    if (saldo.sisa <= 2) totalWarn++;
+    exportRows.push({ idPeg: idPeg, nama: p['NAMA']||'-', job: p['PEKERJAAN']||'-', tim: p['Tim']||p['TIM']||'-', hak: saldo.hak, pakai: saldo.pakai, sisa: saldo.sisa });
+    return { p: p, saldo: saldo };
+  });
+  document.getElementById('hc-total').textContent = pegawaiList.length;
+  document.getElementById('hc-pakai').textContent = totalPakai;
+  document.getElementById('hc-sisa').textContent  = totalSisa;
+  document.getElementById('hc-warn').textContent  = totalWarn;
+  window._lastHakCutiRows = exportRows;
+  window._lastHakCutiPeriode = periode;
+
+  renderPaged('adminHakCuti', dataRows, 'adminHakCutiBody', 'pgAdminHakCuti', function(row) {
+    var p = row.p, saldo = row.saldo;
     var idPeg = p['ID PEGAWAI'] || '';
     var nama  = p['NAMA'] || '-';
     var job   = p['PEKERJAAN'] || '-';
     var tim   = p['Tim'] || p['TIM'] || '-';
-    var pakai = localPermohonan.filter(function(pm) {
-      return pm.ID_Karyawan === idPeg &&
-             (pm.Jenis_Cuti||'').indexOf('Cuti Tahunan') >= 0 &&
-             pm.Status === 'Disetujui';
-    }).reduce(function(s, pm) { return s + Number(pm.Jumlah_Hari || 0); }, 0);
-    var sisa = Math.max(0, 6 - pakai);
+    var pakai = saldo.pakai;
+    var sisa  = saldo.sisa;
     var statusLabel = sisa === 0
       ? '<span class="badge badge-red">Habis</span>'
       : sisa <= 2
@@ -7637,13 +8337,58 @@ async function loadAdminHakCuti() {
       '<td><strong>' + nama + '</strong></td>' +
       '<td><span class="badge badge-blue">' + job + '</span></td>' +
       '<td><span class="badge badge-gray">' + tim + '</span></td>' +
-      '<td style="text-align:center;font-weight:700">6</td>' +
+      '<td style="text-align:center;font-weight:700">' + saldo.hak + '</td>' +
       '<td style="text-align:center;font-weight:700;color:var(--danger)">' + pakai + '</td>' +
       '<td style="text-align:center;font-weight:800;font-family:Space Mono,monospace;color:' +
         (sisa > 2 ? 'var(--accent2)' : sisa > 0 ? 'var(--accent)' : 'var(--danger)') + '">' + sisa + '</td>' +
       '<td>' + statusLabel + '</td>' +
       '</tr>';
   }, 8, 'Tidak ada data pegawai');
+}
+
+// Export rekap hak cuti (sesuai filter & periode yang sedang ditampilkan) ke Excel
+function exportHakCutiExcel() {
+  var rows = window._lastHakCutiRows;
+  var periode = window._lastHakCutiPeriode || getPeriodeCuti();
+  if (!rows || !rows.length) { alert('Tidak ada data untuk diekspor. Muat data terlebih dahulu.'); return; }
+
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+  html += '<head><meta charset="UTF-8"><' + 'style>';
+  html += 'body{font-family:Arial,sans-serif;font-size:10pt}';
+  html += 'table{border-collapse:collapse;width:100%}';
+  html += 'th{background:#0b3d2e;color:#fff;padding:7px 9px;border:1px solid #888;font-size:9pt;text-align:center}';
+  html += 'td{padding:5px 8px;border:1px solid #ccc;font-size:10pt;vertical-align:middle}';
+  html += 'tr:nth-child(even)td{background:#f8fafc}';
+  html += '.red{color:#dc2626;font-weight:bold} .green{color:#16a34a;font-weight:bold} .amber{color:#d97706;font-weight:bold}';
+  html += '<' + '/style><' + '/head><body>';
+
+  html += '<h2 style="color:#0b3d2e;margin-bottom:4px">HAK CUTI PEGAWAI PPNPN</h2>';
+  html += '<p style="color:#666;font-size:10pt">Periode: ' + periode.label + ' (' + fmtDate(periode.start) + ' s/d ' + fmtDate(periode.end) + ')</p>';
+  html += '<p style="color:#666;font-size:9pt;margin-bottom:12px">Diekspor: ' + todayStr() + '</p>';
+
+  html += '<table><thead><tr><th>No</th><th>ID Pegawai</th><th>Nama</th><th>Jabatan</th><th>Tim</th><th>Hak Cuti</th><th>Terpakai</th><th>Sisa</th></tr></' + 'thead><tbody>';
+  rows.forEach(function(r, i) {
+    html += '<tr><td style="text-align:center">' + (i+1) + '</td>' +
+      '<td style="font-family:monospace">' + r.idPeg + '</td>' +
+      '<td><b>' + r.nama + '</b></td>' +
+      '<td>' + r.job + '</td>' +
+      '<td>' + r.tim + '</td>' +
+      '<td style="text-align:center">' + r.hak + '</td>' +
+      '<td style="text-align:center" class="' + (r.pakai>0?'red':'green') + '">' + r.pakai + '</td>' +
+      '<td style="text-align:center;font-size:12pt" class="' + (r.sisa===0?'red':r.sisa<=2?'amber':'green') + '">' + r.sisa + '</td></tr>';
+  });
+  html += '<' + '/tbody><' + '/table>';
+  html += '<' + '/body><' + '/html>';
+
+  var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'Hak_Cuti_Pegawai_' + periode.start + '_sd_' + periode.end + '.xls';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ============================================================
@@ -7919,6 +8664,10 @@ function loadPengaturanPage() {
   document.getElementById('setOfficeLon').value = officeLon != null ? officeLon : DEMO_RADIUS.officeLon;
   document.getElementById('setOfficeRadius').value = officeRadius != null ? officeRadius : DEMO_RADIUS.radiusTolerance;
   loadStorageSettingsUI();
+  document.getElementById('setSpkNamaTtd').value     = spkSetting.namaTtd || '';
+  document.getElementById('setSpkJabatanTtd').value  = spkSetting.jabatanTtd || '';
+  document.getElementById('setSpkKota').value        = spkSetting.kota || 'Subang';
+  document.getElementById('setSpkFormatNomor').value = spkSetting.formatNomor || '';
 }
 
 function renderJamKerjaSettingsTable() {
@@ -7928,6 +8677,7 @@ function renderJamKerjaSettingsTable() {
       '<td><input type="text" value="'+(jk.PEKERJAAN||'')+'" onchange="updateJamKerjaField('+idx+',\'PEKERJAAN\',this.value)"></td>' +
       '<td>' +
         '<select onchange="updateJamKerjaField('+idx+',\'SHIFT\',this.value)">' +
+          '<option value="Jaga" '+(jk.SHIFT==='Jaga'?'selected':'')+'>Jaga (24 Jam)</option>' +
           '<option value="Pagi" '+(jk.SHIFT==='Pagi'?'selected':'')+'>Pagi</option>' +
           '<option value="Malam" '+(jk.SHIFT==='Malam'?'selected':'')+'>Malam</option>' +
         '</select>' +
