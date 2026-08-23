@@ -57,7 +57,7 @@
   /* ========= LOGIN ========= */
   #loginPage {
     min-height: 100vh;
-    background: linear-gradient(120deg, #4887f3 0%, #14356e 22%, #1e56a0 45%, #16fa01 72%, #f4cd6b 100%);
+    background: linear-gradient(120deg, #4887f3 0%, #14356e 22%, #1e56a0 45%, #001414 72%, #f4cd6b 100%);
     background-size: 240% 240%;
     animation: loginBgShift 14s ease-in-out infinite;
     display: flex; align-items: center; justify-content: center;
@@ -191,11 +191,11 @@
   .login-error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; border-radius: 10px; padding: 12px; font-size: 13px; margin-top: 12px; display: none; text-align: center; }
   .btn-login-userlist {
     width: 100%; padding: 12px; margin-top: 12px;
-    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(51, 2, 53, 1); border: 1px solid rgba(255,255,255,1);
     border-radius: 12px; color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600;
     font-family: inherit; cursor: pointer; transition: all 0.15s;
   }
-  .btn-login-userlist:hover { background: rgba(255,255,255,0.14); border-color: rgba(244,205,107,0.4); color: #fff; }
+  .btn-login-userlist:hover { background: rgba(10, 5, 22, 0.14); border-color: rgba(244,205,107,0.4); color: #fff; }
   .userlist-row {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px;
@@ -1348,17 +1348,18 @@
   .absensi-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   @media (max-width: 900px) {
     .absensi-layout { grid-template-columns: 1fr; }
-    /* Kartu Waktu Server & tombol Absen Masuk/Pulang sudah ditaruh di
-       markup SEBELUM .absensi-layout, sehingga selalu tampil paling atas
-       (di atas kartu profil & Validasi Lokasi/Wajah) baik di HP maupun
-       desktop — tidak perlu diatur ulang urutannya di sini lagi. */
+    /* Di layar sempit (HP), kartu profil + kamera/validasi wajah tampil
+       DULUAN, baru kartu Waktu Server & tombol absen di bawahnya — sesuai
+       permintaan, tanpa mengubah urutan di layar lebar (desktop) yang
+       tetap 2 kolom berdampingan. */
+    .absensi-side { order: -1; }
   }
 
   /* ---- Hero: Waktu Server + tombol absen ---- */
   .absen-hero-card {
     background: linear-gradient(135deg, rgba(16,185,129,0.14), rgba(0,108,70,0.08));
     border: 1px solid rgba(0,108,70,0.14);
-    border-radius: 22px; padding: 22px 26px; margin-bottom: 16px;
+    border-radius: 22px; padding: 22px 26px;
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px;
   }
   .ahc-label { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #0d7d5c; margin-bottom: 6px; }
@@ -1428,8 +1429,8 @@
   <div class="login-card">
     <div class="login-logo">
       <div class="badge">SIMPEG</div>
-      <h1>PPNPN Portal</h1>
-      <p>Sistem Informasi Kepegawaian Non ASN</p>
+      <h1>PPNPN Portal 439</h1>
+      <p>Sistem Informasi Kepegawaian PPNPN KPP439</p>
     </div>
     <div class="form-group">
       <label>Username</label>
@@ -1852,32 +1853,30 @@
       <div class="page" id="page-absensi">
         <div id="absenAlert"></div>
 
-        <!-- Hero: Waktu server + tombol absen (selalu tampil paling atas,
-             di atas kartu Validasi Lokasi & Wajah, baik di mobile maupun
-             desktop) -->
-        <div class="absen-hero-card">
-          <div>
-            <div class="ahc-label">⏱ Waktu Server Saat Ini</div>
-            <div class="ahc-clock" id="absenClock">00:00:00</div>
-            <div class="ahc-sub"><span id="absenDateDisplay"></span> · Zona Waktu WIB (UTC+7)</div>
-          </div>
-          <div class="ahc-actions absensi-form-el">
-            <button class="btn-absen-masuk" id="btnAbsenMasuk" onclick="doAbsen('masuk')" disabled>→ Absen Masuk</button>
-            <button class="btn-absen-pulang" id="btnAbsenPulang" onclick="doAbsen('pulang')" disabled>⇥ Absen Pulang</button>
-          </div>
-        </div>
-
-        <!-- Hari Libur / Off Notice -->
-        <div id="holidayNotice" style="display:none" class="alert alert-warn">
-          🗓 Hari ini adalah hari libur. Tidak perlu melakukan absensi.
-        </div>
-        <div id="offDayNotice" style="display:none" class="alert alert-info">
-          😴 Anda sedang OFF hari ini sesuai jadwal shift. Tidak perlu absensi.
-        </div>
-
         <div class="absensi-layout">
           <!-- ===== KOLOM UTAMA ===== -->
           <div class="absensi-main">
+            <!-- Hero: Waktu server + tombol absen -->
+            <div class="absen-hero-card">
+              <div>
+                <div class="ahc-label">⏱ Waktu Server Saat Ini</div>
+                <div class="ahc-clock" id="absenClock">00:00:00</div>
+                <div class="ahc-sub"><span id="absenDateDisplay"></span> · Zona Waktu WIB (UTC+7)</div>
+              </div>
+              <div class="ahc-actions absensi-form-el">
+                <button class="btn-absen-masuk" id="btnAbsenMasuk" onclick="doAbsen('masuk')" disabled>→ Absen Masuk</button>
+                <button class="btn-absen-pulang" id="btnAbsenPulang" onclick="doAbsen('pulang')" disabled>⇥ Absen Pulang</button>
+              </div>
+            </div>
+
+            <!-- Hari Libur / Off Notice (mobile: tampil di sini juga lewat CSS order jika perlu) -->
+            <div id="holidayNotice" style="display:none" class="alert alert-warn">
+              🗓 Hari ini adalah hari libur. Tidak perlu melakukan absensi.
+            </div>
+            <div id="offDayNotice" style="display:none" class="alert alert-info">
+              😴 Anda sedang OFF hari ini sesuai jadwal shift. Tidak perlu absensi.
+            </div>
+
             <!-- Riwayat -->
             <div class="card">
               <div class="card-title-row">
