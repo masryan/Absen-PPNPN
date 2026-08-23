@@ -1348,18 +1348,17 @@
   .absensi-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   @media (max-width: 900px) {
     .absensi-layout { grid-template-columns: 1fr; }
-    /* Di layar sempit (HP), kartu profil + kamera/validasi wajah tampil
-       DULUAN, baru kartu Waktu Server & tombol absen di bawahnya — sesuai
-       permintaan, tanpa mengubah urutan di layar lebar (desktop) yang
-       tetap 2 kolom berdampingan. */
-    .absensi-side { order: -1; }
+    /* Kartu Waktu Server & tombol Absen Masuk/Pulang sudah ditaruh di
+       markup SEBELUM .absensi-layout, sehingga selalu tampil paling atas
+       (di atas kartu profil & Validasi Lokasi/Wajah) baik di HP maupun
+       desktop — tidak perlu diatur ulang urutannya di sini lagi. */
   }
 
   /* ---- Hero: Waktu Server + tombol absen ---- */
   .absen-hero-card {
     background: linear-gradient(135deg, rgba(16,185,129,0.14), rgba(0,108,70,0.08));
     border: 1px solid rgba(0,108,70,0.14);
-    border-radius: 22px; padding: 22px 26px;
+    border-radius: 22px; padding: 22px 26px; margin-bottom: 16px;
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px;
   }
   .ahc-label { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #0d7d5c; margin-bottom: 6px; }
@@ -1853,30 +1852,32 @@
       <div class="page" id="page-absensi">
         <div id="absenAlert"></div>
 
+        <!-- Hero: Waktu server + tombol absen (selalu tampil paling atas,
+             di atas kartu Validasi Lokasi & Wajah, baik di mobile maupun
+             desktop) -->
+        <div class="absen-hero-card">
+          <div>
+            <div class="ahc-label">⏱ Waktu Server Saat Ini</div>
+            <div class="ahc-clock" id="absenClock">00:00:00</div>
+            <div class="ahc-sub"><span id="absenDateDisplay"></span> · Zona Waktu WIB (UTC+7)</div>
+          </div>
+          <div class="ahc-actions absensi-form-el">
+            <button class="btn-absen-masuk" id="btnAbsenMasuk" onclick="doAbsen('masuk')" disabled>→ Absen Masuk</button>
+            <button class="btn-absen-pulang" id="btnAbsenPulang" onclick="doAbsen('pulang')" disabled>⇥ Absen Pulang</button>
+          </div>
+        </div>
+
+        <!-- Hari Libur / Off Notice -->
+        <div id="holidayNotice" style="display:none" class="alert alert-warn">
+          🗓 Hari ini adalah hari libur. Tidak perlu melakukan absensi.
+        </div>
+        <div id="offDayNotice" style="display:none" class="alert alert-info">
+          😴 Anda sedang OFF hari ini sesuai jadwal shift. Tidak perlu absensi.
+        </div>
+
         <div class="absensi-layout">
           <!-- ===== KOLOM UTAMA ===== -->
           <div class="absensi-main">
-            <!-- Hero: Waktu server + tombol absen -->
-            <div class="absen-hero-card">
-              <div>
-                <div class="ahc-label">⏱ Waktu Server Saat Ini</div>
-                <div class="ahc-clock" id="absenClock">00:00:00</div>
-                <div class="ahc-sub"><span id="absenDateDisplay"></span> · Zona Waktu WIB (UTC+7)</div>
-              </div>
-              <div class="ahc-actions absensi-form-el">
-                <button class="btn-absen-masuk" id="btnAbsenMasuk" onclick="doAbsen('masuk')" disabled>→ Absen Masuk</button>
-                <button class="btn-absen-pulang" id="btnAbsenPulang" onclick="doAbsen('pulang')" disabled>⇥ Absen Pulang</button>
-              </div>
-            </div>
-
-            <!-- Hari Libur / Off Notice (mobile: tampil di sini juga lewat CSS order jika perlu) -->
-            <div id="holidayNotice" style="display:none" class="alert alert-warn">
-              🗓 Hari ini adalah hari libur. Tidak perlu melakukan absensi.
-            </div>
-            <div id="offDayNotice" style="display:none" class="alert alert-info">
-              😴 Anda sedang OFF hari ini sesuai jadwal shift. Tidak perlu absensi.
-            </div>
-
             <!-- Riwayat -->
             <div class="card">
               <div class="card-title-row">
@@ -7110,7 +7111,7 @@ function getLocation() {
   }, err => {
     locationOk = false;
     el.className = 'location-status error';
-    el.textContent = '❌ Lokasi GPS tidak tersedia — aktifkan izin lokasi untuk bisa absen';
+    el.textContent = '❌ Lokasi GPS tidak tersedia — aktifkan izin lokasi atau matikan fake gps untuk bisa absen';
     updateAbsenButtons();
   });
 }
