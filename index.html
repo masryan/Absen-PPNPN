@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIMPEG PPNPN</title>
+<title>SIMPEG PPNPN KPP Pratama Subang</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -32,6 +32,7 @@
     --shadow-lift: 0 12px 28px rgba(11,61,46,0.12);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow-x: hidden; max-width: 100%; }
   body {
     font-family: 'Manrope', sans-serif;
     background:
@@ -41,6 +42,12 @@
       var(--surface);
     color: var(--text); min-height: 100vh;
     -webkit-tap-highlight-color: transparent;
+    /* Guard: kalau ada elemen lain yang tidak sengaja overflow lebar
+       viewport, halaman TIDAK ikut ter-scroll horizontal — konten yang
+       overflow akan terpotong (clip) alih-alih menggeser seluruh
+       tampilan, seperti yang terjadi pada kartu Rekap Kehadiran. */
+    overflow-x: hidden;
+    max-width: 100%;
   }
   h1, h2, h3, .login-logo h1, .sidebar-logo h2, .card-title, .topbar h1 { font-family: 'Sora', sans-serif; }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -338,6 +345,7 @@
 
   /* ========= PEGAWAI DASHBOARD (redesign) ========= */
   .pd-overview-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: stretch; }
+  .pd-overview-grid > * { min-width: 0; }
   .pd-hero {
     background: linear-gradient(160deg, #0b3d2e 0%, #08251b 100%);
     border-radius: 32px; padding: 40px; position: relative; overflow: hidden;
@@ -440,7 +448,7 @@
   }
 
   /* ========= TABLES ========= */
-  .table-wrap { overflow-x: auto; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   th { background: var(--surface); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 2px solid var(--border); }
   td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
@@ -893,6 +901,7 @@
 
   /* ========= SETTINGS / PENGATURAN ========= */
   .settings-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; align-items: start; }
+  .settings-grid > * { min-width: 0; }
   .jk-table-wrap table { font-size: 13px; }
   .jk-table-wrap input, .jk-table-wrap select { padding: 7px 10px; border-radius: 8px; border: 1.5px solid var(--border); font-family: inherit; font-size: 13px; width: 100%; }
   .jk-table-wrap input:focus, .jk-table-wrap select:focus { border-color: var(--primary-light); outline: none; }
@@ -1139,7 +1148,35 @@
   @keyframes pdQuickBlink { 0%, 100% { box-shadow: var(--shadow-soft); } 50% { box-shadow: 0 0 0 3px rgba(249,115,22,0.35), var(--shadow-lift); } }
 
   /* ---- Ringkasan Bulan Ini + Aktivitas Terakhir (dua kolom) ---- */
+  /* Kartu "Rekap Kehadiran Hari Ini" (3 kolom tim) — pakai minmax(0,1fr),
+     BUKAN 1fr biasa. Track grid "1fr" tanpa minmax masih dibatasi lebar
+     minimum oleh min-content kontennya, jadi di layar sempit kartu ini
+     bisa memaksa lebar total > 100vw dan membuat SELURUH halaman ikut
+     ter-scroll horizontal (termasuk topbar & kartu lain di atasnya
+     kelihatan terpotong di kiri). minmax(0,1fr) mengizinkan kolom
+     menyusut penuh sehingga tidak pernah overflow. */
+  .rekap-tim-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+  .rekap-tim-card { min-width: 0; }
+  .rekap-tim-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 480px) {
+    .rekap-tim-grid { gap: 6px; }
+    .rekap-tim-card { padding: 8px !important; border-radius: 10px !important; }
+    .rekap-tim-label { font-size: 8.5px !important; margin-bottom: 3px !important; }
+    .rekap-tim-value { font-size: 18px !important; }
+    .rekap-tim-value span { font-size: 10px !important; }
+  }
+
   .pd-bottom-grid { display: grid; grid-template-columns: 1fr 1.75fr; gap: 20px; align-items: start; margin-top: 24px; }
+  /* PENTING: grid item secara default punya min-width:auto, yang berarti
+     lebarnya tidak boleh lebih kecil dari min-content anak-anaknya —
+     termasuk tabel di dalamnya yang punya min-width tetap (mis. 500px
+     di mobile). Akibatnya kartu tabel dipaksa ikut melebar mengikuti
+     tabel, bukan tabelnya yang scroll di dalam kartu — tabel jadi
+     terlihat "freeze"/tidak bisa digeser karena bungkusnya (.table-wrap)
+     sendiri tidak pernah lebih sempit dari tabel. min-width:0 di sini
+     mengizinkan kartu menyusut penuh, sehingga overflow-x:auto pada
+     .table-wrap di dalamnya baru benar-benar berfungsi. */
+  .pd-bottom-grid > * { min-width: 0; }
   .pd-summary-list { display: flex; flex-direction: column; gap: 20px; margin-top: 6px; }
   .pd-summary-row { display: flex; align-items: center; gap: 14px; }
   .pd-summary-icon {
@@ -1238,9 +1275,17 @@
 
   /* ---- Layout 2 kolom: utama + panel samping ---- */
   .absensi-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; }
+  .absensi-layout > * { min-width: 0; }
   .absensi-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   .absensi-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  @media (max-width: 900px) { .absensi-layout { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) {
+    .absensi-layout { grid-template-columns: 1fr; }
+    /* Di layar sempit (HP), kartu profil + kamera/validasi wajah tampil
+       DULUAN, baru kartu Waktu Server & tombol absen di bawahnya — sesuai
+       permintaan, tanpa mengubah urutan di layar lebar (desktop) yang
+       tetap 2 kolom berdampingan. */
+    .absensi-side { order: -1; }
+  }
 
   /* ---- Hero: Waktu Server + tombol absen ---- */
   .absen-hero-card {
@@ -3743,11 +3788,18 @@ function fmtTime(d) {
 function today() {
   return new Date().toISOString().split('T')[0];
 }
-function todayStr() {
-  const d = new Date();
+function todayStr(d) {
+  d = d || new Date();
+  // Selalu pakai zona WIB eksplisit (bukan zona perangkat) supaya nama
+  // hari/tanggal tetap benar meski zona waktu HP diubah-ubah.
   const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
   const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-  return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jakarta', weekday: 'short', day: 'numeric', month: 'numeric', year: 'numeric'
+  }).formatToParts(d);
+  const get = t => parts.find(p => p.type === t).value;
+  const weekdayIdx = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 }[get('weekday')];
+  return `${days[weekdayIdx]}, ${get('day')} ${months[parseInt(get('month'),10)-1]} ${get('year')}`;
 }
 function haversine(lat1,lon1,lat2,lon2) {
   const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
@@ -3756,6 +3808,116 @@ function haversine(lat1,lon1,lat2,lon2) {
 }
 function genId(prefix) {
   return prefix + Date.now().toString(36).toUpperCase();
+}
+
+// ============================================================
+// WAKTU SERVER (ANTI-MANIPULASI JAM/TANGGAL HP)
+// ------------------------------------------------------------
+// Absen masuk/pulang TIDAK BOLEH mengandalkan jam/tanggal perangkat
+// pegawai, karena bisa diubah manual (mundur/maju) untuk menghindari
+// status Terlambat/Pulang Cepat atau untuk absen di luar jadwal.
+// Setiap kali absen dilakukan, aplikasi WAJIB mengambil waktu resmi
+// dari server (fungsi get_waktu_server() di Supabase). Jika gagal
+// diambil, absen DIBATALKAN — tidak pernah jatuh balik ke jam HP.
+//
+// CATATAN SETUP: jalankan SQL ini SEKALI di Supabase SQL Editor agar
+// fungsi ini tersedia:
+//   create or replace function get_waktu_server()
+//   returns timestamptz language sql stable as $$ select now(); $$;
+//   grant execute on function get_waktu_server() to anon, authenticated;
+// ============================================================
+async function getServerTime() {
+  if (!supabaseClient) return null;
+  try {
+    const { data, error } = await supabaseClient.rpc('get_waktu_server');
+    if (error || !data) return null;
+    const d = new Date(data);
+    return isNaN(d.getTime()) ? null : d;
+  } catch (e) { return null; }
+}
+
+// Tanggal (YYYY-MM-DD) & jam (HH:MM) dari waktu server, SELALU di zona
+// Asia/Jakarta (WIB) — mengubah zona waktu di HP tidak berpengaruh.
+function tanggalServerWIB(d) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(d);
+  const get = t => parts.find(p => p.type === t).value;
+  return get('year') + '-' + get('month') + '-' + get('day');
+}
+function jamServerWIB(d) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(d);
+  const get = t => parts.find(p => p.type === t).value;
+  return get('hour') + ':' + get('minute');
+}
+
+// ============================================================
+// SINKRONISASI WAKTU HALAMAN (tampilan jam & gating hari libur/shift)
+// ------------------------------------------------------------
+// doAbsen() sudah aman karena selalu verifikasi ulang ke server saat
+// SUBMIT. Tapi tampilan jam "WAKTU SERVER SAAT INI" dan keputusan
+// "hari ini libur / shift OFF" di halaman Absensi sebelumnya memakai
+// today()/new Date() (jam & tanggal PERANGKAT) — itu celah kedua:
+// walau submit tetap ditolak server, tampilannya jadi menyesatkan dan
+// tombol absen bisa muncul/hilang keliru saat jam HP diubah. Dua
+// variabel & fungsi ini menyimpan hasil verifikasi server sekali per
+// buka halaman Absensi, lalu dipakai untuk semua tampilan terkait.
+var serverTimeOffsetMs = 0;   // Date.now() + offset ≈ waktu server asli
+var serverDateVerified = null; // tanggal WIB hasil verifikasi server, atau null kalau gagal
+
+async function syncServerTime() {
+  var serverNow = null;
+  if (SCRIPT_URL) serverNow = await getServerTime();
+  if (!serverNow) serverNow = await getFallbackNetworkTime();
+  if (serverNow) {
+    serverTimeOffsetMs = serverNow.getTime() - Date.now();
+    serverDateVerified = tanggalServerWIB(serverNow);
+  } else {
+    serverTimeOffsetMs = 0;
+    serverDateVerified = null;
+  }
+  return serverDateVerified;
+}
+
+// Jam "sekarang" yang sudah dikoreksi ke waktu server (dipakai untuk
+// centang detik berjalan di layar) — tetap akurat walau jam HP diubah
+// SETELAH sinkronisasi terakhir, karena hanya offset-nya yang dipakai.
+function serverAdjustedNow() {
+  return new Date(Date.now() + serverTimeOffsetMs);
+}
+
+// Tanggal hari ini versi TERVERIFIKASI server — dipakai untuk gating
+// hari libur/shift supaya tidak bisa dimanipulasi lewat jam HP. Fallback
+// ke today() (jam perangkat) hanya kalau verifikasi server benar-benar
+// gagal (mis. offline total) — di titik itu submit absen juga otomatis
+// ditolak oleh doAbsen(), jadi fallback ini murni untuk tampilan.
+function todayVerified() {
+  return serverDateVerified || today();
+}
+
+// Lapis kedua kalau RPC get_waktu_server() Supabase gagal/tidak tersedia
+// (mis. koneksi ke Supabase bermasalah, atau belum di-setup). Sebelum ini
+// kodenya langsung jatuh balik ke jam HP kalau SCRIPT_URL kosong — itu
+// celahnya: pegawai tinggal ubah jam HP dan status Terlambat tidak
+// terdeteksi. Sekarang dicoba dulu ambil waktu dari layanan waktu publik
+// (jam SERVER mereka, bukan jam perangkat) sebelum benar-benar menyerah.
+async function getFallbackNetworkTime() {
+  var providers = [
+    { url: 'https://worldtimeapi.org/api/timezone/Asia/Jakarta', parse: function(j){ return j && j.utc_datetime ? new Date(j.utc_datetime) : null; } },
+    { url: 'https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta', parse: function(j){ return j && j.dateTime ? new Date(j.dateTime + 'Z'.slice(j.dateTime.endsWith('Z') ? 1 : 0)) : null; } }
+  ];
+  for (var i = 0; i < providers.length; i++) {
+    try {
+      var res = await fetch(providers[i].url, { method: 'GET', cache: 'no-store' });
+      if (!res.ok) continue;
+      var json = await res.json();
+      var d = providers[i].parse(json);
+      if (d && !isNaN(d.getTime())) return d;
+    } catch (e) { /* coba provider berikutnya */ }
+  }
+  return null;
 }
 
 
@@ -4256,14 +4418,28 @@ async function callAPI(action, params={}) {
       }
 
       case 'saveRadius': {
-        const row = {
-          id: 1,
+        // Tidak pakai upsert(onConflict:'id') karena itu MEMBUTUHKAN
+        // constraint UNIQUE/PRIMARY KEY di kolom id pada tabel
+        // 'konfigurasi' — kalau constraint itu tidak ada, Supabase akan
+        // menolak perintah ini dengan error "no unique or exclusion
+        // constraint matching the ON CONFLICT specification", dan
+        // pengaturan lokasi gagal tersimpan tanpa sebab yang jelas bagi
+        // pengguna. Sebagai gantinya: cek dulu apakah row id=1 sudah
+        // ada, baru UPDATE atau INSERT sesuai kondisinya — ini bekerja
+        // tanpa perlu constraint apapun di database.
+        const existingRad = await supabaseClient.from('konfigurasi').select('id').eq('id',1).limit(1);
+        const rowRad = {
           office_lat: params.officeLat,
           office_lon: params.officeLon,
           radius_tolerance: params.radiusTolerance
         };
-        const { error } = await supabaseClient.from('konfigurasi').upsert(row, { onConflict: 'id' });
-        return { success: !error, error: error?error.message:null };
+        let errRad;
+        if (existingRad.data && existingRad.data.length) {
+          errRad = (await supabaseClient.from('konfigurasi').update(rowRad).eq('id',1)).error;
+        } else {
+          errRad = (await supabaseClient.from('konfigurasi').insert(Object.assign({id:1}, rowRad))).error;
+        }
+        return { success: !errRad, error: errRad?errRad.message:null };
       }
 
       case 'getSpkSettings': {
@@ -4277,15 +4453,22 @@ async function callAPI(action, params={}) {
       }
 
       case 'saveSpkSettings': {
-        const row = {
-          id: 1,
+        // Sama seperti saveRadius di atas — hindari upsert(onConflict)
+        // yang rapuh terhadap constraint DB, pakai cek-lalu-update/insert.
+        const existingSpk = await supabaseClient.from('konfigurasi').select('id').eq('id',1).limit(1);
+        const rowSpk = {
           spk_nama_ttd: params.namaTtd || null,
           spk_jabatan_ttd: params.jabatanTtd || null,
           spk_kota: params.kota || null,
           spk_format_nomor: params.formatNomor || null
         };
-        const { error } = await supabaseClient.from('konfigurasi').upsert(row, { onConflict: 'id' });
-        return { success: !error, error: error?error.message:null };
+        let errSpk;
+        if (existingSpk.data && existingSpk.data.length) {
+          errSpk = (await supabaseClient.from('konfigurasi').update(rowSpk).eq('id',1)).error;
+        } else {
+          errSpk = (await supabaseClient.from('konfigurasi').insert(Object.assign({id:1}, rowSpk))).error;
+        }
+        return { success: !errSpk, error: errSpk?errSpk.message:null };
       }
 
       case 'getJamKerja': {
@@ -5930,7 +6113,7 @@ async function loadDashboard() {
     dashCards.innerHTML = `
       <div class="card">
         <div class="card-title">📊 Rekap Kehadiran Hari Ini</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="rekap-tim-grid">
           ${['Cleaning Service','Pramubakti','Security'].map(function(job, idx){
             var hadir = todayAll.filter(function(a){
               var peg = pegawaiListDb.find(function(u){ return u.idPegawai===a.idPegawai; });
@@ -5943,9 +6126,9 @@ async function loadDashboard() {
               {bg:'linear-gradient(135deg,#0d2b4e 0%,#10241d 70%)', accent:'#7cb8ff', label:'#9ec4ee'}
             ];
             var t = themes[idx % themes.length];
-            return '<div onclick="goToAdminAbsensiByJob(\'' + job + '\')" style="cursor:pointer;background:' + t.bg + ';border-top:3px solid ' + t.accent + ';border-radius:12px;padding:14px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,0.25);transition:transform .15s" onmouseover="this.style.transform=\'translateY(-3px)\'" onmouseout="this.style.transform=\'none\'">' +
-              '<div style="font-size:11px;color:' + t.label + ';font-weight:700;letter-spacing:0.5px;margin-bottom:6px">' + job.toUpperCase() + '</div>' +
-              '<div style="font-size:28px;font-weight:800;font-family:Space Mono,monospace;color:' + t.accent + '">' + hadir + '<span style="font-size:14px;color:rgba(255,255,255,0.4)">/' + total + '</span></div>' +
+            return '<div class="rekap-tim-card" onclick="goToAdminAbsensiByJob(\'' + job + '\')" style="cursor:pointer;background:' + t.bg + ';border-top:3px solid ' + t.accent + ';border-radius:12px;padding:14px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,0.25);transition:transform .15s" onmouseover="this.style.transform=\'translateY(-3px)\'" onmouseout="this.style.transform=\'none\'">' +
+              '<div class="rekap-tim-label" style="font-size:11px;color:' + t.label + ';font-weight:700;letter-spacing:0.5px;margin-bottom:6px">' + job.toUpperCase() + '</div>' +
+              '<div class="rekap-tim-value" style="font-size:28px;font-weight:800;font-family:Space Mono,monospace;color:' + t.accent + '">' + hadir + '<span style="font-size:14px;color:rgba(255,255,255,0.4)">/' + total + '</span></div>' +
               '</div>';
           }).join('')}
         </div>
@@ -6286,6 +6469,11 @@ async function initAbsensiPage() {
   document.getElementById('absenNama').textContent = u.namaPegawai;
   document.getElementById('absenJabatan').textContent = u.pekerjaan;
 
+  // Verifikasi waktu server SEKALI di awal buka halaman — dipakai untuk
+  // gating hari libur/shift & tampilan jam di bawah, supaya tidak ikut
+  // jam/tanggal perangkat yang bisa diubah manual.
+  await syncServerTime();
+
   // Determine shift
   let jamMasuk = '-', jamPulang = '-';
   if (u.pekerjaan === 'Security') {
@@ -6293,7 +6481,7 @@ async function initAbsensiPage() {
     var shiftVal = getSecurityShiftToday();
     if (shiftVal === null && SCRIPT_URL) {
       // Belum ada di cache — ambil dari Sheets
-      var sRes = await callAPI('getShift', { from: today(), to: today() });
+      var sRes = await callAPI('getShift', { from: todayVerified(), to: todayVerified() });
       if (sRes && sRes.success && sRes.data.length > 0) {
         sRes.data.forEach(function(r) {
           var tgl = r['Tanggal'] || r['tanggal'] || '';
@@ -6328,10 +6516,10 @@ async function initAbsensiPage() {
     }
   } else {
     await ensureLiburLoaded();
-    if (isHariLibur(today())) {
+    if (isHariLibur(todayVerified())) {
       document.getElementById('holidayNotice').style.display = 'block';
       document.getElementById('holidayNotice').textContent =
-        '🗓 Hari ini adalah hari libur' + (getKeteranganLibur(today()) ? ' (' + getKeteranganLibur(today()) + ')' : '') + '. Tidak perlu melakukan absensi.';
+        '🗓 Hari ini adalah hari libur' + (getKeteranganLibur(todayVerified()) ? ' (' + getKeteranganLibur(todayVerified()) + ')' : '') + '. Tidak perlu melakukan absensi.';
       document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display='none'; });
     } else {
       document.getElementById('holidayNotice').style.display = 'none';
@@ -6347,7 +6535,7 @@ async function initAbsensiPage() {
   if (clockInterval) clearInterval(clockInterval);
   clockInterval = setInterval(updateClock, 1000);
   updateClock();
-  document.getElementById('absenDateDisplay').textContent = todayStr();
+  document.getElementById('absenDateDisplay').textContent = todayStr(serverAdjustedNow());
 
   // Cek absensi hari ini dari Sheets (prioritas) supaya tidak dobel
   todayAbsenData = null;
@@ -6388,7 +6576,7 @@ async function initAbsensiPage() {
 
 function getSecurityShiftToday() {
   const tim    = currentUser.Tim;          // e.g. "TIM 4"
-  const tgl    = today();                  // "YYYY-MM-DD"
+  const tgl    = todayVerified();          // "YYYY-MM-DD" hasil verifikasi server
 
   // Baca dari shiftData (sudah di-sync dari sheet Shift Satpam)
   var val = shiftData[tgl] && shiftData[tgl][tim]
@@ -6588,17 +6776,18 @@ function getJamPulangHariIni(u) {
     var jkSec = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN==='Security' && j.SHIFT==='Jaga'; });
     return jkSec ? jkSec.JAM_PULANG : '07:00';
   }
-  if (isHariLibur(today())) return null;
+  if (isHariLibur(todayVerified())) return null;
   var jk = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN===u.pekerjaan; });
   return jk ? jk.JAM_PULANG : null;
 }
 
 function updateClock() {
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2,'0');
-  const mm = String(now.getMinutes()).padStart(2,'0');
-  const ss = String(now.getSeconds()).padStart(2,'0');
-  document.getElementById('absenClock').textContent = `${hh}:${mm}:${ss}`;
+  const now = serverAdjustedNow();
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  }).formatToParts(now);
+  const get = t => parts.find(p => p.type === t).value;
+  document.getElementById('absenClock').textContent = `${get('hour')}:${get('minute')}:${get('second')}`;
 }
 
 function updateAbsenButtons() {
@@ -6740,19 +6929,22 @@ function capturePhoto() {
   return canvas.toDataURL('image/jpeg', 0.7);
 }
 
-function getStatusMasuk(jamKerjaStr) {
-  const now = new Date();
+// jamSekarangStr WAJIB berasal dari waktu server (jamServerWIB), bukan
+// jam perangkat, supaya status Terlambat/Pulang Cepat tidak bisa
+// dimanipulasi dengan mengubah jam HP.
+function getStatusMasuk(jamKerjaStr, jamSekarangStr) {
   const [h,m] = jamKerjaStr.split(':').map(Number);
   const jamKerjaMs = h*60+m;
-  const nowMs = now.getHours()*60+now.getMinutes();
+  const [hs,ms] = jamSekarangStr.split(':').map(Number);
+  const nowMs = hs*60+ms;
   return nowMs > jamKerjaMs + 5 ? 'Terlambat' : 'Tepat Waktu';
 }
 
-function getStatusPulang(jamPulangStr) {
-  const now = new Date();
+function getStatusPulang(jamPulangStr, jamSekarangStr) {
   const [h,m] = jamPulangStr.split(':').map(Number);
   const jamPulangMs = h*60+m;
-  const nowMs = now.getHours()*60+now.getMinutes();
+  const [hs,ms] = jamSekarangStr.split(':').map(Number);
+  const nowMs = hs*60+ms;
   return nowMs < jamPulangMs - 5 ? 'Pulang Cepat' : 'Tepat Waktu';
 }
 
@@ -6771,9 +6963,34 @@ function upsertLocalAbsen(record) {
 async function doAbsen(type) {
   const u = currentUser;
 
+  // ── WAJIB ambil waktu resmi dari server sebelum apapun. Jika gagal,
+  // absen DIBATALKAN — tidak boleh jatuh balik memakai jam/tanggal HP,
+  // karena itulah celah yang memungkinkan pegawai absen mundur atau
+  // menghindari status terlambat dengan mengubah jam perangkatnya. ──
+  var todayServer, nowStr;
+  var serverNow = null;
+  if (SCRIPT_URL) {
+    serverNow = await getServerTime();
+  }
+  if (!serverNow) {
+    // RPC Supabase gagal/tidak tersedia — coba layanan waktu publik
+    // (masih jam SERVER, bukan jam perangkat) sebagai lapis kedua.
+    serverNow = await getFallbackNetworkTime();
+  }
+  if (!serverNow) {
+    // Kedua sumber waktu server gagal (kemungkinan besar tidak ada koneksi
+    // internet sama sekali). JANGAN pernah jatuh balik ke jam perangkat —
+    // itulah celah yang membuat pegawai bisa absen tanpa terlambat dengan
+    // mengubah jam HP-nya. Absen dibatalkan, bukan diloloskan.
+    showAlert('absenAlert', 'error', '❌ Gagal memverifikasi waktu server (cek koneksi internet). Absen dibatalkan demi keakuratan data — coba lagi, atau hubungi admin jika terus gagal.');
+    return;
+  }
+  todayServer = tanggalServerWIB(serverNow);
+  nowStr = jamServerWIB(serverNow);
+
   // ── Selalu ambil state terbaru dari Sheets sebelum aksi ──
   if (SCRIPT_URL) {
-    const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: today(), to: today() });
+    const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: todayServer, to: todayServer });
     if (res && res.success && res.data.length > 0) {
       // Sheets bisa kembalikan >1 baris jika masih ada duplikat lama — ambil yang paling lengkap
       todayAbsenData = res.data.reduce(function(best, cur){
@@ -6787,7 +7004,7 @@ async function doAbsen(type) {
   if (!todayAbsenData) {
     const existing = localAbsensi.filter(function(a){
       return String(a.idPegawai||'').toUpperCase() === String(u.idPegawai||'').toUpperCase()
-          && a.tanggal === today();
+          && a.tanggal === todayServer;
     });
     if (existing.length > 0) {
       todayAbsenData = existing.reduce(function(best, cur){
@@ -6797,7 +7014,6 @@ async function doAbsen(type) {
     }
   }
 
-  const nowStr    = new Date().toTimeString().substring(0,5);
   const lokasi    = 'Lat: ' + (userLat ? userLat.toFixed(6) : '-') + ', Lon: ' + (userLon ? userLon.toFixed(6) : '-');
   const jamMasukEl  = document.getElementById('absenJamMasuk').textContent;
   const jamPulangEl = document.getElementById('absenJamPulang').textContent;
@@ -6809,7 +7025,7 @@ async function doAbsen(type) {
   let fotoUrl = null;
   let fotoUploadError = null;
   if (fotoDataUrl && fotoDataUrl !== 'tanpa_foto') {
-    var fotoRes = await uploadFotoAbsen(fotoDataUrl, u.idPegawai, u.namaPegawai, u.username, today(), type);
+    var fotoRes = await uploadFotoAbsen(fotoDataUrl, u.idPegawai, u.namaPegawai, u.username, todayServer, type);
     fotoUrl = fotoRes.url;
     fotoUploadError = fotoRes.error;
   }
@@ -6821,19 +7037,19 @@ async function doAbsen(type) {
       updateAbsenButtons(); return;
     }
 
-    const statusMasuk = jamMasukEl !== '-' ? getStatusMasuk(jamMasukEl) : 'Tepat Waktu';
+    const statusMasuk = jamMasukEl !== '-' ? getStatusMasuk(jamMasukEl, nowStr) : 'Tepat Waktu';
 
     // Cek apakah pegawai ini ditugaskan lembur hari ini (mis. bertugas di
     // hari libur atas penunjukan admin) — kalau iya, tandai absensinya.
     if (SCRIPT_URL) {
-      var lRes = await callAPI('getLembur', { idPegawai: u.idPegawai, from: today(), to: today() });
+      var lRes = await callAPI('getLembur', { idPegawai: u.idPegawai, from: todayServer, to: todayServer });
       if (lRes && lRes.success) {
-        localLembur = (localLembur||[]).filter(function(l){ return !(l.idPegawai===u.idPegawai && l.tanggal===today()); });
+        localLembur = (localLembur||[]).filter(function(l){ return !(l.idPegawai===u.idPegawai && l.tanggal===todayServer); });
         localLembur = localLembur.concat(lRes.data);
         localStorage.setItem('ppnpn_lembur', JSON.stringify(localLembur));
       }
     }
-    const isLemburHariIni = isPenugasanLembur(u.idPegawai, today());
+    const isLemburHariIni = isPenugasanLembur(u.idPegawai, todayServer);
 
     if (!todayAbsenData) {
       // Belum ada record sama sekali — buat baru
@@ -6843,7 +7059,7 @@ async function doAbsen(type) {
         namaPegawai: u.namaPegawai,
         pekerjaan: u.pekerjaan,
         Tim: u.Tim || '',
-        tanggal: today(),
+        tanggal: todayServer,
         absenMasuk: nowStr, statusAbsenMasuk: statusMasuk,
         lokasiMasuk: lokasi, latMasuk: userLat, lonMasuk: userLon,
         absenPulang: '', statusAbsenPulang: '',
@@ -6882,7 +7098,7 @@ async function doAbsen(type) {
     }
     // Tidak diblokir meski sudah pulang sebelumnya — jam terakhir yang dipakai
 
-    const statusPulang = jamPulangEl !== '-' ? getStatusPulang(jamPulangEl) : 'Tepat Waktu';
+    const statusPulang = jamPulangEl !== '-' ? getStatusPulang(jamPulangEl, nowStr) : 'Tepat Waktu';
     const [hm, mm2]    = todayAbsenData.absenMasuk.split(':').map(Number);
     const [hp, mp]     = nowStr.split(':').map(Number);
     var diff = (hp*60+mp) - (hm*60+mm2);
@@ -9416,20 +9632,41 @@ function useCurrentLocationForOffice() {
   navigator.geolocation.getCurrentPosition(function(pos){
     document.getElementById('setOfficeLat').value = pos.coords.latitude.toFixed(7);
     document.getElementById('setOfficeLon').value = pos.coords.longitude.toFixed(7);
+    // Isi radius dengan nilai default kalau kolomnya masih kosong, supaya
+    // tombol Simpan tidak gagal gara-gara radius belum diisi.
+    var radiusEl = document.getElementById('setOfficeRadius');
+    if (!radiusEl.value) radiusEl.value = 100;
     statusEl.className = 'geo-status location-status ok';
     statusEl.textContent = '✅ Lokasi berhasil didapat (akurasi ±' + Math.round(pos.coords.accuracy) + 'm). Klik Simpan untuk menerapkan.';
   }, function(err){
     statusEl.className = 'geo-status location-status error';
-    statusEl.textContent = '❌ Gagal mengambil lokasi: ' + err.message;
+    // err.code: 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+    if (err.code === 1) {
+      statusEl.textContent = '❌ Izin lokasi ditolak. Kalau halaman ini dibuka lewat browser bawaan aplikasi lain (mis. TikTok/Instagram in-app browser), izin lokasi sering diblokir — buka link ini lewat Chrome/Safari langsung lalu coba lagi, atau isi Latitude/Longitude manual (bisa dicek lewat Google Maps: tap-tahan lokasi kantor).';
+    } else if (err.code === 3) {
+      statusEl.textContent = '❌ Waktu tunggu habis saat mengambil lokasi. Pastikan GPS aktif dan coba lagi, atau isi Latitude/Longitude manual.';
+    } else {
+      statusEl.textContent = '❌ Gagal mengambil lokasi: ' + err.message + '. Anda tetap bisa isi Latitude/Longitude manual.';
+    }
   }, { enableHighAccuracy: true, timeout: 10000 });
 }
 
 async function saveRadiusSettings() {
-  var lat = parseFloat(document.getElementById('setOfficeLat').value);
-  var lon = parseFloat(document.getElementById('setOfficeLon').value);
-  var rad = parseFloat(document.getElementById('setOfficeRadius').value);
-  if (isNaN(lat) || isNaN(lon) || isNaN(rad) || rad <= 0) {
-    alert('⚠ Latitude, Longitude, dan Radius wajib diisi dengan angka yang valid.');
+  var latRaw = document.getElementById('setOfficeLat').value.trim();
+  var lonRaw = document.getElementById('setOfficeLon').value.trim();
+  var radRaw = document.getElementById('setOfficeRadius').value.trim();
+  var lat = parseFloat(latRaw);
+  var lon = parseFloat(lonRaw);
+  var rad = radRaw ? parseFloat(radRaw) : 100; // default 100m kalau kosong
+
+  // Validasi per kolom supaya pesan errornya jelas kolom mana yang salah,
+  // bukan pesan umum yang membingungkan.
+  var errs = [];
+  if (!latRaw || isNaN(lat)) errs.push('Latitude Kantor kosong/tidak valid — klik "Gunakan Lokasi Saat Ini" atau isi manual, mis. -6.301685');
+  if (!lonRaw || isNaN(lon)) errs.push('Longitude Kantor kosong/tidak valid — mis. 107.299907');
+  if (isNaN(rad) || rad <= 0) errs.push('Toleransi Radius harus angka lebih dari 0 (meter)');
+  if (errs.length) {
+    alert('⚠ Belum bisa disimpan:\n- ' + errs.join('\n- '));
     return;
   }
   officeLat = lat; officeLon = lon; officeRadius = rad;
