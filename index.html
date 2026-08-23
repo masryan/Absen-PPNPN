@@ -657,28 +657,43 @@
     box-shadow: 0 6px 0 #fff, 0 -6px 0 #fff;
   }
 
-  /* ========= BOTTOM NAV (mobile only) ========= */
+  /* ========= BOTTOM NAV (mobile only) — modern & soft ========= */
   .bottom-nav {
     display: none; position: fixed; bottom: 0; left: 0; right: 0;
-    background: var(--primary); z-index: 150;
-    padding: 6px 0 env(safe-area-inset-bottom, 6px);
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(15,60,45,0.06);
+    border-radius: 22px 22px 0 0;
+    z-index: 150;
+    padding: 10px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -10px 28px rgba(15,60,45,0.10);
   }
   .bottom-nav-items {
-    display: flex; justify-content: space-around; align-items: center;
+    display: flex; justify-content: space-around; align-items: center; gap: 4px;
   }
   .bottom-nav-item {
     display: flex; flex-direction: column; align-items: center;
-    gap: 3px; padding: 6px 10px; cursor: pointer; border: none;
-    background: none; color: rgba(255,255,255,0.5);
-    font-size: 10px; font-weight: 600; font-family: inherit;
-    border-radius: 10px; transition: all 0.2s; flex: 1; min-width: 0;
+    gap: 3px; padding: 7px 8px 8px; cursor: pointer; border: none;
+    background: none; color: #9aa8a0;
+    font-size: 10.5px; font-weight: 600; font-family: inherit;
+    border-radius: 14px; transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+    flex: 1; min-width: 0; width: 100%; position: relative;
   }
-  .bottom-nav-item svg { width: 22px; height: 22px; }
-  .bottom-nav-item.active { color: var(--accent); }
+  .bottom-nav-item svg {
+    width: 21px; height: 21px; transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+  }
+  .bottom-nav-item.active {
+    color: #0d7d5c;
+    background: rgba(16,185,129,0.12);
+    box-shadow: 0 4px 10px rgba(16,185,129,0.14);
+  }
+  .bottom-nav-item.active svg { transform: translateY(-1px); }
+  .bottom-nav-item:active { transform: scale(0.94); }
   .bottom-nav-item .bnav-dot {
-    width: 6px; height: 6px; background: var(--danger);
-    border-radius: 50%; position: absolute; top: 4px; right: 8px;
+    width: 7px; height: 7px; background: #ef4444;
+    border: 2px solid #fff;
+    border-radius: 50%; position: absolute; top: 2px; right: 12px;
+    box-shadow: 0 0 0 1px rgba(239,68,68,0.25);
   }
   .bottom-nav-item-wrap { position: relative; flex: 1; display: flex; justify-content: center; }
 
@@ -694,7 +709,7 @@
     .sidebar.open { transform: translateX(0); }
 
     /* Main content full width */
-    .main-content { margin-left: 0; padding-bottom: 72px; }
+    .main-content { margin-left: 0; padding-bottom: 82px; }
 
     /* Topbar mobile */
     .topbar {
@@ -900,7 +915,6 @@
     .import-bar { width: 100%; }
     .import-bar .btn, .import-bar .btn-import, .import-bar label.btn { width: 100%; justify-content: center; }
     .settings-hero { padding: 18px; }
-    .bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
   }
 
   /* ========= SIDEBAR MINIMIZE (DESKTOP) ========= */
@@ -1051,6 +1065,22 @@
   .pd-hero-date { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #1f6e4f; margin-bottom: 6px; }
   .pd-hero h2 { font-family: 'Sora', sans-serif; font-size: 27px; font-weight: 800; margin-bottom: 8px; line-height: 1.2; color: #0d2b20; }
   .pd-hero p { font-size: 14px; color: #35594a; max-width: 420px; line-height: 1.5; }
+  .pd-checklist-reminder {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;
+    background: rgba(255,255,255,0.65); border: 1px solid rgba(180,135,47,0.35);
+    color: #7a4f10; font-size: 12.5px; font-weight: 700; line-height: 1.4;
+    padding: 8px 14px; border-radius: 12px; max-width: 460px;
+    animation: pdChecklistBlink 1.6s ease-in-out infinite;
+  }
+  .pd-checklist-reminder-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #c9a24b; flex-shrink: 0;
+    animation: pdChecklistDot 1.6s ease-in-out infinite;
+  }
+  @keyframes pdChecklistBlink {
+    0%, 100% { background: rgba(255,255,255,0.65); box-shadow: 0 0 0 0 rgba(201,162,75,0); }
+    50% { background: rgba(255,247,224,0.95); box-shadow: 0 0 0 5px rgba(201,162,75,0.18); }
+  }
+  @keyframes pdChecklistDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.75); } }
   .pd-hero-actions { display: flex; gap: 12px; flex-wrap: wrap; position: relative; z-index: 1; }
   .btn-pd-primary {
     background: linear-gradient(135deg,#e8c874,#c9a24b); color: #2c2005; border: none;
@@ -1065,6 +1095,17 @@
     display: flex; align-items: center; gap: 8px; transition: all .2s; font-family: inherit; white-space: nowrap;
   }
   .btn-pd-secondary:hover { background: rgba(255,255,255,0.85); }
+  .btn-pd-checklist {
+    background: rgba(255,255,255,0.55); border: 1.5px solid rgba(180,135,47,0.55); color: #7a4f10;
+    padding: 12px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; transition: all .2s; font-family: inherit; white-space: nowrap;
+    animation: pdChecklistBtnBlink 1.6s ease-in-out infinite;
+  }
+  .btn-pd-checklist:hover { background: rgba(255,255,255,0.9); transform: translateY(-2px); }
+  @keyframes pdChecklistBtnBlink {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(201,162,75,0); border-color: rgba(180,135,47,0.55); }
+    50% { box-shadow: 0 0 0 6px rgba(201,162,75,0.22); border-color: rgba(180,135,47,0.9); }
+  }
 
   /* ---- Baris kartu ringkas (Absen Masuk / Jadwal Pulang / Sisa Cuti / Pengajuan Terakhir) ---- */
   .pd-quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 18px; }
@@ -1123,14 +1164,51 @@
   .pd-table-card .card-title a { font-size: 12.5px; font-weight: 700; color: #0d7d5c; text-decoration: none; }
 
   @media (max-width: 900px) {
-    .pd-quick-grid { grid-template-columns: repeat(2, 1fr); }
     .pd-bottom-grid { grid-template-columns: 1fr; }
-    .pd-hero { flex-direction: column; align-items: flex-start; }
   }
-  @media (max-width: 560px) {
-    .pd-quick-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .pd-hero-left { gap: 14px; }
-    .pd-hero-avatar, .pd-hero-avatar-fallback { width: 64px; height: 64px; border-radius: 16px; }
+
+  /* ---- Dashboard pegawai: mobile (selaras breakpoint utama app di 768px) ---- */
+  @media (max-width: 768px) {
+    .pd-hero {
+      flex-direction: column; align-items: flex-start;
+      padding: 20px 18px; border-radius: 20px; gap: 16px;
+    }
+    .pd-hero-left { width: 100%; gap: 14px; }
+    .pd-hero-left > div:last-child { min-width: 0; flex: 1; }
+    .pd-hero-avatar, .pd-hero-avatar-fallback { width: 58px; height: 58px; border-radius: 15px; font-size: 20px; }
+    .pd-hero-active-pill { font-size: 8.5px; padding: 2px 8px; bottom: -8px; }
+    .pd-hero-date { font-size: 10.5px; margin-bottom: 4px; }
+    .pd-hero h2 { font-size: 19px; margin-bottom: 5px; }
+    .pd-hero p { font-size: 12.5px; max-width: 100%; }
+    .pd-hero-actions { width: 100%; flex-direction: column; gap: 10px; }
+    .btn-pd-primary, .btn-pd-secondary, .btn-pd-checklist { width: 100%; justify-content: center; padding: 12px 16px; font-size: 13.5px; }
+
+    .pd-quick-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .pd-quick-card { padding: 14px; border-radius: 14px; gap: 8px; }
+    .pd-quick-icon { width: 32px; height: 32px; border-radius: 10px; font-size: 14px; }
+    .pd-quick-label { font-size: 10.5px; }
+    .pd-quick-value { font-size: 16px; line-height: 1.2; word-break: break-word; }
+    .pd-quick-sub { font-size: 10px; }
+    .pd-quick-tag { font-size: 9.5px; padding: 3px 9px; white-space: normal; line-height: 1.3; }
+
+    .pd-bottom-grid { grid-template-columns: 1fr; gap: 14px; margin-top: 18px; }
+    .pd-summary-list { gap: 16px; margin-top: 4px; }
+    .pd-summary-icon { width: 32px; height: 32px; border-radius: 9px; font-size: 14px; }
+    .pd-summary-top { font-size: 12.5px; }
+    .pd-summary-top .pd-summary-frac { font-size: 11.5px; }
+
+    .pd-table-filter-row { width: 100%; flex-direction: column !important; align-items: stretch !important; }
+    .pd-table-filter-row input[type="date"] { width: 100%; }
+    .pd-table-filter-row button { width: 100%; justify-content: center; }
+    .pd-table-filter-row span { text-align: center; }
+  }
+
+  @media (max-width: 400px) {
+    .pd-quick-grid { grid-template-columns: 1fr; }
+    .pd-quick-card { flex-direction: row; align-items: center; flex-wrap: wrap; }
+    .pd-quick-card > div:nth-child(2) { flex: 1; min-width: 0; }
+    .pd-hero-avatar, .pd-hero-avatar-fallback { width: 50px; height: 50px; font-size: 17px; }
+    .pd-hero h2 { font-size: 17px; }
   }
 
   /* ---- Tabs: pill aktif putih di atas track abu ---- */
@@ -1290,36 +1368,7 @@
 </div>
 
 <!-- ========== CONFIG MODAL ========== -->
-<div class="modal-backdrop" id="configModal">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-header">
-      <h3>⚙ Konfigurasi Sistem</h3>
-      <button class="modal-close" onclick="closeConfigModal()">✕</button>
-    </div>
-    <div style="display:inline-flex;align-items:center;gap:6px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:#92400e;margin-bottom:14px">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      Hanya dapat diakses oleh Administrator
-    </div>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">
-      Hubungkan aplikasi ke database Supabase dengan mengisi Project URL & anon key dari project Anda.
-    </p>
-    <div class="field" style="margin-bottom:14px">
-      <label>Supabase Project URL</label>
-      <input type="text" id="cfgSheetId" placeholder="https://xxxxxxxxxxxx.supabase.co">
-    </div>
-    <div class="field" style="margin-bottom:14px">
-      <label>Supabase anon public key</label>
-      <input type="text" id="cfgScriptUrl" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-    </div>
-    <div class="alert alert-info" style="font-size:13px;">
-      💡 Dapatkan dari Supabase Dashboard → <strong>Project Settings → API</strong>. Salin <strong>Project URL</strong> dan <strong>anon public</strong> key.
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeConfigModal()">Batal</button>
-      <button class="btn btn-primary" onclick="saveConfig()">💾 Simpan Konfigurasi</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- ========== APP PAGE ========== -->
 <div id="appPage">
@@ -1383,7 +1432,7 @@
       </a>
       <a class="nav-item" onclick="showPage('adminAbsensi')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Rekap Absensi
+        Rekap Absensi & Potongan
       </a>
       
       <a class="nav-item" onclick="showPage('adminChecklistCS')">
@@ -1393,44 +1442,24 @@
       
       <a class="nav-item" onclick="showPage('adminCuti')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        Persetujuan Cuti <span id="pendingBadge" style="display:none;background:var(--danger);color:#fff;border-radius:20px;padding:2px 7px;font-size:10px;font-weight:700;margin-left:4px;"></span>
-      </a>
-      <a class="nav-item" onclick="showPage('adminIjinKeluar')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Persetujuan Ijin Keluar <span id="pendingBadgeIjin" style="display:none;background:var(--danger);color:#fff;border-radius:20px;padding:2px 7px;font-size:10px;font-weight:700;margin-left:4px;"></span>
+        Persetujuan Cuti & Ijin <span id="pendingBadgeTotal" style="display:none;background:var(--danger);color:#fff;border-radius:20px;padding:2px 7px;font-size:10px;font-weight:700;margin-left:4px;"></span>
       </a>
       <a class="nav-item" onclick="showPage('adminPegawai')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Data Pegawai
+        Data Pegawai & Hak Cuti
       </a>
       <a class="nav-item" onclick="showPage('adminShift')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
         Jadwal Shift
-      </a>
-      <a class="nav-item" onclick="showPage('adminHakCuti')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        Hak Cuti Pegawai
       </a>
       <a class="nav-item" onclick="showPage('adminLembur')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
         Penugasan & SPK Lembur
       </a>
       
-      <a class="nav-item" onclick="showPage('adminLibur')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
-        Jadwal Hari Libur
-      </a>
-      <a class="nav-item" onclick="showPage('adminPotongan')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        Rekapitulasi Potongan
-      </a>
       <a class="nav-item" onclick="showPage('adminPengaturan')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Jam Kerja & Jarak
-      </a>
-      <a class="nav-item" onclick="showConfigSetup()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Konfigurasi Sistem
+        Jam Kerja, Libur & Konfig
       </a>
     </div>
     <div class="sidebar-footer">
@@ -1472,48 +1501,101 @@
       <div class="page active" id="page-dashboard">
         <div id="configBanner" style="display:none" class="config-banner">
           <h3>⚙ Konfigurasi Diperlukan</h3>
-          <p>Aplikasi belum terhubung ke Supabase. Buka menu <strong>Konfigurasi Sistem</strong> (khusus Admin) untuk mengisi Project URL & anon key Supabase.</p>
+          <p>Aplikasi belum terhubung ke Supabase. Buka menu <strong>Jam Kerja & Konfigurasi</strong> (khusus Admin) untuk mengisi Project URL & anon key Supabase.</p>
           <input type="text" id="quickScriptUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" onchange="quickSaveUrl(this.value)">
         </div>
 
-        <!-- ===== ADMIN DASHBOARD (tampilan lama) ===== -->
+        <!-- ===== ADMIN DASHBOARD (selaras mockup SIMPEG Portal) ===== -->
         <div id="adminDashboardWrap" style="display:none">
-          <div class="stats-grid" id="dashStats">
-            <div class="stat-card green" style="cursor:pointer" onclick="showPage('adminAbsensi')" title="Lihat Rekap Absensi"><div class="label">Hadir Hari Ini</div><div class="value" id="ds-hadir">-</div><div class="sub">Dari total pegawai</div></div>
-            <div class="stat-card amber" style="cursor:pointer" onclick="showPage('adminAbsensi')" title="Lihat Rekap Absensi"><div class="label">Terlambat</div><div class="value" id="ds-late">-</div><div class="sub">Masuk lebih dari jam kerja</div></div>
-            <div class="stat-card red" style="cursor:pointer" onclick="showPage('adminAbsensi'); setTimeout(bukaBelumAbsen, 50)" title="Lihat daftar pegawai yang belum absen"><div class="label">Tidak Hadir</div><div class="value" id="ds-absent">-</div><div class="sub">Belum absen masuk — klik untuk lihat daftar</div></div>
-            <div class="stat-card cyan" style="cursor:pointer" onclick="showPage('adminCuti')" title="Lihat Persetujuan Cuti &amp; Ijin"><div class="label">Cuti/Ijin</div><div class="value" id="ds-cuti">-</div><div class="sub">Disetujui hari ini</div></div>
+          <div class="pd-hero">
+            <div class="pd-hero-decor pd-hero-decor-1"></div>
+            <div class="pd-hero-decor pd-hero-decor-2"></div>
+            <div class="pd-hero-left">
+              <div class="pd-hero-avatar-wrap">
+                <div class="pd-hero-avatar-fallback" id="adminHeroAvatar">?</div>
+                <span class="pd-hero-active-pill">ADMIN</span>
+              </div>
+              <div>
+                <div class="pd-hero-date" id="adminHeroDate">-</div>
+                <h2 id="adminHeroGreeting">Selamat Datang!</h2>
+                <p id="adminHeroSubtitle">Berikut ringkasan kehadiran pegawai hari ini.</p>
+              </div>
+            </div>
+            <div class="pd-hero-actions">
+              <button class="btn-pd-primary" onclick="showPage('adminAbsensi')">📋 Kelola Absensi</button>
+              <button class="btn-pd-secondary" onclick="showPage('adminCuti')">🗓️ Persetujuan Cuti</button>
+            </div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr;gap:16px" id="dashCards">
-            <div class="card" id="myAbsenCard">
-              <div class="card-title">📋 Status Absensi Saya Hari Ini</div>
-              <div id="myAbsenStatus">
-                <div class="alert alert-info">Memuat data...</div>
+
+          <div class="pd-quick-grid" id="dashStats">
+            <div class="pd-quick-card" style="cursor:pointer" onclick="showPage('adminAbsensi')" title="Lihat Rekap Absensi">
+              <div class="pd-quick-icon">✅</div>
+              <div>
+                <div class="pd-quick-label">Hadir Hari Ini</div>
+                <div class="pd-quick-value" id="ds-hadir">-</div>
+              </div>
+              <span class="pd-quick-sub">Dari total pegawai</span>
+            </div>
+            <div class="pd-quick-card" style="cursor:pointer" onclick="showPage('adminAbsensi')" title="Lihat Rekap Absensi">
+              <div class="pd-quick-icon amber">⏰</div>
+              <div>
+                <div class="pd-quick-label">Terlambat</div>
+                <div class="pd-quick-value" id="ds-late">-</div>
+              </div>
+              <span class="pd-quick-sub">Masuk lebih dari jam kerja</span>
+            </div>
+            <div class="pd-quick-card" style="cursor:pointer" onclick="showPage('adminAbsensi'); setTimeout(bukaBelumAbsen, 50)" title="Lihat daftar pegawai yang belum absen">
+              <div class="pd-quick-icon red">⛔</div>
+              <div>
+                <div class="pd-quick-label">Tidak Hadir</div>
+                <div class="pd-quick-value" id="ds-absent">-</div>
+              </div>
+              <span class="pd-quick-sub">Belum absen — klik utk lihat</span>
+            </div>
+            <div class="pd-quick-card" style="cursor:pointer" onclick="showPage('adminCuti')" title="Lihat Persetujuan Cuti &amp; Ijin">
+              <div class="pd-quick-icon purple">🗓️</div>
+              <div>
+                <div class="pd-quick-label">Cuti/Ijin</div>
+                <div class="pd-quick-value" id="ds-cuti">-</div>
+              </div>
+              <span class="pd-quick-sub">Disetujui hari ini</span>
+            </div>
+          </div>
+
+          <div class="pd-bottom-grid">
+            <div style="display:grid;grid-template-columns:1fr;gap:16px" id="dashCards">
+              <div class="card" id="myAbsenCard">
+                <div class="card-title">📋 Status Absensi Saya Hari Ini</div>
+                <div id="myAbsenStatus">
+                  <div class="alert alert-info">Memuat data...</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card pd-table-card">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+                <div class="card-title" id="recentAbsenTitle" style="margin-bottom:0">📅 Riwayat Absensi</div>
+                <div class="pd-table-filter-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                  <input type="date" id="dashAbsenFrom" onchange="filterDashAbsen()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit">
+                  <span style="font-size:12px;color:var(--text-muted)">s/d</span>
+                  <input type="date" id="dashAbsenTo" onchange="filterDashAbsen()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit">
+                  <button class="btn btn-primary btn-sm" onclick="filterDashAbsen()" style="padding:6px 14px;font-size:12px">🔍</button>
+                  <button class="btn btn-outline btn-sm" onclick="resetDashAbsen()" style="padding:6px 12px;font-size:12px">Reset</button>
+                </div>
+              </div>
+              <div id="dashAbsenSummary" style="display:none;margin-bottom:12px"></div>
+              <div class="table-wrap">
+                <table id="recentAbsenTable">
+                  <thead><tr><th>Tanggal</th><th>Masuk</th><th>Status Masuk</th><th>Pulang</th><th>Status Pulang</th><th>Durasi</th></tr></thead>
+                  <tbody id="recentAbsenBody"></tbody>
+                </table>
               </div>
             </div>
           </div>
-          <div class="card" id="adminPiketWrap" style="margin-top:16px">
+
+          <div class="card" id="adminPiketWrap" style="margin-top:20px">
             <div class="card-title">🛡️ Piket Security Hari Ini</div>
             <div id="adminPiketBody"><div class="alert alert-info">⏳ Memuat data...</div></div>
-          </div>
-          <div class="card" style="margin-top:16px">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-              <div class="card-title" id="recentAbsenTitle" style="margin-bottom:0">📅 Riwayat Absensi</div>
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                <input type="date" id="dashAbsenFrom" onchange="filterDashAbsen()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit">
-                <span style="font-size:12px;color:var(--text-muted)">s/d</span>
-                <input type="date" id="dashAbsenTo" onchange="filterDashAbsen()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit">
-                <button class="btn btn-primary btn-sm" onclick="filterDashAbsen()" style="padding:6px 14px;font-size:12px">🔍</button>
-                <button class="btn btn-outline btn-sm" onclick="resetDashAbsen()" style="padding:6px 12px;font-size:12px">Reset</button>
-              </div>
-            </div>
-            <div id="dashAbsenSummary" style="display:none;margin-bottom:12px"></div>
-            <div class="table-wrap">
-              <table id="recentAbsenTable">
-                <thead><tr><th>Tanggal</th><th>Masuk</th><th>Status Masuk</th><th>Pulang</th><th>Status Pulang</th><th>Durasi</th></tr></thead>
-                <tbody id="recentAbsenBody"></tbody>
-              </table>
-            </div>
           </div>
         </div>
 
@@ -1531,11 +1613,16 @@
                 <div class="pd-hero-date" id="pdHeroDate">-</div>
                 <h2 id="pdGreeting">Selamat Datang!</h2>
                 <p id="pdSubtitle">Jangan lupa untuk melakukan absensi hari ini.</p>
+                <div class="pd-checklist-reminder" id="pdChecklistReminder" style="display:none">
+                  <span class="pd-checklist-reminder-dot"></span>
+                  Setelah melakukan absensi, jangan lupa mengisi cek list tugas harian.
+                </div>
               </div>
             </div>
             <div class="pd-hero-actions">
               <button class="btn-pd-primary" onclick="showPage('absensi')">🖐 Absen Sekarang</button>
               <button class="btn-pd-secondary" onclick="showPage('cuti')">📋 Ajukan Cuti</button>
+              <button class="btn-pd-checklist" id="pdChecklistBtn" onclick="showPage('checklist')" style="display:none">✅ Cek List Tugas Harian</button>
             </div>
           </div>
 
@@ -1631,7 +1718,7 @@
             <div class="card pd-table-card">
               <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
                 <div class="card-title" style="margin-bottom:0">Aktivitas Terakhir</div>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <div class="pd-table-filter-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                   <input type="date" id="pdAbsenFrom" onchange="filterPdAbsen()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit">
                   <span style="font-size:12px;color:var(--text-muted)">s/d</span>
                   <input type="date" id="pdAbsenTo" onchange="filterPdAbsen()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit">
@@ -1934,6 +2021,13 @@
 
       <!-- ===== ADMIN: ABSENSI ===== -->
       <div class="page" id="page-adminAbsensi">
+        <div class="tabs" id="rekapMainTabs" style="margin-bottom:16px">
+          <div class="tab active" onclick="switchRekapMainTab('absensi')">📋 Rekap Absensi</div>
+          <div class="tab" onclick="switchRekapMainTab('potongan')">💰 Rekap Potongan</div>
+        </div>
+
+        <!-- ===== SUB: REKAP ABSENSI ===== -->
+        <div id="rekapAbsensiWrap">
         <div class="stats-grid" style="margin-bottom:16px">
           <div class="stat-card blue"><div class="label">Total Hadir</div><div class="value" id="adm-hadir">-</div><div class="sub">Hari ini</div></div>
           <div class="stat-card amber"><div class="label">Terlambat</div><div class="value" id="adm-late">-</div><div class="sub">Hari ini</div></div>
@@ -1990,58 +2084,152 @@
           </div>
           <div class="pagination" id="pgAdminAbsensi"></div>
         </div>
+        </div>
+
+        <!-- ===== SUB: REKAP POTONGAN ===== -->
+        <div id="rekapPotonganWrap" style="display:none">
+        <!-- Info potongan -->
+        <div class="card" style="background:linear-gradient(135deg,#0b3d2e,#1a7a52);color:#fff;margin-bottom:16px">
+          <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+            <div>
+              <div style="font-size:11px;opacity:0.7;font-weight:600;margin-bottom:4px">POTONGAN TERLAMBAT</div>
+              <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace">1%</div>
+              <div style="font-size:12px;opacity:0.7">per kejadian</div>
+            </div>
+            <div style="width:1px;height:48px;background:rgba(255,255,255,0.2)"></div>
+            <div>
+              <div style="font-size:11px;opacity:0.7;font-weight:600;margin-bottom:4px">POTONGAN PULANG CEPAT</div>
+              <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace">1%</div>
+              <div style="font-size:12px;opacity:0.7">per kejadian</div>
+            </div>
+            <div style="width:1px;height:48px;background:rgba(255,255,255,0.2)"></div>
+            <div>
+              <div style="font-size:11px;opacity:0.7;font-weight:600;margin-bottom:4px">POTONGAN TIDAK MASUK</div>
+              <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace">4%</div>
+              <div style="font-size:12px;opacity:0.7">per hari (tanpa ijin/cuti)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💰 Rekapitulasi Potongan Per Pegawai</div>
+          <div class="filter-bar">
+            <div class="field"><label>Dari</label><input type="date" id="potFilterFrom"></div>
+            <div class="field"><label>Sampai</label><input type="date" id="potFilterTo"></div>
+            <div class="field"><label>Jabatan</label>
+              <select id="potFilterJab">
+                <option value="">Semua</option>
+                <option>Cleaning Service</option>
+                <option>Pramubakti</option>
+                <option>Security</option>
+                <option>Pengemudi</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="loadAdminPotongan()">🔍 Hitung</button>
+            <button class="btn btn-success" onclick="exportPotonganExcel()" style="background:#16a34a;border-color:#16a34a">⬇ Export Excel</button>
+          </div>
+
+          <div id="potonganSummaryCards" style="display:none;margin-bottom:16px">
+            <div class="stats-grid">
+              <div class="stat-card red"><div class="label">Total Terlambat</div><div class="value" id="pot-late">0</div><div class="sub">kejadian</div></div>
+              <div class="stat-card amber"><div class="label">Total Pulang Cepat</div><div class="value" id="pot-early">0</div><div class="sub">kejadian</div></div>
+              <div class="stat-card red"><div class="label">Total Tidak Masuk</div><div class="value" id="pot-absent">0</div><div class="sub">hari tanpa ijin</div></div>
+              <div class="stat-card blue"><div class="label">Rata-rata Potongan</div><div class="value" id="pot-avg">0%</div><div class="sub">per pegawai</div></div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table id="potonganTable">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>ID Pegawai</th>
+                  <th>Nama</th>
+                  <th>Jabatan</th>
+                  <th>Hari Kerja</th>
+                  <th>Hadir</th>
+                  <th style="color:#86efac">Ijin/Cuti Disetujui</th>
+                  <th style="color:#fca5a5">Terlambat</th>
+                  <th style="color:#fcd34d">Pulang Cepat</th>
+                  <th style="color:#fca5a5">Tidak Masuk</th>
+                  <th style="color:#fca5a5">Pot. Terlambat</th>
+                  <th style="color:#fcd34d">Pot. Pulang Cepat</th>
+                  <th style="color:#fca5a5">Pot. Tidak Masuk</th>
+                  <th style="background:#dc2626;color:#fff;border-radius:4px">TOTAL POTONGAN</th>
+                </tr>
+              </thead>
+              <tbody id="adminPotonganBody">
+                <tr><td colspan="14" style="text-align:center;padding:40px;color:var(--text-muted)">
+                  Pilih periode dan klik <strong>Hitung</strong>
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pgAdminPotongan"></div>
+        </div>
+        </div>
       </div>
 
-      <!-- ===== ADMIN: CUTI ===== -->
+
       <div class="page" id="page-adminCuti">
         <div class="card">
-          <div class="card-title">✅ Persetujuan Cuti & Ijin</div>
-          <div class="tabs" style="align-items:center;gap:10px;flex-wrap:wrap">
-            <div class="tab active" onclick="switchAdminCutiTab('pending')">⏳ Pending</div>
-            <div class="tab" onclick="switchAdminCutiTab('all')">📋 Semua</div>
-            <button class="btn btn-danger btn-sm" id="btnBulkDeleteCuti" style="display:none" onclick="hapusCutiBulk()">🗑 Hapus Terpilih (0)</button>
+          <div class="card-title">✅ Persetujuan Cuti & Ijin Keluar</div>
+          <div class="tabs" id="approvalMainTabs" style="margin-bottom:16px">
+            <div class="tab active" onclick="switchApprovalMainTab('cuti')">🗓️ Cuti & Ijin</div>
+            <div class="tab" onclick="switchApprovalMainTab('ijin')">🚪 Ijin Keluar</div>
           </div>
-          <div class="import-bar">
-            <label class="btn-import">
-              📥 Import Data Cuti
-              <input type="file" id="cutiFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importCutiFile(event)">
-            </label>
-            <button class="btn btn-outline btn-sm" onclick="downloadTemplateCuti()">⬇ Template Import</button>
+
+          <!-- ===== SUB: PERSETUJUAN CUTI ===== -->
+          <div id="approvalCutiWrap">
+            <div class="tabs" id="cutiSubTabs" style="align-items:center;gap:10px;flex-wrap:wrap">
+              <div class="tab active" onclick="switchAdminCutiTab('pending')">⏳ Pending</div>
+              <div class="tab" onclick="switchAdminCutiTab('all')">📋 Semua</div>
+              <button class="btn btn-danger btn-sm" id="btnBulkDeleteCuti" style="display:none" onclick="hapusCutiBulk()">🗑 Hapus Terpilih (0)</button>
+            </div>
+            <div class="import-bar">
+              <label class="btn-import">
+                📥 Import Data Cuti
+                <input type="file" id="cutiFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importCutiFile(event)">
+              </label>
+              <button class="btn btn-outline btn-sm" onclick="downloadTemplateCuti()">⬇ Template Import</button>
+            </div>
+            <div class="import-hint">📋 Format kolom: ID Karyawan | Nama | Jenis Cuti | Tanggal Mulai | Tanggal Selesai | Jumlah Hari | Alasan | Status</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th style="width:36px"><input type="checkbox" id="chkAllCuti" onchange="toggleAllCuti(this)"></th><th>ID</th><th>Nama</th><th>Jenis</th><th>Mulai</th><th>Selesai</th><th>Hari</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody id="adminCutiBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="pgAdminCuti"></div>
           </div>
-          <div class="import-hint">📋 Format kolom: ID Karyawan | Nama | Jenis Cuti | Tanggal Mulai | Tanggal Selesai | Jumlah Hari | Alasan | Status</div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th style="width:36px"><input type="checkbox" id="chkAllCuti" onchange="toggleAllCuti(this)"></th><th>ID</th><th>Nama</th><th>Jenis</th><th>Mulai</th><th>Selesai</th><th>Hari</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead>
-              <tbody id="adminCutiBody"></tbody>
-            </table>
+
+          <!-- ===== SUB: PERSETUJUAN IJIN KELUAR ===== -->
+          <div id="approvalIjinWrap" style="display:none">
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Setujui atau tolak permohonan ijin keluar sementara pada jam kerja, lengkap dengan catatan untuk pegawai.</p>
+            <div class="tabs" id="ijinSubTabs" style="align-items:center;gap:10px;flex-wrap:wrap">
+              <div class="tab active" onclick="switchAdminIjinTab('pending')">⏳ Pending</div>
+              <div class="tab" onclick="switchAdminIjinTab('all')">📋 Semua</div>
+              <button class="btn btn-danger btn-sm" id="btnBulkDeleteIjin" style="display:none" onclick="hapusIjinBulk()">🗑 Hapus Terpilih (0)</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th style="width:36px"><input type="checkbox" id="chkAllIjin" onchange="toggleAllIjin(this)"></th><th>ID</th><th>Nama</th><th>Tanggal</th><th>Keperluan</th><th>Jam Keluar</th><th>Jam Kembali</th><th>Status</th><th>Catatan Admin</th><th>Aksi</th></tr></thead>
+                <tbody id="adminIjinBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="pgAdminIjin"></div>
           </div>
-          <div class="pagination" id="pgAdminCuti"></div>
         </div>
       </div>
 
-      <!-- ===== ADMIN: PERSETUJUAN IJIN KELUAR ===== -->
-      <div class="page" id="page-adminIjinKeluar">
-        <div class="card">
-          <div class="card-title">🚪 Persetujuan Ijin Keluar</div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Setujui atau tolak permohonan ijin keluar sementara pada jam kerja, lengkap dengan catatan untuk pegawai.</p>
-          <div class="tabs" style="align-items:center;gap:10px;flex-wrap:wrap">
-            <div class="tab active" onclick="switchAdminIjinTab('pending')">⏳ Pending</div>
-            <div class="tab" onclick="switchAdminIjinTab('all')">📋 Semua</div>
-            <button class="btn btn-danger btn-sm" id="btnBulkDeleteIjin" style="display:none" onclick="hapusIjinBulk()">🗑 Hapus Terpilih (0)</button>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th style="width:36px"><input type="checkbox" id="chkAllIjin" onchange="toggleAllIjin(this)"></th><th>ID</th><th>Nama</th><th>Tanggal</th><th>Keperluan</th><th>Jam Keluar</th><th>Jam Kembali</th><th>Status</th><th>Catatan Admin</th><th>Aksi</th></tr></thead>
-              <tbody id="adminIjinBody"></tbody>
-            </table>
-          </div>
-          <div class="pagination" id="pgAdminIjin"></div>
-        </div>
-      </div>
-
-      <!-- ===== ADMIN: PEGAWAI ===== -->
+      <!-- ===== ADMIN: PEGAWAI & HAK CUTI ===== -->
       <div class="page" id="page-adminPegawai">
-        <div class="card">
+        <div class="tabs" id="pegawaiMainTabs" style="margin-bottom:16px">
+          <div class="tab active" onclick="switchPegawaiMainTab('pegawai')">👥 Data Seluruh Pegawai</div>
+          <div class="tab" onclick="switchPegawaiMainTab('hakCuti')">🏖 Hak Cuti Pegawai</div>
+        </div>
+        <div id="pegawaiTabContent" style="display:block;">
+<div class="card">
           <div class="card-title">👥 Data Seluruh Pegawai</div>
           <div class="filter-bar">
             <div class="field"><label>Pekerjaan</label>
@@ -2073,8 +2261,53 @@
           </div>
           <div class="pagination" id="pgAdminPegawai"></div>
         </div>
-      </div>
+        </div>
+        <div id="hakCutiTabContent" style="display:none;">
+<div class="card">
+          <div class="card-title">🏖 Hak Cuti Seluruh Pegawai</div>
 
+          <!-- Info periode aktif & reset otomatis -->
+          <div class="alert alert-info" id="hakCutiPeriodeInfo" style="margin-bottom:16px;font-size:13px"></div>
+
+          <!-- Kartu ringkasan -->
+          <div class="stats-grid" id="hakCutiStats" style="margin-bottom:16px">
+            <div class="stat-card blue"><div class="label">Total Pegawai</div><div class="value" id="hc-total">-</div><div class="sub">Pada periode berjalan</div></div>
+            <div class="stat-card amber"><div class="label">Total Terpakai</div><div class="value" id="hc-pakai">-</div><div class="sub">Hari, periode berjalan</div></div>
+            <div class="stat-card green"><div class="label">Total Sisa</div><div class="value" id="hc-sisa">-</div><div class="sub">Hari, seluruh pegawai</div></div>
+            <div class="stat-card red"><div class="label">Perlu Perhatian</div><div class="value" id="hc-warn">-</div><div class="sub">Sisa ≤ 2 hari / habis</div></div>
+          </div>
+
+          <div class="filter-bar">
+            <div class="field"><label>Pekerjaan</label>
+              <select id="filterHakCutiJab">
+                <option value="">Semua</option>
+                <option>Cleaning Service</option>
+                <option>Pramubakti</option>
+                <option>Security</option>
+                <option>Pengemudi</option>
+              </select>
+            </div>
+            <div class="field"><label>Periode Hak Cuti</label>
+              <select id="filterHakCutiPeriode"></select>
+            </div>
+            <button class="btn btn-primary" onclick="loadAdminHakCuti()">🔍 Filter</button>
+            <button class="btn btn-outline" onclick="exportHakCutiExcel()">📥 Export Excel</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th><th>Nama</th><th>Pekerjaan</th><th>Tim</th>
+                  <th>Hak Cuti</th><th>Terpakai</th><th>Sisa</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="adminHakCutiBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pgAdminHakCuti"></div>
+        </div>
+        </div>
+      </div>
       <!-- ===== ADMIN: SHIFT ===== -->
       <div class="page" id="page-adminShift">
 
@@ -2193,53 +2426,6 @@
     
 
 
-      <!-- ===== ADMIN: HAK CUTI ===== -->
-      <div class="page" id="page-adminHakCuti">
-        <div class="card">
-          <div class="card-title">🏖 Hak Cuti Seluruh Pegawai</div>
-
-          <!-- Info periode aktif & reset otomatis -->
-          <div class="alert alert-info" id="hakCutiPeriodeInfo" style="margin-bottom:16px;font-size:13px"></div>
-
-          <!-- Kartu ringkasan -->
-          <div class="stats-grid" id="hakCutiStats" style="margin-bottom:16px">
-            <div class="stat-card blue"><div class="label">Total Pegawai</div><div class="value" id="hc-total">-</div><div class="sub">Pada periode berjalan</div></div>
-            <div class="stat-card amber"><div class="label">Total Terpakai</div><div class="value" id="hc-pakai">-</div><div class="sub">Hari, periode berjalan</div></div>
-            <div class="stat-card green"><div class="label">Total Sisa</div><div class="value" id="hc-sisa">-</div><div class="sub">Hari, seluruh pegawai</div></div>
-            <div class="stat-card red"><div class="label">Perlu Perhatian</div><div class="value" id="hc-warn">-</div><div class="sub">Sisa ≤ 2 hari / habis</div></div>
-          </div>
-
-          <div class="filter-bar">
-            <div class="field"><label>Pekerjaan</label>
-              <select id="filterHakCutiJab">
-                <option value="">Semua</option>
-                <option>Cleaning Service</option>
-                <option>Pramubakti</option>
-                <option>Security</option>
-                <option>Pengemudi</option>
-              </select>
-            </div>
-            <div class="field"><label>Periode Hak Cuti</label>
-              <select id="filterHakCutiPeriode"></select>
-            </div>
-            <button class="btn btn-primary" onclick="loadAdminHakCuti()">🔍 Filter</button>
-            <button class="btn btn-outline" onclick="exportHakCutiExcel()">📥 Export Excel</button>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th><th>Nama</th><th>Pekerjaan</th><th>Tim</th>
-                  <th>Hak Cuti</th><th>Terpakai</th><th>Sisa</th><th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="adminHakCutiBody"></tbody>
-            </table>
-          </div>
-          <div class="pagination" id="pgAdminHakCuti"></div>
-        </div>
-      </div>
-
       <!-- ===== ADMIN: PENUGASAN & SPK LEMBUR ===== -->
       <div class="page" id="page-adminLembur">
         <div class="card" style="margin-bottom:20px">
@@ -2323,96 +2509,40 @@
         </div>
       </div>
 
-      <!-- ===== ADMIN: REKAPITULASI POTONGAN ===== -->
-      <div class="page" id="page-adminPotongan">
-        <!-- Info potongan -->
-        <div class="card" style="background:linear-gradient(135deg,#0b3d2e,#1a7a52);color:#fff;margin-bottom:16px">
-          <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center">
-            <div>
-              <div style="font-size:11px;opacity:0.7;font-weight:600;margin-bottom:4px">POTONGAN TERLAMBAT</div>
-              <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace">1%</div>
-              <div style="font-size:12px;opacity:0.7">per kejadian</div>
-            </div>
-            <div style="width:1px;height:48px;background:rgba(255,255,255,0.2)"></div>
-            <div>
-              <div style="font-size:11px;opacity:0.7;font-weight:600;margin-bottom:4px">POTONGAN PULANG CEPAT</div>
-              <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace">1%</div>
-              <div style="font-size:12px;opacity:0.7">per kejadian</div>
-            </div>
-            <div style="width:1px;height:48px;background:rgba(255,255,255,0.2)"></div>
-            <div>
-              <div style="font-size:11px;opacity:0.7;font-weight:600;margin-bottom:4px">POTONGAN TIDAK MASUK</div>
-              <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace">4%</div>
-              <div style="font-size:12px;opacity:0.7">per hari (tanpa ijin/cuti)</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">💰 Rekapitulasi Potongan Per Pegawai</div>
-          <div class="filter-bar">
-            <div class="field"><label>Dari</label><input type="date" id="potFilterFrom"></div>
-            <div class="field"><label>Sampai</label><input type="date" id="potFilterTo"></div>
-            <div class="field"><label>Jabatan</label>
-              <select id="potFilterJab">
-                <option value="">Semua</option>
-                <option>Cleaning Service</option>
-                <option>Pramubakti</option>
-                <option>Security</option>
-                <option>Pengemudi</option>
-              </select>
-            </div>
-            <button class="btn btn-primary" onclick="loadAdminPotongan()">🔍 Hitung</button>
-            <button class="btn btn-success" onclick="exportPotonganExcel()" style="background:#16a34a;border-color:#16a34a">⬇ Export Excel</button>
-          </div>
-
-          <div id="potonganSummaryCards" style="display:none;margin-bottom:16px">
-            <div class="stats-grid">
-              <div class="stat-card red"><div class="label">Total Terlambat</div><div class="value" id="pot-late">0</div><div class="sub">kejadian</div></div>
-              <div class="stat-card amber"><div class="label">Total Pulang Cepat</div><div class="value" id="pot-early">0</div><div class="sub">kejadian</div></div>
-              <div class="stat-card red"><div class="label">Total Tidak Masuk</div><div class="value" id="pot-absent">0</div><div class="sub">hari tanpa ijin</div></div>
-              <div class="stat-card blue"><div class="label">Rata-rata Potongan</div><div class="value" id="pot-avg">0%</div><div class="sub">per pegawai</div></div>
-            </div>
-          </div>
-
-          <div class="table-wrap">
-            <table id="potonganTable">
-              <thead>
-                <tr>
-                  <th>No</th>
-                  <th>ID Pegawai</th>
-                  <th>Nama</th>
-                  <th>Jabatan</th>
-                  <th>Hari Kerja</th>
-                  <th>Hadir</th>
-                  <th style="color:#86efac">Ijin/Cuti Disetujui</th>
-                  <th style="color:#fca5a5">Terlambat</th>
-                  <th style="color:#fcd34d">Pulang Cepat</th>
-                  <th style="color:#fca5a5">Tidak Masuk</th>
-                  <th style="color:#fca5a5">Pot. Terlambat</th>
-                  <th style="color:#fcd34d">Pot. Pulang Cepat</th>
-                  <th style="color:#fca5a5">Pot. Tidak Masuk</th>
-                  <th style="background:#dc2626;color:#fff;border-radius:4px">TOTAL POTONGAN</th>
-                </tr>
-              </thead>
-              <tbody id="adminPotonganBody">
-                <tr><td colspan="14" style="text-align:center;padding:40px;color:var(--text-muted)">
-                  Pilih periode dan klik <strong>Hitung</strong>
-                </td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="pagination" id="pgAdminPotongan"></div>
-        </div>
-      </div>
-
-      <!-- ===== ADMIN: PENGATURAN JAM KERJA & JARAK ===== -->
+      <!-- ===== ADMIN: PENGATURAN JAM KERJA, JARAK & LIBUR ===== -->
       <div class="page" id="page-adminPengaturan">
-        <div class="settings-hero">
-          <h2>⏰ Pengaturan Jam Kerja &amp; Radius Absensi</h2>
-          <p>Atur jam masuk/pulang per pekerjaan serta lokasi &amp; toleransi jarak (radius) titik absensi kantor.</p>
+        <div class="tabs" id="pengaturanMainTabs" style="margin-bottom:16px">
+          <div class="tab active" onclick="switchPengaturanTab('pengaturan')">⚙ Konfigurasi Sistem</div>
+          <div class="tab" onclick="switchPengaturanTab('libur')">🗓 Jadwal Hari Libur</div>
+        </div>
+        <div id="pengaturanTabContent" style="display:block;">
+<div class="settings-hero">
+          <h2>⏰ Jam Kerja, Jarak &amp; Konfigurasi Sistem</h2>
+          <p>Atur jam masuk/pulang, lokasi &amp; toleransi jarak absensi, serta koneksi sistem ke database Supabase.</p>
         </div>
         <div class="settings-grid">
+          <!-- KONFIGURASI SISTEM -->
+          <div class="card">
+            <div class="card-title">⚙ Konfigurasi Sistem</div>
+            <div style="display:inline-flex;align-items:center;gap:6px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:#92400e;margin-bottom:14px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Hanya dapat diakses oleh Administrator
+            </div>
+            <div class="import-hint">Hubungkan aplikasi ke database Supabase dengan mengisi Project URL &amp; anon key dari project Anda.</div>
+            <div class="field" style="margin-bottom:14px">
+              <label>Supabase Project URL</label>
+              <input type="text" id="cfgSheetId" placeholder="https://xxxxxxxxxxxx.supabase.co">
+            </div>
+            <div class="field" style="margin-bottom:14px">
+              <label>Supabase anon public key</label>
+              <input type="text" id="cfgScriptUrl" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+            </div>
+            <div class="alert alert-info" style="font-size:13px;margin-bottom:14px">
+              💡 Dapatkan dari Supabase Dashboard → <strong>Project Settings → API</strong>. Salin <strong>Project URL</strong> dan <strong>anon public</strong> key.
+            </div>
+            <button class="btn btn-primary" onclick="saveConfig()">💾 Simpan Konfigurasi</button>
+          </div>
+
           <!-- JAM KERJA -->
           <div class="card">
             <div class="card-title">🕐 Jam Kerja per Pekerjaan / Shift</div>
@@ -2515,8 +2645,41 @@
             <button class="btn btn-success" onclick="saveSpkLemburSettings()">💾 Simpan Pengaturan SPK Lembur</button>
           </div>
         </div>
-      </div>
+        </div>
+        <div id="liburTabContent" style="display:none;">
+<div class="card">
+          <div class="card-title">🗓 Jadwal Hari Libur</div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Menjadi parameter hari libur untuk pegawai Cleaning Service & Pramubakti. Security tetap mengikuti jadwal shift (kode Libur).</p>
 
+          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+            <div class="field"><label>Tanggal</label><input type="date" id="adm-libur-quick-tgl"></div>
+            <div class="field"><label>Keterangan</label><input type="text" id="adm-libur-quick-ket" placeholder="mis. Hari Raya Idul Fitri" style="min-width:220px"></div>
+            <button class="btn btn-primary" onclick="quickAddLibur()">➕ Tambah Libur</button>
+            <button class="btn btn-outline" onclick="document.getElementById('chkAllLibur').checked=false;hapusLiburBulk()">🗑 Hapus Terpilih</button>
+            <div class="field"><label>Generate Sabtu &amp; Minggu</label>
+              <div style="display:flex;gap:6px">
+                <input type="number" id="adm-libur-gen-tahun" value="2026" style="width:90px">
+                <button class="btn btn-success" style="background:#16a34a;border-color:#16a34a" onclick="generateWeekendLibur()">🔄 Generate</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:10px">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" id="chkAllLibur" onchange="toggleAllLibur(this)"></th>
+                  <th>Tanggal</th>
+                  <th>Keterangan</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="adminLiburBody"></tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+      </div>
       <!-- ===== CHECKLIST CS / PRAMUBAKTI ===== -->
       <div class="page" id="page-checklist">
         <div class="alert alert-info" style="margin-bottom:16px;font-size:13px">💾 Setiap tugas yang dicentang langsung tersimpan otomatis ke database, tercatat per hari.</div>
@@ -2634,41 +2797,6 @@
                 </tr>
               </thead>
               <tbody id="daftarTugasAdminBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== ADMIN: JADWAL HARI LIBUR ===== -->
-      <div class="page" id="page-adminLibur">
-        <div class="card">
-          <div class="card-title">🗓 Jadwal Hari Libur</div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Menjadi parameter hari libur untuk pegawai Cleaning Service & Pramubakti. Security tetap mengikuti jadwal shift (kode Libur).</p>
-
-          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
-            <div class="field"><label>Tanggal</label><input type="date" id="adm-libur-quick-tgl"></div>
-            <div class="field"><label>Keterangan</label><input type="text" id="adm-libur-quick-ket" placeholder="mis. Hari Raya Idul Fitri" style="min-width:220px"></div>
-            <button class="btn btn-primary" onclick="quickAddLibur()">➕ Tambah Libur</button>
-            <button class="btn btn-outline" onclick="document.getElementById('chkAllLibur').checked=false;hapusLiburBulk()">🗑 Hapus Terpilih</button>
-            <div class="field"><label>Generate Sabtu &amp; Minggu</label>
-              <div style="display:flex;gap:6px">
-                <input type="number" id="adm-libur-gen-tahun" value="2026" style="width:90px">
-                <button class="btn btn-success" style="background:#16a34a;border-color:#16a34a" onclick="generateWeekendLibur()">🔄 Generate</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="table-wrap" style="margin-top:10px">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width:36px"><input type="checkbox" id="chkAllLibur" onchange="toggleAllLibur(this)"></th>
-                  <th>Tanggal</th>
-                  <th>Keterangan</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody id="adminLiburBody"></tbody>
             </table>
           </div>
         </div>
@@ -3006,9 +3134,11 @@ function initSupabaseClient() {
   if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
     try {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } catch (e) { supabaseClient = null; }
+      SCRIPT_URL = 'supabase';
+    } catch (e) { supabaseClient = null; SCRIPT_URL = ''; }
   } else {
     supabaseClient = null;
+    SCRIPT_URL = '';
   }
 }
 initSupabaseClient();
@@ -3016,7 +3146,7 @@ initSupabaseClient();
 // SCRIPT_URL dipertahankan sekadar sebagai penanda "backend siap dipakai?"
 // supaya seluruh pengecekan `if (SCRIPT_URL)` di kode lama tetap berfungsi
 // tanpa perlu diubah satu per satu — sekarang backend-nya Supabase.
-var SCRIPT_URL = supabaseClient ? 'supabase' : '';
+
 var SHEET_ID = '';
 
 // ============================================================
@@ -3798,25 +3928,18 @@ function showAlert(elId, type, msg) {
 // ============================================================
 // CONFIG
 // ============================================================
-function showConfigSetup() {
-  // Hanya admin yang bisa akses
+function saveConfig() {
+  // Hanya admin yang bisa mengubah
   if (!currentUser || currentUser.status !== 'Admin') {
     alert('⛔ Akses ditolak. Konfigurasi hanya dapat diubah oleh Administrator.');
     return;
   }
-  document.getElementById('cfgSheetId').value  = SUPABASE_URL || '';
-  document.getElementById('cfgScriptUrl').value = SUPABASE_ANON_KEY || '';
-  document.getElementById('configModal').classList.add('open');
-}
-function closeConfigModal() { document.getElementById('configModal').classList.remove('open'); }
-function saveConfig() {
   SUPABASE_URL      = document.getElementById('cfgSheetId').value.trim();
   SUPABASE_ANON_KEY = document.getElementById('cfgScriptUrl').value.trim();
   localStorage.setItem('ppnpn_supabase_url', SUPABASE_URL);
   localStorage.setItem('ppnpn_supabase_key', SUPABASE_ANON_KEY);
   initSupabaseClient();
   SCRIPT_URL = supabaseClient ? 'supabase' : '';
-  closeConfigModal();
   // Tampilkan notifikasi di dalam app
   var notif = document.createElement('div');
   notif.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;background:#16a34a;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.2);animation:fadeIn 0.3s';
@@ -5292,6 +5415,7 @@ function loadRememberedLogin() {
 // Modal daftar user di halaman login — membantu pegawai yang lupa
 // username/format password awal sebelum berhasil masuk aplikasi.
 async function openLoginUserListModal() {
+  if (!supabaseClient) initSupabaseClient();
   document.getElementById('loginUserListModal').classList.add('open');
   var body = document.getElementById('loginUserListBody');
   body.innerHTML = '<p style="font-size:13px;color:var(--text-muted);text-align:center;padding:20px 0">Memuat daftar user...</p>';
@@ -5319,6 +5443,7 @@ async function openLoginUserListModal() {
 }
 
 async function doLogin() {
+  if (!supabaseClient) initSupabaseClient();
   const username = document.getElementById('loginUsername').value.trim().toLowerCase();
   const password = document.getElementById('loginPassword').value.trim();
   const remember = document.getElementById('rememberMe').checked;
@@ -5417,7 +5542,12 @@ function initApp() {
   document.getElementById('topbarDate').textContent = todayStr();
 
 var menuCS = document.getElementById('menuChecklistCS');
-  if (menuCS) menuCS.style.display = ((u.pekerjaan === 'Cleaning Service' || u.pekerjaan === 'Pramubakti') && !isAdmin) ? 'flex' : 'none';
+  var isCSRole = (u.pekerjaan === 'Cleaning Service' || u.pekerjaan === 'Pramubakti') && !isAdmin;
+  if (menuCS) menuCS.style.display = isCSRole ? 'flex' : 'none';
+  var pdChecklistBtnEl = document.getElementById('pdChecklistBtn');
+  var pdChecklistReminderEl = document.getElementById('pdChecklistReminder');
+  if (pdChecklistBtnEl) pdChecklistBtnEl.style.display = isCSRole ? 'flex' : 'none';
+  if (pdChecklistReminderEl) pdChecklistReminderEl.style.display = isCSRole ? 'inline-flex' : 'none';
   // Preload jadwal hari libur & daftar tugas (dipakai lintas halaman)
   ensureLiburLoaded();
   ensureDaftarTugasLoaded();
@@ -5585,12 +5715,32 @@ function getPegawaiListForStats() {
 // ============================================================
 // NAVIGATION
 // ============================================================
+
+function switchPegawaiMainTab(tab) {
+  document.querySelectorAll('#pegawaiMainTabs .tab').forEach(function(t,i){
+    t.classList.toggle('active', (tab==='pegawai'&&i===0)||(tab==='hakCuti'&&i===1));
+  });
+  document.getElementById('pegawaiTabContent').style.display = tab==='pegawai' ? 'block' : 'none';
+  document.getElementById('hakCutiTabContent').style.display = tab==='hakCuti' ? 'block' : 'none';
+  if (tab === 'pegawai') loadAdminPegawai();
+  if (tab === 'hakCuti') loadAdminHakCuti();
+}
+
+function switchPengaturanTab(tab) {
+  document.querySelectorAll('#pengaturanMainTabs .tab').forEach(function(t,i) {
+    t.classList.toggle('active', (tab==='pengaturan'&&i===0)||(tab==='libur'&&i===1));
+  });
+  document.getElementById('pengaturanTabContent').style.display = tab==='pengaturan' ? 'block' : 'none';
+  document.getElementById('liburTabContent').style.display = tab==='libur' ? 'block' : 'none';
+  if (tab === 'libur') loadAdminLibur();
+}
+
 function showPage(name) {
   var u = currentUser;
   var isAdmin = u && u.status === 'Admin';
 
   // Access guard — pegawai tidak bisa akses halaman admin
-  var adminPages = ['adminAbsensi','adminCuti','adminIjinKeluar','adminPegawai','adminShift','adminHakCuti','adminPotongan','adminPengaturan', 'adminChecklistCS', 'adminLibur', 'adminLembur']; 
+  var adminPages = ['adminAbsensi','adminCuti','adminPegawai','adminShift','adminPengaturan', 'adminChecklistCS', 'adminLembur']; 
   var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga'];
   if (!isAdmin && adminPages.indexOf(name) >= 0) {
     alert('Akses ditolak. Halaman ini hanya untuk admin.');
@@ -5616,16 +5766,14 @@ function showPage(name) {
     ijinKeluar: '🚪 Ijin Keluar',
     profil: '👤 Profil Saya',
     keluarga: '👨‍👩‍👧 Data Keluarga',
-    adminAbsensi: '📋 Rekap Absensi Pegawai',
-    adminCuti: '✅ Persetujuan Cuti & Ijin',
-    adminIjinKeluar: '🚪 Persetujuan Ijin Keluar',
-    adminPegawai: '👥 Data Seluruh Pegawai',
+    adminAbsensi: '📋 Rekap Absensi & Potongan',
+    adminCuti: '✅ Persetujuan Cuti & Ijin Keluar',
+    adminPegawai: '👥 Data Pegawai & Hak Cuti',
     adminShift: '🔄 Jadwal Shift Security',
-    adminHakCuti: '🏖 Hak Cuti Pegawai',
+    
     adminLembur: '🔥 Penugasan & SPK Lembur',
-    adminPotongan: '💰 Rekapitulasi Potongan',
-    adminPengaturan: '⏰ Jam Kerja & Radius Absensi',
-    adminLibur: '🗓 Jadwal Hari Libur',
+    adminPengaturan: '⏰ Jam Kerja, Libur & Konfig',
+    
     libur: '🗓 Jadwal Hari Libur'
   };
   document.getElementById('topbarTitle').textContent = titles[name] || name;
@@ -5646,18 +5794,16 @@ function showPage(name) {
   if (name === 'absensi') initAbsensiPage();
   if (name === 'cuti') loadCutiPage();
   if (name === 'ijinKeluar') loadIjinKeluarPage();
-  if (name === 'adminIjinKeluar') { adminIjinCurrentTab='pending'; loadAdminIjinKeluar(); }
+  if (name === 'adminCuti') { switchApprovalMainTab('cuti'); switchAdminCutiTab('pending'); switchAdminIjinTab('pending'); }
   if (name === 'profil') loadProfil();
   if (name === 'keluarga') loadKeluarga();
-  if (name === 'adminAbsensi') { initAdminAbsensiFilter(); loadAdminAbsensi(); }
-  if (name === 'adminCuti') { adminCutiCurrentTab='pending'; loadAdminCuti(); }
-  if (name === 'adminPegawai') loadAdminPegawai();
+  if (name === 'adminAbsensi') { switchRekapMainTab('absensi'); initAdminAbsensiFilter(); loadAdminAbsensi(); initAdminPotongan(); }
+  if (name === 'adminPegawai') { switchPegawaiMainTab('pegawai'); }
   if (name === 'adminShift') { initShiftFilter(); switchShiftTab('generator'); loadShiftData(); renderShiftTimRoster(); }
-  if (name === 'adminHakCuti') loadAdminHakCuti();
+  
   if (name === 'adminLembur') initAdminLembur();
-  if (name === 'adminPotongan') initAdminPotongan();
-  if (name === 'adminPengaturan') loadPengaturanPage();
-  if (name === 'adminLibur') loadAdminLibur();
+  if (name === 'adminPengaturan') { switchPengaturanTab('pengaturan'); }
+  
   if (name === 'libur') loadLiburUserPage();
   if (name === 'dashboard') loadDashboard();
   if (name === 'checklist') loadChecklist();
@@ -5772,8 +5918,13 @@ async function loadDashboard() {
     document.getElementById('ds-cuti').textContent = pendingCuti;
 
     // Update stat labels for admin context
-    document.querySelector('#ds-cuti').closest('.stat-card').querySelector('.label').textContent = 'CUTI PENDING';
-    document.querySelector('#ds-cuti').closest('.stat-card').querySelector('.sub').textContent = 'Menunggu persetujuan';
+    var dsCutiCard = document.getElementById('ds-cuti').closest('.pd-quick-card');
+    if (dsCutiCard) {
+      var dsCutiLabel = dsCutiCard.querySelector('.pd-quick-label');
+      var dsCutiSub = dsCutiCard.querySelector('.pd-quick-sub');
+      if (dsCutiLabel) dsCutiLabel.textContent = 'CUTI PENDING';
+      if (dsCutiSub) dsCutiSub.textContent = 'Menunggu persetujuan';
+    }
 
     // Admin dashboard cards (data pegawai & absensi real dari database)
     dashCards.innerHTML = `
@@ -7106,6 +7257,15 @@ function initAdminAbsensiFilter() {
   document.getElementById('admFilterTo').value = d.toISOString().split('T')[0];
 }
 
+// Tab utama "Rekap Absensi" / "Rekap Potongan" (menu gabungan).
+function switchRekapMainTab(tab) {
+  document.querySelectorAll('#rekapMainTabs .tab').forEach(function(t,i){
+    t.classList.toggle('active', (tab==='absensi'&&i===0)||(tab==='potongan'&&i===1));
+  });
+  document.getElementById('rekapAbsensiWrap').style.display = tab==='absensi' ? '' : 'none';
+  document.getElementById('rekapPotonganWrap').style.display = tab==='potongan' ? '' : 'none';
+}
+
 async function loadAdminAbsensi() {
   const from = document.getElementById('admFilterFrom').value;
   const to   = document.getElementById('admFilterTo').value;
@@ -7389,9 +7549,25 @@ async function hapusCutiBulk() {
 // ============================================================
 // ADMIN: CUTI
 // ============================================================
+// Badge gabungan (jumlah total Cuti + Ijin Keluar yang masih Pending),
+// ditampilkan di menu sidebar "Persetujuan Cuti & Ijin".
+function updateApprovalBadge() {
+  var pendingCuti = (localPermohonan||[]).filter(function(p){ return p.Status==='Menunggu'; }).length;
+  var pendingIjin = (localIjinKeluar||[]).filter(function(p){ return p.status==='Menunggu'; }).length;
+  var total = pendingCuti + pendingIjin;
+  var badge = document.getElementById('pendingBadgeTotal');
+  if (badge) { badge.style.display = total>0 ? 'inline' : 'none'; badge.textContent = total; }
+}
+function switchApprovalMainTab(tab) {
+  document.querySelectorAll('#approvalMainTabs .tab').forEach(function(t,i){
+    t.classList.toggle('active', (tab==='cuti'&&i===0)||(tab==='ijin'&&i===1));
+  });
+  document.getElementById('approvalCutiWrap').style.display = tab==='cuti' ? '' : 'none';
+  document.getElementById('approvalIjinWrap').style.display = tab==='ijin' ? '' : 'none';
+}
 function switchAdminCutiTab(tab) {
   adminCutiCurrentTab = tab;
-  document.querySelectorAll('#page-adminCuti .tab').forEach((t,i)=>t.classList.toggle('active',(tab==='pending'&&i===0)||(tab==='all'&&i===1)));
+  document.querySelectorAll('#cutiSubTabs .tab').forEach((t,i)=>t.classList.toggle('active',(tab==='pending'&&i===0)||(tab==='all'&&i===1)));
   loadAdminCuti();
 }
 async function loadAdminCuti() {
@@ -7412,9 +7588,7 @@ async function loadAdminCuti() {
   data = data.slice().sort(function(a,b){ return (b.Tanggal_Mulai||'').localeCompare(a.Tanggal_Mulai||''); });
 
   var pending = localPermohonan.filter(function(p){ return p.Status==='Menunggu'; }).length;
-  var badge = document.getElementById('pendingBadge');
-  badge.style.display = pending>0 ? 'inline' : 'none';
-  badge.textContent = pending;
+  updateApprovalBadge();
 
   if (!data.length) { tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada permohonan</td></tr>'; document.getElementById('pgAdminCuti').innerHTML=''; return; }
   renderPaged('adminCuti', data, 'adminCutiBody', 'pgAdminCuti', function(p){ return `
@@ -7562,7 +7736,7 @@ async function loadIjinKeluarHistory() {
 
 function switchAdminIjinTab(tab) {
   adminIjinCurrentTab = tab;
-  document.querySelectorAll('#page-adminIjinKeluar .tab').forEach(function(t,i){ t.classList.toggle('active', (tab==='pending'&&i===0)||(tab==='all'&&i===1)); });
+  document.querySelectorAll('#ijinSubTabs .tab').forEach(function(t,i){ t.classList.toggle('active', (tab==='pending'&&i===0)||(tab==='all'&&i===1)); });
   loadAdminIjinKeluar();
 }
 
@@ -7584,8 +7758,7 @@ async function loadAdminIjinKeluar() {
   data = data.slice().sort(function(a,b){ return (b.tanggal||'').localeCompare(a.tanggal||''); });
 
   var pending = (localIjinKeluar||[]).filter(function(p){ return p.status==='Menunggu'; }).length;
-  var badge = document.getElementById('pendingBadgeIjin');
-  if (badge) { badge.style.display = pending>0 ? 'inline' : 'none'; badge.textContent = pending; }
+  updateApprovalBadge();
 
   if (!data.length) { tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada permohonan ijin keluar</td></tr>'; document.getElementById('pgAdminIjin').innerHTML=''; return; }
   renderPaged('adminIjin', data, 'adminIjinBody', 'pgAdminIjin', function(p){ return `
@@ -9163,6 +9336,8 @@ function downloadTemplateCuti() {
 // ADMIN: PENGATURAN JAM KERJA & RADIUS/JARAK ABSENSI
 // ============================================================
 function loadPengaturanPage() {
+  document.getElementById('cfgSheetId').value  = SUPABASE_URL || '';
+  document.getElementById('cfgScriptUrl').value = SUPABASE_ANON_KEY || '';
   renderJamKerjaSettingsTable();
   document.getElementById('setOfficeLat').value = officeLat != null ? officeLat : DEMO_RADIUS.officeLat;
   document.getElementById('setOfficeLon').value = officeLon != null ? officeLon : DEMO_RADIUS.officeLon;
@@ -9833,7 +10008,7 @@ function updateBottomNavActive(pageName) {
   // map sub-pages to bottom nav items
   if (pageName === 'keluarga') key = 'profil';
   if (pageName === 'ijinKeluar') key = 'cuti';
-  if (pageName === 'adminShift' || pageName === 'adminHakCuti' || pageName === 'adminPotongan' || pageName === 'adminPengaturan' || pageName === 'adminIjinKeluar') key = 'more';
+  if (pageName === 'adminShift' || pageName === 'adminHakCuti' || pageName === 'adminPengaturan') key = 'more';
   var target = document.getElementById('bn-' + key);
   if (target) target.classList.add('active');
 }
