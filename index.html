@@ -1348,18 +1348,16 @@
   .absensi-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   @media (max-width: 900px) {
     .absensi-layout { grid-template-columns: 1fr; }
-    /* Di layar sempit (HP), kartu profil + kamera/validasi wajah tampil
-       DULUAN, baru kartu Waktu Server & tombol absen di bawahnya — sesuai
-       permintaan, tanpa mengubah urutan di layar lebar (desktop) yang
-       tetap 2 kolom berdampingan. */
-    .absensi-side { order: -1; }
+    /* Urutan tampil (mobile & desktop) mengikuti urutan markup: Waktu
+       Server & tombol absen -> Validasi Lokasi & Wajah -> Riwayat
+       Kehadiran -> Profil Pegawai. */
   }
 
   /* ---- Hero: Waktu Server + tombol absen ---- */
   .absen-hero-card {
     background: linear-gradient(135deg, rgba(16,185,129,0.14), rgba(0,108,70,0.08));
     border: 1px solid rgba(0,108,70,0.14);
-    border-radius: 22px; padding: 22px 26px;
+    border-radius: 22px; padding: 22px 26px; margin-bottom: 16px;
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px;
   }
   .ahc-label { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #0d7d5c; margin-bottom: 6px; }
@@ -1853,28 +1851,54 @@
       <div class="page" id="page-absensi">
         <div id="absenAlert"></div>
 
+        <!-- Hero: Waktu server + tombol absen (paling atas) -->
+        <div class="absen-hero-card">
+          <div>
+            <div class="ahc-label">⏱ Waktu Server Saat Ini</div>
+            <div class="ahc-clock" id="absenClock">00:00:00</div>
+            <div class="ahc-sub"><span id="absenDateDisplay"></span> · Zona Waktu WIB (UTC+7)</div>
+          </div>
+          <div class="ahc-actions absensi-form-el">
+            <button class="btn-absen-masuk" id="btnAbsenMasuk" onclick="doAbsen('masuk')" disabled>→ Absen Masuk</button>
+            <button class="btn-absen-pulang" id="btnAbsenPulang" onclick="doAbsen('pulang')" disabled>⇥ Absen Pulang</button>
+          </div>
+        </div>
+
+        <!-- Hari Libur / Off Notice -->
+        <div id="holidayNotice" style="display:none" class="alert alert-warn">
+          🗓 Hari ini adalah hari libur. Tidak perlu melakukan absensi.
+        </div>
+        <div id="offDayNotice" style="display:none" class="alert alert-info">
+          😴 Anda sedang OFF hari ini sesuai jadwal shift. Tidak perlu absensi.
+        </div>
+
         <div class="absensi-layout">
           <!-- ===== KOLOM UTAMA ===== -->
           <div class="absensi-main">
-            <!-- Hero: Waktu server + tombol absen -->
-            <div class="absen-hero-card">
-              <div>
-                <div class="ahc-label">⏱ Waktu Server Saat Ini</div>
-                <div class="ahc-clock" id="absenClock">00:00:00</div>
-                <div class="ahc-sub"><span id="absenDateDisplay"></span> · Zona Waktu WIB (UTC+7)</div>
+            <!-- Kamera & Validasi Lokasi (tepat di atas Riwayat Kehadiran) -->
+            <div class="card absen-loc-card absensi-form-el" id="absensiFormWrap">
+              <div class="card-title-row">
+                <div class="card-title">📍 Validasi Lokasi &amp; Wajah</div>
               </div>
-              <div class="ahc-actions absensi-form-el">
-                <button class="btn-absen-masuk" id="btnAbsenMasuk" onclick="doAbsen('masuk')" disabled>→ Absen Masuk</button>
-                <button class="btn-absen-pulang" id="btnAbsenPulang" onclick="doAbsen('pulang')" disabled>⇥ Absen Pulang</button>
+              <div class="cam-container">
+                <video id="videoPreview" playsinline></video>
+                <canvas id="captureCanvas"></canvas>
+                <div class="cam-overlay" id="camOverlay">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <p class="cam-placeholder-text" id="camPlaceholderText">⏳ Memulai kamera...</p>
+                  <button class="btn btn-amber" id="btnStartCamera" onclick="startCamera()" style="display:none">📷 Aktifkan Kamera</button>
+                </div>
               </div>
-            </div>
-
-            <!-- Hari Libur / Off Notice (mobile: tampil di sini juga lewat CSS order jika perlu) -->
-            <div id="holidayNotice" style="display:none" class="alert alert-warn">
-              🗓 Hari ini adalah hari libur. Tidak perlu melakukan absensi.
-            </div>
-            <div id="offDayNotice" style="display:none" class="alert alert-info">
-              😴 Anda sedang OFF hari ini sesuai jadwal shift. Tidak perlu absensi.
+              <!-- Status bar kamera + lokasi -->
+              <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+                <div id="cameraStatus" class="location-status loading">⏳ Memuat kamera...</div>
+                <div id="locationStatus" class="location-status loading">⏳ Mendapatkan lokasi...</div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="lanjutTanpaKamera()" id="btnSkipCamera"
+                style="width:100%;margin-top:8px;font-size:12px;display:none">
+                ✅ Lanjut Tanpa Kamera
+              </button>
+              <p class="apc-hint">Pastikan wajah dan lokasi Anda terlihat jelas sebelum melakukan absensi.</p>
             </div>
 
             <!-- Riwayat -->
@@ -1914,32 +1938,6 @@
                 <div><div class="lbl">Jam Masuk</div><div class="val" id="absenJamMasuk">-</div></div>
                 <div><div class="lbl">Jam Pulang</div><div class="val" id="absenJamPulang">-</div></div>
               </div>
-            </div>
-
-            <!-- Kamera & Validasi Lokasi -->
-            <div class="card absen-loc-card absensi-form-el" id="absensiFormWrap">
-              <div class="card-title-row">
-                <div class="card-title">📍 Validasi Lokasi &amp; Wajah</div>
-              </div>
-              <div class="cam-container">
-                <video id="videoPreview" playsinline></video>
-                <canvas id="captureCanvas"></canvas>
-                <div class="cam-overlay" id="camOverlay">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                  <p class="cam-placeholder-text" id="camPlaceholderText">⏳ Memulai kamera...</p>
-                  <button class="btn btn-amber" id="btnStartCamera" onclick="startCamera()" style="display:none">📷 Aktifkan Kamera</button>
-                </div>
-              </div>
-              <!-- Status bar kamera + lokasi -->
-              <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-                <div id="cameraStatus" class="location-status loading">⏳ Memuat kamera...</div>
-                <div id="locationStatus" class="location-status loading">⏳ Mendapatkan lokasi...</div>
-              </div>
-              <button class="btn btn-outline btn-sm" onclick="lanjutTanpaKamera()" id="btnSkipCamera"
-                style="width:100%;margin-top:8px;font-size:12px;display:none">
-                ✅ Lanjut Tanpa Kamera
-              </button>
-              <p class="apc-hint">Pastikan wajah dan lokasi Anda terlihat jelas sebelum melakukan absensi.</p>
             </div>
           </div>
         </div>
