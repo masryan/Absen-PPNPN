@@ -1374,6 +1374,15 @@
   .btn-absen-masuk:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(16,185,129,0.4); }
   .btn-absen-pulang { background: linear-gradient(135deg, #16065f, #2f1a8f); box-shadow: 0 6px 16px rgba(22,6,95,0.28); }
   .btn-absen-pulang:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(22,6,95,0.36); }
+  /* Badge status (Tepat Waktu / Terlambat / Pulang Cepat) yang ditampilkan
+     menyatu di dalam tombol Absen Masuk & Absen Pulang setelah tercatat. */
+  .absen-status-badge {
+    display: inline-flex; align-items: center; font-size: 11px; font-weight: 800;
+    padding: 3px 10px; border-radius: 9999px; letter-spacing: 0.2px; line-height: 1.4;
+  }
+  .absen-status-badge.ontime { background: rgba(255,255,255,0.28); color: #fff; }
+  .absen-status-badge.late   { background: #fde047; color: #78350f; }
+  .absen-status-badge.early  { background: #fde047; color: #78350f; }
   .btn-absen-masuk:disabled, .btn-absen-pulang:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
   /* ---- Kartu riwayat: header + link ---- */
@@ -6990,26 +6999,71 @@ function updateAbsenButtons() {
   if (!btnMasuk || !btnPulang) return;
   const cameraOk = !!cameraStream;
   const allOk    = cameraOk && locationOk;
+  const sudahMasuk  = !!(todayAbsenData && todayAbsenData.absenMasuk);
+  const sudahPulang = !!(todayAbsenData && todayAbsenData.absenPulang);
+
+  // Badge kecil status (Tepat Waktu / Terlambat / Pulang Cepat) yang
+  // ditampilkan menyatu di dalam tombol setelah absen tercatat.
+  function statusBadge(status, kind) {
+    if (!status) return '';
+    var isBad = (kind === 'masuk') ? status === 'Terlambat' : status === 'Pulang Cepat';
+    var cls = isBad ? (kind === 'masuk' ? 'late' : 'early') : 'ontime';
+    return ' <span class="absen-status-badge ' + cls + '">' + status + '</span>';
+  }
 
   // Tombol MASUK — hanya bisa 1x
-  if (todayAbsenData && todayAbsenData.absenMasuk) {
-    btnMasuk.disabled    = true;
-    btnMasuk.textContent = '✅ Sudah Masuk (' + fmtTime(todayAbsenData.absenMasuk) + ')';
+  if (sudahMasuk) {
+    btnMasuk.disabled  = true;
+    btnMasuk.innerHTML = '✅ Sudah Masuk (' + fmtTime(todayAbsenData.absenMasuk) + ')' + statusBadge(todayAbsenData.statusAbsenMasuk, 'masuk');
   } else {
     btnMasuk.disabled    = !allOk;
     btnMasuk.textContent = allOk ? '✅ Absen Masuk' : '⏳ Menunggu kamera & lokasi...';
   }
 
-  // Tombol PULANG — bisa berkali-kali, selalu pakai jam terakhir
-  const sudahMasuk = todayAbsenData && todayAbsenData.absenMasuk;
+  // Tombol PULANG — bisa berkali-kali, selalu pakai jam terakhir.
+  // Setelah absen pulang berhasil sekali, kartu Validasi Lokasi & Wajah
+  // otomatis disembunyikan (lihat updateValidasiCardVisibility), sehingga
+  // tombol ini TETAP dibiarkan aktif tanpa lagi mensyaratkan kamera/lokasi
+  // — sebagai antisipasi jika pegawai salah pencet dan perlu koreksi jam.
   if (sudahMasuk) {
-    btnPulang.disabled    = !allOk;
-    btnPulang.textContent = todayAbsenData.absenPulang
-      ? '🔄 Perbarui Jam Pulang (terakhir: ' + fmtTime(todayAbsenData.absenPulang) + ')'
+    btnPulang.disabled  = sudahPulang ? false : !allOk;
+    btnPulang.innerHTML = sudahPulang
+      ? '🔄 Jam Pulang (' + fmtTime(todayAbsenData.absenPulang) + ')' + statusBadge(todayAbsenData.statusAbsenPulang, 'pulang')
       : '🏠 Absen Pulang';
   } else {
     btnPulang.disabled    = true;
     btnPulang.textContent = '🏠 Absen Pulang';
+  }
+
+  updateValidasiCardVisibility();
+}
+
+// Setelah absen PULANG berhasil dicatat, kartu "Validasi Lokasi & Wajah"
+// (kamera) tidak diperlukan lagi hari ini sehingga otomatis disembunyikan
+// & kameranya dimatikan (hemat baterai + privasi). Tombol Absen Pulang
+// tetap aktif (lihat updateAbsenButtons) agar tetap bisa dikoreksi tanpa
+// perlu menyalakan ulang kamera. Tidak berlaku saat hari libur/off —
+// biarkan alur libur/off yang mengatur visibilitasnya sendiri.
+function updateValidasiCardVisibility() {
+  var card = document.getElementById('absensiFormWrap');
+  if (!card) return;
+  var holidayEl = document.getElementById('holidayNotice');
+  var offdayEl  = document.getElementById('offDayNotice');
+  var holidayShown = holidayEl && holidayEl.style.display === 'block';
+  var offdayShown  = offdayEl && offdayEl.style.display === 'block';
+  if (holidayShown || offdayShown) return;
+
+  var sudahPulang = !!(todayAbsenData && todayAbsenData.absenPulang);
+  if (sudahPulang) {
+    if (card.style.display !== 'none') {
+      card.style.display = 'none';
+      if (cameraStream && cameraStream !== 'skip') {
+        try { cameraStream.getTracks().forEach(function(t){ t.stop(); }); } catch(e){}
+      }
+      cameraStream = null;
+    }
+  } else {
+    card.style.display = '';
   }
 }
 
