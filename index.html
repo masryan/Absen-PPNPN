@@ -1374,15 +1374,6 @@
   .btn-absen-masuk:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(16,185,129,0.4); }
   .btn-absen-pulang { background: linear-gradient(135deg, #16065f, #2f1a8f); box-shadow: 0 6px 16px rgba(22,6,95,0.28); }
   .btn-absen-pulang:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(22,6,95,0.36); }
-  /* Badge status (Tepat Waktu / Terlambat / Pulang Cepat) yang ditampilkan
-     menyatu di dalam tombol Absen Masuk & Absen Pulang setelah tercatat. */
-  .absen-status-badge {
-    display: inline-flex; align-items: center; font-size: 11px; font-weight: 800;
-    padding: 3px 10px; border-radius: 9999px; letter-spacing: 0.2px; line-height: 1.4;
-  }
-  .absen-status-badge.ontime { background: rgba(255,255,255,0.28); color: #fff; }
-  .absen-status-badge.late   { background: #fde047; color: #78350f; }
-  .absen-status-badge.early  { background: #fde047; color: #78350f; }
   .btn-absen-masuk:disabled, .btn-absen-pulang:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
   /* ---- Kartu riwayat: header + link ---- */
@@ -2693,12 +2684,17 @@
           <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
             <div style="font-weight:700;font-size:14px">Kode Shift:</div>
             <div style="display:flex;gap:12px;flex-wrap:wrap">
-              <span style="background:#16a34a;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">J = JAGA 24 JAM (07:00–07:00 keesokan hari)</span>
+              <span style="background:#16a34a;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">J = JAGA</span>
               <span style="background:#6b7280;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">L = LIBUR / OFF</span>
+              <span style="background:#5b21b6;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">- = TIM 4 / PRAMUBAKTI</span>
             </div>
           </div>
           <div style="margin-top:10px;font-size:12.5px;opacity:0.85">
-            🪄 Pola Generator Otomatis: setiap hari <strong>1 TIM Jaga 24 Jam</strong> (07:00–07:00 keesokan hari), <strong>3 TIM lainnya Libur</strong>. Giliran tim yang jaga dirotasi tiap hari secara merata.
+            🪄 <strong>Pola Generator Otomatis:</strong> mengikuti jadwal Agustus dengan rotasi 3 hari:
+            <br>Hari 1 → TIM 1 = L, TIM 2 = L, TIM 3 = J, TIM 4 = -
+            <br>Hari 2 → TIM 1 = L, TIM 2 = J, TIM 3 = L, TIM 4 = -
+            <br>Hari 3 → TIM 1 = J, TIM 2 = L, TIM 3 = L, TIM 4 = -
+            <br>Lalu berulang untuk hari-hari berikutnya.
           </div>
         </div>
 
@@ -2778,7 +2774,7 @@
             <!-- Petunjuk upload -->
             <div id="shiftUploadInfo" style="display:none;margin:10px 0">
               <div class="alert alert-info" style="font-size:13px">
-                📋 <strong>Format upload:</strong> Kolom: Tanggal (YYYY-MM-DD) | TIM 1 | TIM 2 | TIM 3 | TIM 4 — Isi dengan <strong>J</strong> (Jaga 24 Jam) atau <strong>L</strong> (Libur)
+                📋 <strong>Format upload:</strong> Kolom: Tanggal (YYYY-MM-DD) | TIM 1 | TIM 2 | TIM 3 | TIM 4 — Isi dengan <strong>J</strong> (Jaga), <strong>L</strong> (Libur), dan <strong>-</strong> khusus <strong>TIM 4</strong> karena mengikuti jam pramubakti.
               </div>
             </div>
 
@@ -2803,14 +2799,13 @@
         <!-- ===== TAB 3: REKAP PIKET SECURITY ===== -->
         <div id="shiftTabRekap" style="display:none">
           <div class="card">
-            <div class="card-title">📊 Rekap Piket Security per TIM</div>
-            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Menghitung jumlah hari piket (kode <strong>J</strong>) &amp; libur (kode <strong>L</strong>) tiap TIM dalam periode tanggal yang dipilih, berdasarkan jadwal yang tersimpan di database.</p>
+            <div class="card-title">📊 Rekap Piket Security per Bulan</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Menampilkan rekap per bulan untuk <strong>TIM 1, TIM 2, dan TIM 3</strong> dalam bentuk pivot: kolom <strong>PIKET</strong> dan <strong>LIBUR</strong>. Baris terakhir menampilkan <strong>Total Setahun</strong>.</p>
 
             <div id="rekapPiketAlert"></div>
 
             <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
-              <div class="field"><label>Dari Tanggal</label><input type="date" id="filterRekapPiketFrom"></div>
-              <div class="field"><label>Sampai Tanggal</label><input type="date" id="filterRekapPiketTo"></div>
+              <div class="field"><label>Tahun</label><input type="number" id="filterRekapPiketYear" min="2000" max="2100" step="1"></div>
               <button class="btn btn-primary" onclick="loadRekapPiketSecurity()">🔍 Tampilkan</button>
               <button class="btn btn-success" style="background:#16a34a;border-color:#16a34a" onclick="exportRekapPiketExcel()">📊 Export Excel</button>
             </div>
@@ -2819,14 +2814,20 @@
               <table id="rekapPiketTable">
                 <thead>
                   <tr>
-                    <th style="min-width:90px">TIM</th>
-                    <th style="min-width:110px">Jml Anggota</th>
-                    <th style="min-width:120px">Hari Piket (J)</th>
-                    <th style="min-width:120px">Hari Libur (L)</th>
-                    <th style="min-width:180px">Anggota TIM</th>
+                    <th rowspan="2" style="min-width:110px">BULAN</th>
+                    <th colspan="3">PIKET</th>
+                    <th colspan="3">LIBUR</th>
+                  </tr>
+                  <tr>
+                    <th style="min-width:90px">TIM 1</th>
+                    <th style="min-width:90px">TIM 2</th>
+                    <th style="min-width:90px">TIM 3</th>
+                    <th style="min-width:90px">TIM 1</th>
+                    <th style="min-width:90px">TIM 2</th>
+                    <th style="min-width:90px">TIM 3</th>
                   </tr>
                 </thead>
-                <tbody id="rekapPiketBody"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">Pilih periode tanggal lalu klik "Tampilkan".</td></tr></tbody>
+                <tbody id="rekapPiketBody"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">Pilih tahun lalu klik "Tampilkan".</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -6999,71 +7000,26 @@ function updateAbsenButtons() {
   if (!btnMasuk || !btnPulang) return;
   const cameraOk = !!cameraStream;
   const allOk    = cameraOk && locationOk;
-  const sudahMasuk  = !!(todayAbsenData && todayAbsenData.absenMasuk);
-  const sudahPulang = !!(todayAbsenData && todayAbsenData.absenPulang);
-
-  // Badge kecil status (Tepat Waktu / Terlambat / Pulang Cepat) yang
-  // ditampilkan menyatu di dalam tombol setelah absen tercatat.
-  function statusBadge(status, kind) {
-    if (!status) return '';
-    var isBad = (kind === 'masuk') ? status === 'Terlambat' : status === 'Pulang Cepat';
-    var cls = isBad ? (kind === 'masuk' ? 'late' : 'early') : 'ontime';
-    return ' <span class="absen-status-badge ' + cls + '">' + status + '</span>';
-  }
 
   // Tombol MASUK — hanya bisa 1x
-  if (sudahMasuk) {
-    btnMasuk.disabled  = true;
-    btnMasuk.innerHTML = '✅ Sudah Masuk (' + fmtTime(todayAbsenData.absenMasuk) + ')' + statusBadge(todayAbsenData.statusAbsenMasuk, 'masuk');
+  if (todayAbsenData && todayAbsenData.absenMasuk) {
+    btnMasuk.disabled    = true;
+    btnMasuk.textContent = '✅ Sudah Masuk (' + fmtTime(todayAbsenData.absenMasuk) + ')';
   } else {
     btnMasuk.disabled    = !allOk;
     btnMasuk.textContent = allOk ? '✅ Absen Masuk' : '⏳ Menunggu kamera & lokasi...';
   }
 
-  // Tombol PULANG — bisa berkali-kali, selalu pakai jam terakhir.
-  // Setelah absen pulang berhasil sekali, kartu Validasi Lokasi & Wajah
-  // otomatis disembunyikan (lihat updateValidasiCardVisibility), sehingga
-  // tombol ini TETAP dibiarkan aktif tanpa lagi mensyaratkan kamera/lokasi
-  // — sebagai antisipasi jika pegawai salah pencet dan perlu koreksi jam.
+  // Tombol PULANG — bisa berkali-kali, selalu pakai jam terakhir
+  const sudahMasuk = todayAbsenData && todayAbsenData.absenMasuk;
   if (sudahMasuk) {
-    btnPulang.disabled  = sudahPulang ? false : !allOk;
-    btnPulang.innerHTML = sudahPulang
-      ? '🔄 Jam Pulang (' + fmtTime(todayAbsenData.absenPulang) + ')' + statusBadge(todayAbsenData.statusAbsenPulang, 'pulang')
+    btnPulang.disabled    = !allOk;
+    btnPulang.textContent = todayAbsenData.absenPulang
+      ? '🔄 Perbarui Jam Pulang (terakhir: ' + fmtTime(todayAbsenData.absenPulang) + ')'
       : '🏠 Absen Pulang';
   } else {
     btnPulang.disabled    = true;
     btnPulang.textContent = '🏠 Absen Pulang';
-  }
-
-  updateValidasiCardVisibility();
-}
-
-// Setelah absen PULANG berhasil dicatat, kartu "Validasi Lokasi & Wajah"
-// (kamera) tidak diperlukan lagi hari ini sehingga otomatis disembunyikan
-// & kameranya dimatikan (hemat baterai + privasi). Tombol Absen Pulang
-// tetap aktif (lihat updateAbsenButtons) agar tetap bisa dikoreksi tanpa
-// perlu menyalakan ulang kamera. Tidak berlaku saat hari libur/off —
-// biarkan alur libur/off yang mengatur visibilitasnya sendiri.
-function updateValidasiCardVisibility() {
-  var card = document.getElementById('absensiFormWrap');
-  if (!card) return;
-  var holidayEl = document.getElementById('holidayNotice');
-  var offdayEl  = document.getElementById('offDayNotice');
-  var holidayShown = holidayEl && holidayEl.style.display === 'block';
-  var offdayShown  = offdayEl && offdayEl.style.display === 'block';
-  if (holidayShown || offdayShown) return;
-
-  var sudahPulang = !!(todayAbsenData && todayAbsenData.absenPulang);
-  if (sudahPulang) {
-    if (card.style.display !== 'none') {
-      card.style.display = 'none';
-      if (cameraStream && cameraStream !== 'skip') {
-        try { cameraStream.getTracks().forEach(function(t){ t.stop(); }); } catch(e){}
-      }
-      cameraStream = null;
-    }
-  } else {
-    card.style.display = '';
   }
 }
 
@@ -8428,69 +8384,108 @@ async function renderShiftTimRoster() {
 var rekapPiketCache = null; // { from, to, perTim: {'TIM 1':{jaga,libur}, ...} }
 
 async function loadRekapPiketSecurity() {
-  var from = document.getElementById('filterRekapPiketFrom').value;
-  var to   = document.getElementById('filterRekapPiketTo').value;
+  var yearVal = document.getElementById('filterRekapPiketYear').value;
   var tbody = document.getElementById('rekapPiketBody');
-  if (!from || !to) {
-    showAlert('rekapPiketAlert','warn','⚠ Pilih tanggal "Dari" dan "Sampai" terlebih dahulu.');
-    return;
-  }
-  if (from > to) {
-    showAlert('rekapPiketAlert','warn','⚠ Tanggal "Dari" tidak boleh lebih besar dari tanggal "Sampai".');
+  if (!yearVal) {
+    showAlert('rekapPiketAlert','warn','⚠ Pilih tahun terlebih dahulu.');
     return;
   }
 
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat rekap...</td></tr>';
+  var year = parseInt(yearVal, 10);
+  if (!year || year < 2000 || year > 2100) {
+    showAlert('rekapPiketAlert','warn','⚠ Tahun tidak valid.');
+    return;
+  }
 
-  var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
-  var perTim = {};
-  tims.forEach(function(t){ perTim[t] = { jaga: 0, libur: 0 }; });
+  var bulanNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  var tims = ['TIM 1','TIM 2','TIM 3'];
 
-  if (SCRIPT_URL) {
-    var res = await callAPI('getShift', { from: from, to: to });
-    if (!res || !res.success) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">❌ Gagal memuat data dari database.</td></tr>';
-      showAlert('rekapPiketAlert','error','❌ Gagal memuat data jadwal: '+(res && res.error ? res.error : 'Tidak ada respons dari server.'));
-      return;
-    }
-    (res.data || []).forEach(function(r){
-      tims.forEach(function(t){
-        var kode = (r[t] || '').toString().trim().toUpperCase();
-        if (kode === 'J') perTim[t].jaga++;
-        else if (kode === 'L') perTim[t].libur++;
-      });
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat rekap bulanan...</td></tr>';
+
+  if (!SCRIPT_URL) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">⚠ Database belum dikonfigurasi.</td></tr>';
+    return;
+  }
+
+  var from = year + '-01-01';
+  var to   = year + '-12-31';
+
+  var res = await callAPI('getShift', { from: from, to: to });
+  if (!res || !res.success) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">❌ Gagal memuat data dari database.</td></tr>';
+    showAlert('rekapPiketAlert','error','❌ Gagal memuat data jadwal: '+(res && res.error ? res.error : 'Tidak ada respons dari server.'));
+    return;
+  }
+
+  var monthly = {};
+  for (var m = 1; m <= 12; m++) {
+    var key = String(m).padStart(2, '0');
+    monthly[key] = {
+      month: m,
+      label: bulanNames[m-1],
+      piket: { 'TIM 1': 0, 'TIM 2': 0, 'TIM 3': 0 },
+      libur: { 'TIM 1': 0, 'TIM 2': 0, 'TIM 3': 0 }
+    };
+  }
+
+  (res.data || []).forEach(function(r) {
+    var tgl = (r.Tanggal || '').toString();
+    if (tgl.length < 7) return;
+    var monthKey = tgl.substring(5,7);
+    if (!monthly[monthKey]) return;
+
+    tims.forEach(function(t){
+      var kode = (r[t] || '').toString().trim().toUpperCase();
+      if (kode === 'J') monthly[monthKey].piket[t]++;
+      else if (kode === 'L') monthly[monthKey].libur[t]++;
     });
-  } else {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">⚠ Supabase belum dikonfigurasi.</td></tr>';
-    return;
-  }
+  });
 
-  if (SCRIPT_URL) await refreshAllPegawai();
-  var pegawaiList = getPegawaiListForStats().filter(function(p){ return p.pekerjaan === 'Security'; });
-
-  rekapPiketCache = { from: from, to: to, perTim: perTim };
+  var totals = {
+    piket: { 'TIM 1': 0, 'TIM 2': 0, 'TIM 3': 0 },
+    libur: { 'TIM 1': 0, 'TIM 2': 0, 'TIM 3': 0 }
+  };
 
   var html = '';
-  tims.forEach(function(tim){
-    var anggota = pegawaiList.filter(function(p){ return (p.Tim||'').trim().toUpperCase() === tim; });
-    var namaAnggota = anggota.length ? anggota.map(function(p){ return p.namaPegawai || '-'; }).join(', ') : '<span style="color:var(--text-muted)">Belum ada anggota</span>';
+  Object.keys(monthly).sort().forEach(function(key){
+    var row = monthly[key];
+    tims.forEach(function(t){
+      totals.piket[t] += row.piket[t];
+      totals.libur[t] += row.libur[t];
+    });
+
     html += '<tr>';
-    html += '<td><strong>'+tim+'</strong></td>';
-    html += '<td style="text-align:center">'+anggota.length+' orang</td>';
-    html += '<td style="text-align:center"><span style="background:#dcfce7;color:#16a34a;font-weight:700;padding:3px 10px;border-radius:20px;font-size:12.5px">'+perTim[tim].jaga+' hari</span></td>';
-    html += '<td style="text-align:center"><span style="background:#f1f5f9;color:#6b7280;font-weight:700;padding:3px 10px;border-radius:20px;font-size:12.5px">'+perTim[tim].libur+' hari</span></td>';
-    html += '<td style="font-size:12.5px">'+namaAnggota+'</td>';
+    html += '<td><strong>' + row.label + '</strong></td>';
+    html += '<td style="text-align:center"><span style="background:#dcfce7;color:#16a34a;font-weight:700;padding:3px 10px;border-radius:20px;font-size:12.5px">' + row.piket['TIM 1'] + '</span></td>';
+    html += '<td style="text-align:center"><span style="background:#dcfce7;color:#16a34a;font-weight:700;padding:3px 10px;border-radius:20px;font-size:12.5px">' + row.piket['TIM 2'] + '</span></td>';
+    html += '<td style="text-align:center"><span style="background:#dcfce7;color:#16a34a;font-weight:700;padding:3px 10px;border-radius:20px;font-size:12.5px">' + row.piket['TIM 3'] + '</span></td>';
+    html += '<td style="text-align:center"><span style="background:#f1f5f9;color:#6b7280;font-weight:700;padding:3px 10px;border-radius:20px;font-size:12.5px">' + row.libur['TIM 1'] + '</span></td>';
+    html += '<td style="text-align:center"><span style="background:#f1f5f9;color:#6b7280;font-weight:700;padding:3px 10px;border-radius:20px;font-size:12.5px">' + row.libur['TIM 2'] + '</span></td>';
+    html += '<td style="text-align:center"><span style="background:#f1f5f9;color:#6b7280;font-weight:700;padding:3px 10px;border-radius:20px;font-size:12.5px">' + row.libur['TIM 3'] + '</span></td>';
     html += '</tr>';
   });
+
+  html += '<tr style="background:#fff7ed">';
+  html += '<td><strong>Total Setahun</strong></td>';
+  html += '<td style="text-align:center"><strong>' + totals.piket['TIM 1'] + '</strong></td>';
+  html += '<td style="text-align:center"><strong>' + totals.piket['TIM 2'] + '</strong></td>';
+  html += '<td style="text-align:center"><strong>' + totals.piket['TIM 3'] + '</strong></td>';
+  html += '<td style="text-align:center"><strong>' + totals.libur['TIM 1'] + '</strong></td>';
+  html += '<td style="text-align:center"><strong>' + totals.libur['TIM 2'] + '</strong></td>';
+  html += '<td style="text-align:center"><strong>' + totals.libur['TIM 3'] + '</strong></td>';
+  html += '</tr>';
+
   tbody.innerHTML = html;
+  rekapPiketCache = { year: year, monthly: monthly, totals: totals };
 }
 
 // Export rekap piket yang sedang ditampilkan ke file Excel (.xls)
 function exportRekapPiketExcel() {
-  if (!rekapPiketCache) { alert('Klik "Tampilkan" terlebih dahulu sebelum export.'); return; }
-  var from = rekapPiketCache.from, to = rekapPiketCache.to, perTim = rekapPiketCache.perTim;
-  var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
-  var pegawaiList = getPegawaiListForStats().filter(function(p){ return p.pekerjaan === 'Security'; });
+  if (!rekapPiketCache || !rekapPiketCache.year) { alert('Klik "Tampilkan" terlebih dahulu sebelum export.'); return; }
+
+  var year = rekapPiketCache.year;
+  var monthly = rekapPiketCache.monthly;
+  var totals = rekapPiketCache.totals;
 
   var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office">';
   html += '<head><meta charset="UTF-8"><' + 'style>';
@@ -8498,26 +8493,52 @@ function exportRekapPiketExcel() {
   html += 'table{border-collapse:collapse;width:100%}';
   html += 'th{background:#0b3d2e;color:#fff;padding:8px;border:1px solid #888;text-align:center}';
   html += 'td{padding:6px 8px;border:1px solid #ccc;text-align:center}';
+  html += '.piket{background:#dcfce7;color:#166534;font-weight:bold}';
+  html += '.libur{background:#f1f5f9;color:#475569;font-weight:bold}';
+  html += '.total{background:#fff7ed;font-weight:bold}';
   html += '<' + '/style><' + '/head><body>';
-  html += '<h2 style="color:#0b3d2e">REKAP PIKET SECURITY PER TIM</h2>';
-  html += '<p style="color:#666">Periode: <strong>'+from+' s/d '+to+'</strong></p>';
-  html += '<table><thead><tr><th>TIM</th><th>Jml Anggota</th><th>Hari Piket (J)</th><th>Hari Libur (L)</th><th>Anggota TIM</th></tr><' + '/thead><tbody>';
-  tims.forEach(function(tim){
-    var anggota = pegawaiList.filter(function(p){ return (p.Tim||'').trim().toUpperCase() === tim; });
-    var namaAnggota = anggota.length ? anggota.map(function(p){ return p.namaPegawai || '-'; }).join(', ') : '-';
-    html += '<tr><td style="text-align:left"><strong>'+tim+'</strong></td><td>'+anggota.length+'</td><td>'+perTim[tim].jaga+'</td><td>'+perTim[tim].libur+'</td><td style="text-align:left">'+namaAnggota+'</td></tr>';
+  html += '<h2 style="color:#0b3d2e">REKAP PIKET SECURITY PER BULAN</h2>';
+  html += '<p style="color:#666">Tahun: <strong>'+year+'</strong></p>';
+  html += '<table><thead>';
+  html += '<tr><th rowspan="2">BULAN</th><th colspan="3">PIKET</th><th colspan="3">LIBUR</th></tr>';
+  html += '<tr><th>TIM 1</th><th>TIM 2</th><th>TIM 3</th><th>TIM 1</th><th>TIM 2</th><th>TIM 3</th></tr>';
+  html += '<' + '/thead><tbody>';
+
+  Object.keys(monthly).sort().forEach(function(key){
+    var row = monthly[key];
+    html += '<tr>';
+    html += '<td style="text-align:left"><strong>'+row.label+'</strong></td>';
+    html += '<td class="piket">'+row.piket['TIM 1']+'</td>';
+    html += '<td class="piket">'+row.piket['TIM 2']+'</td>';
+    html += '<td class="piket">'+row.piket['TIM 3']+'</td>';
+    html += '<td class="libur">'+row.libur['TIM 1']+'</td>';
+    html += '<td class="libur">'+row.libur['TIM 2']+'</td>';
+    html += '<td class="libur">'+row.libur['TIM 3']+'</td>';
+    html += '</tr>';
   });
+
+  html += '<tr class="total">';
+  html += '<td style="text-align:left"><strong>Total Setahun</strong></td>';
+  html += '<td>'+totals.piket['TIM 1']+'</td>';
+  html += '<td>'+totals.piket['TIM 2']+'</td>';
+  html += '<td>'+totals.piket['TIM 3']+'</td>';
+  html += '<td>'+totals.libur['TIM 1']+'</td>';
+  html += '<td>'+totals.libur['TIM 2']+'</td>';
+  html += '<td>'+totals.libur['TIM 3']+'</td>';
+  html += '</tr>';
+
   html += '<' + '/tbody><' + '/table><' + '/body><' + '/html>';
 
   var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
   a.href = url;
-  a.download = 'Rekap_Piket_Security_'+from+'_sd_'+to+'.xls';
+  a.download = 'Rekap_Piket_Security_Bulanan_' + year + '.xls';
   document.body.appendChild(a); a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 
 // Data jadwal shift disimpan di sini: { 'YYYY-MM-DD': { 'TIM 1':'P', 'TIM 2':'M', ... } }
 var shiftData = JSON.parse(localStorage.getItem('ppnpn_shift') || '{}');
@@ -8701,10 +8722,11 @@ function bukaGeneratorUntukBulanIni() {
 var shiftGenData = {};
 
 function shiftSelectGen(dateStr, tim, val) {
-  val = (val||'L').toUpperCase();
+  val = (val || '-').toUpperCase();
   return '<select class="shift-gen-select" data-date="'+dateStr+'" data-tim="'+tim+'" onchange="onShiftGenChange(this)">' +
-    '<option value="J"'+(val==='J'?' selected':'')+'>JAGA 24 JAM</option>' +
+    '<option value="J"'+(val==='J'?' selected':'')+'>JAGA</option>' +
     '<option value="L"'+(val==='L'?' selected':'')+'>LIBUR</option>' +
+    '<option value="-"'+(val==='-'?' selected':'')+'>PRAMUBAKTI</option>' +
   '</select>';
 }
 
@@ -8751,21 +8773,24 @@ async function generateJadwalShiftOtomatis() {
   var year = p[0], month = p[1];
   var daysInMonth = new Date(year, month, 0).getDate();
 
-  var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
   shiftGenData = {};
   for (var day = 1; day <= daysInMonth; day++) {
     var dateStr = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-    shiftGenData[dateStr] = {};
-    tims.forEach(function(tim, idx) {
-      shiftGenData[dateStr][tim] = hitungShiftOtomatis(dateStr, idx);
-    });
+    var hasilHari = hitungShiftHarianOtomatis(dateStr);
+
+    shiftGenData[dateStr] = {
+      'TIM 1': hasilHari['TIM 1'],
+      'TIM 2': hasilHari['TIM 2'],
+      'TIM 3': hasilHari['TIM 3'],
+      'TIM 4': '-'
+    };
   }
 
   document.getElementById('shiftGenTableWrap').style.display = 'block';
   document.getElementById('btnSimpanShiftGen').style.display = 'inline-flex';
   document.getElementById('btnBatalShiftGen').style.display  = 'inline-flex';
   renderShiftGenTable(year, month, daysInMonth);
-  showAlert('shiftGenAlert','warn','🪄 Pratinjau jadwal 1 bulan berhasil dibuat. Ini <strong>belum tersimpan ke database</strong> — sesuaikan bila perlu, lalu klik "Simpan ke Database".');
+  showAlert('shiftGenAlert','warn','🪄 Pratinjau jadwal berhasil dibuat mengikuti pola Agustus. Hanya <strong>TIM 1, TIM 2, dan TIM 3</strong> yang dijadwalkan. <strong>TIM 4 mengikuti jam pramubakti</strong>. Jadwal ini <strong>belum tersimpan ke database</strong>.');
 }
 
 // Membatalkan pratinjau generator (tidak menghapus apa pun di database,
@@ -8804,7 +8829,7 @@ async function simpanJadwalShiftGenerator() {
       'TIM 1': shiftGenData[tgl]['TIM 1'] || 'L',
       'TIM 2': shiftGenData[tgl]['TIM 2'] || 'L',
       'TIM 3': shiftGenData[tgl]['TIM 3'] || 'L',
-      'TIM 4': shiftGenData[tgl]['TIM 4'] || 'L'
+      'TIM 4': shiftGenData[tgl]['TIM 4'] || '-'
     });
   });
 
@@ -8891,7 +8916,7 @@ async function simpanJadwalShift() {
         'TIM 1': shiftData[tgl]['TIM 1'] || 'L',
         'TIM 2': shiftData[tgl]['TIM 2'] || 'L',
         'TIM 3': shiftData[tgl]['TIM 3'] || 'L',
-        'TIM 4': shiftData[tgl]['TIM 4'] || 'L'
+        'TIM 4': shiftData[tgl]['TIM 4'] || '-'
       });
     });
     var res = await callAPI('saveShift', { rows: rows });
@@ -9072,12 +9097,14 @@ function downloadTemplateShift() {
   var csv = 'Tanggal,TIM 1,TIM 2,TIM 3,TIM 4\n';
   for (var day = 1; day <= daysInMonth; day++) {
     var dateStr = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-    var vals = ['TIM 1','TIM 2','TIM 3','TIM 4'].map(function(tim, idx){
-      return (shiftData[dateStr] && shiftData[dateStr][tim])
-        ? shiftData[dateStr][tim]
-        : hitungShiftOtomatis(dateStr, idx);
-    });
-    csv += dateStr+','+vals.join(',')+'\n';
+    var hasilHari = hitungShiftHarianOtomatis(dateStr);
+    csv += [
+      dateStr,
+      (shiftData[dateStr] && shiftData[dateStr]['TIM 1']) ? shiftData[dateStr]['TIM 1'] : hasilHari['TIM 1'],
+      (shiftData[dateStr] && shiftData[dateStr]['TIM 2']) ? shiftData[dateStr]['TIM 2'] : hasilHari['TIM 2'],
+      (shiftData[dateStr] && shiftData[dateStr]['TIM 3']) ? shiftData[dateStr]['TIM 3'] : hasilHari['TIM 3'],
+      (shiftData[dateStr] && shiftData[dateStr]['TIM 4']) ? shiftData[dateStr]['TIM 4'] : '-'
+    ].join(',')+'\n';
   }
 
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -10735,6 +10762,13 @@ document.addEventListener('keypress', e => {
 
 
 
+</script>
+<script>window.__CF$cv$params={r:'a3017c0fac2a1ffa',t:'MTc4NzU2NTM2MA==',u:'01a03332c65176a1bb02911ed5812e8e',ut:'oiQ4NJ9YfGUe69_flwo6SkGhbY3gpI7HzpNWDoeTlKc-1787565360-1.2.1.1-0B4b6pvWxSRnMr03cOEgN695oaG7ocrvacJwrTjgjV_jO5iqAxvLgup988kAobxHM_PgX2cKfSOv5GvpzrOnpCBlRGisODjHm.j5fZ3u6cA',i:60};(function(){if(!document.body)return;var s=document.createElement('script');s.src='/cdn-cgi/challenge-platform/scripts/precursor/main.js';document.head.appendChild(s);})();</script><script>window.__CF$cv$params={r:'a301964d8a65d69c',t:'MTc4NzU2NjQzNQ==',u:'01a033432cc579018d718c49d6556ca2',ut:'25k_C5yhevC4DCMlW6wbrijXDLRkdUVeLfNgGhKHIJw-1787566435-1.2.1.1-dojPr6.4F0_i1v6y3NFVCfTn78gRdiq47X4yrwd9Ua38WOdQlvESTWLGn157z8GWWIe5iPS0RCskTN17Nv8kHH3lbY0mLNF166JPJXo2UDI',i:60};(function(){if(!document.body)return;var s=document.createElement('script');s.src='/cdn-cgi/challenge-platform/scripts/precursor/main.js';document.head.appendChild(s);})();</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var el = document.getElementById('filterRekapPiketYear');
+  if (el && !el.value) el.value = new Date().getFullYear();
+});
 </script>
 </body>
 </html>
