@@ -5,6 +5,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SIMPEG PPNPN</title>
+<!-- ===== PWA: bisa di-install di HP (Android/Chrome & iOS/Safari) ===== -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b3d2e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SIMPEG 439">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -1422,6 +1431,21 @@
 </head>
 <body>
 
+<!-- ========== PWA: BANNER INSTALL APLIKASI ========== -->
+<div id="pwaInstallBanner" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#0b3d2e;color:#fff;border-radius:14px;box-shadow:0 12px 28px rgba(11,61,46,0.35);padding:14px 16px;align-items:center;gap:12px;font-family:'Manrope',sans-serif;">
+  <div style="width:40px;height:40px;flex:0 0 auto;border-radius:10px;background:#0000;overflow:hidden;">
+    <img src="icon-192.png" alt="Ikon SIMPEG 439" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
+  </div>
+  <div style="flex:1 1 auto;min-width:0;">
+    <div style="font-weight:700;font-size:13.5px;line-height:1.3;">Install SIMPEG PPNPN 439</div>
+    <div id="pwaInstallSub" style="font-size:12px;opacity:0.8;line-height:1.35;margin-top:2px;">Pasang di layar utama HP untuk akses lebih cepat.</div>
+  </div>
+  <div style="display:flex;gap:8px;flex:0 0 auto;">
+    <button type="button" id="pwaInstallBtn" onclick="pwaDoInstall()" style="background:#e8c874;color:#16065f;border:none;border-radius:9px;padding:8px 14px;font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap;">Install</button>
+    <button type="button" onclick="pwaDismissBanner()" aria-label="Tutup" style="background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:9px;width:32px;height:32px;font-size:15px;cursor:pointer;">✕</button>
+  </div>
+</div>
+
 <!-- ========== LOGIN PAGE ========== -->
 <div id="loginPage">
   <div class="login-card">
@@ -2684,17 +2708,16 @@
           <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
             <div style="font-weight:700;font-size:14px">Kode Shift:</div>
             <div style="display:flex;gap:12px;flex-wrap:wrap">
-              <span style="background:#16a34a;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">J = JAGA</span>
+              <span style="background:#16a34a;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">J = JAGA 24 JAM (07:00 – 07:00 besok)</span>
               <span style="background:#6b7280;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">L = LIBUR / OFF</span>
-              <span style="background:#5b21b6;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">- = TIM 4 / PRAMUBAKTI</span>
             </div>
           </div>
           <div style="margin-top:10px;font-size:12.5px;opacity:0.85">
-            🪄 <strong>Pola Generator Otomatis:</strong> mengikuti jadwal Agustus dengan rotasi 3 hari:
-            <br>Hari 1 → TIM 1 = L, TIM 2 = L, TIM 3 = J, TIM 4 = -
-            <br>Hari 2 → TIM 1 = L, TIM 2 = J, TIM 3 = L, TIM 4 = -
-            <br>Hari 3 → TIM 1 = J, TIM 2 = L, TIM 3 = L, TIM 4 = -
-            <br>Lalu berulang untuk hari-hari berikutnya.
+            🪄 <strong>Pola Generator Otomatis:</strong> rotasi 3 hari untuk <strong>3 tim</strong> — tiap hari tepat 1 tim yang jaga, urutannya <strong>TIM 1 → TIM 2 → TIM 3</strong> lalu berulang.
+            <br>📌 Patokan: <strong>24 Agustus 2026 = TIM 1</strong> (piket 24 Agt 07:00 → 25 Agt 07:00), 25 Agt = TIM 2, 26 Agt = TIM 3, 27 Agt = TIM 1, dst.
+            <br>Rotasi ini <strong>berlanjut mulus antar bulan maupun antar tahun</strong>.
+            <br>⏰ <strong>Satu shift = 24 jam penuh</strong>, jadi sebelum pukul 07:00 yang masih bertugas adalah tim yang mulai jaga <strong>kemarin pagi</strong>. Absen pulang baru dihitung <em>Tepat Waktu</em> mulai pukul 07:00 keesokan harinya (toleransi telat absen sampai pukul 17:00).
+            <br>🧹 Security yang tidak masuk TIM 1–3 <strong>tidak ikut piket</strong> — jam kerjanya mengikuti <strong>Pramubakti</strong> dan liburnya mengikuti hari libur kantor.
           </div>
         </div>
 
@@ -2737,7 +2760,6 @@
                     <th style="min-width:90px">TIM 1</th>
                     <th style="min-width:90px">TIM 2</th>
                     <th style="min-width:90px">TIM 3</th>
-                    <th style="min-width:90px">TIM 4</th>
                   </tr>
                 </thead>
                 <tbody id="shiftGenBody"></tbody>
@@ -2774,7 +2796,7 @@
             <!-- Petunjuk upload -->
             <div id="shiftUploadInfo" style="display:none;margin:10px 0">
               <div class="alert alert-info" style="font-size:13px">
-                📋 <strong>Format upload:</strong> Kolom: Tanggal (YYYY-MM-DD) | TIM 1 | TIM 2 | TIM 3 | TIM 4 — Isi dengan <strong>J</strong> (Jaga), <strong>L</strong> (Libur), dan <strong>-</strong> khusus <strong>TIM 4</strong> karena mengikuti jam pramubakti.
+                📋 <strong>Format upload:</strong> Kolom: Tanggal (YYYY-MM-DD) | TIM 1 | TIM 2 | TIM 3 — Isi dengan <strong>J</strong> (Jaga 24 Jam) atau <strong>L</strong> (Libur). Kolom "TIM 4" pada file lama akan diabaikan.
               </div>
             </div>
 
@@ -2786,7 +2808,6 @@
                     <th style="min-width:90px">TIM 1</th>
                     <th style="min-width:90px">TIM 2</th>
                     <th style="min-width:90px">TIM 3</th>
-                    <th style="min-width:90px">TIM 4</th>
                   </tr>
                 </thead>
                 <tbody id="shiftBody"></tbody>
@@ -3321,6 +3342,45 @@ var officeLat = null, officeLon = null, officeRadius = 100;
 var clockInterval = null;
 var pulangCardInterval = null;
 var todayAbsenData = null;
+// Tanggal record absensi yang sedang dikerjakan di halaman absensi. Normalnya
+// null (= hari ini), tapi saat satpam menutup shift jaga 24 jam KEMARIN pada
+// pagi hari ini, isinya tanggal kemarin — supaya absen pulangnya masuk ke
+// record shift yang benar, bukan membuat record baru hari ini.
+var absenTargetTanggal = null;
+// Batas jam satpam masih boleh menutup shift jaga kemarin. Shift berakhir
+// pukul 07:00, tapi diberi toleransi sampai jam ini pada hari yang sama
+// kalau satpam lupa/telat menekan tombol absen pulang.
+var BATAS_TUTUP_SHIFT_KEMARIN = '17:00';
+
+// ============================================================
+// "HARI PIKET" vs "TANGGAL KALENDER"
+// ------------------------------------------------------------
+// Satu shift jaga berjalan 07:00 s.d. 07:00 keesokan hari, jadi shift TIDAK
+// sama dengan tanggal kalender. Contoh: piket TIM 1 tanggal 24 Agustus
+// berarti 24 Agt 07:00 → 25 Agt 07:00. Pada tanggal 25 Agt pukul 05:00,
+// tanggal kalendernya sudah 25, TAPI yang sedang bertugas masih TIM 1
+// (hari piketnya masih 24 Agt).
+//
+// Sebelum ini seluruh tampilan piket memakai tanggal kalender mentah,
+// sehingga sejak lewat tengah malam kartu dashboard langsung berpindah ke
+// tim berikutnya padahal tim sebelumnya masih menjaga sampai pagi.
+// hariPiketBerjalan() memperbaiki itu: sebelum 07:00, hari piket yang
+// berlaku adalah tanggal KEMARIN.
+// ============================================================
+var JAM_MULAI_SHIFT_JAGA = '07:00';
+
+function hariPiketDari(tglStr, jamStr) {
+  if (!tglStr) return tglStr;
+  return (jamStr && jamStr < JAM_MULAI_SHIFT_JAGA) ? tambahHari(tglStr, -1) : tglStr;
+}
+
+// Hari piket yang sedang berjalan SEKARANG, memakai waktu server.
+function hariPiketBerjalan() {
+  var tgl = todayVerified();
+  var jam;
+  try { jam = jamServerWIB(serverAdjustedNow()); } catch (e) { jam = null; }
+  return jam ? hariPiketDari(tgl, jam) : tgl;
+}
 
 // Set berisi ID baris yang dicentang untuk fitur hapus banyak data sekaligus
 var selectedPegawai = new Set();
@@ -3338,12 +3398,92 @@ var DEMO_JAM_KERJA = [];
 var DEMO_RADIUS = {radiusTolerance: 100, officeLat: null, officeLon: null};
 
 // ============================================================
+// TIM SECURITY YANG IKUT SHIFT JAGA 24 JAM
+// ------------------------------------------------------------
+// Jadwal piket security kini hanya 3 TIM (TIM 1, TIM 2, TIM 3) yang saling
+// bergantian jaga 24 jam. TIM 4 SUDAH DIHAPUS: anggotanya tidak lagi ikut
+// pola shift, melainkan mengikuti JAM KERJA PRAMUBAKTI (hari kerja biasa,
+// libur mengikuti tabel jadwal_libur / Sabtu-Minggu).
+//
+// Data pegawai lama di database mungkin masih tertulis "TIM 4". Alih-alih
+// memaksa admin mengedit satu per satu, nilai itu diperlakukan sebagai
+// "bukan tim shift" — persis seperti Security tanpa TIM.
+// (Konstanta SHIFT_TIMS & fungsi rotasinya ada di bagian ADMIN: SHIFT.)
+// ============================================================
+
+// Rapikan penulisan TIM dari database ('tim 1', ' TIM  2 ', dst) menjadi
+// bentuk baku 'TIM 1'. Mengembalikan '' bila bukan tim shift yang valid
+// (termasuk TIM 4 yang sudah dihapus, atau kolom Tim yang kosong).
+function normalisasiTim(tim) {
+  var t = String(tim || '').trim().toUpperCase().replace(/\s+/g, ' ');
+  return SHIFT_TIMS.indexOf(t) >= 0 ? t : '';
+}
+
+// True bila pegawai ini benar-benar ikut rotasi piket jaga 24 jam.
+// Security eks-TIM 4 / tanpa TIM / yang terdaftar di pengecualian jam kerja
+// TIDAK termasuk — mereka memakai jam kerja Pramubakti.
+function isSecurityShiftJaga(u) {
+  if (!u) return false;
+  var job = u.pekerjaan || u['PEKERJAAN'] || '';
+  if (job !== 'Security') return false;
+  if (getPengecualianJamKerja(u)) return false;
+  return !!normalisasiTim(u.Tim || u.tim || u['Tim'] || u['TIM'] || '');
+}
+
+// Jam kerja yang berlaku untuk Security yang TIDAK ikut shift jaga
+// (eks-TIM 4 & Security tanpa TIM): mengikuti pengaturan jam kerja
+// "Pramubakti" di menu Pengaturan, dengan fallback aman bila belum diatur.
+function getJamKerjaPramubakti() {
+  var jk = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN === 'Pramubakti'; });
+  return {
+    jamMasuk:  jk && jk.JAM_MASUK  ? jk.JAM_MASUK  : '07:30',
+    jamPulang: jk && jk.JAM_PULANG ? jk.JAM_PULANG : '17:00'
+  };
+}
+
+// Jam kerja shift jaga 24 jam: masuk 07:00, pulang 07:00 KEESOKAN HARI.
+function getJamKerjaSecurityJaga() {
+  var jk = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN === 'Security' && j.SHIFT === 'Jaga'; });
+  return {
+    jamMasuk:  jk && jk.JAM_MASUK  ? jk.JAM_MASUK  : '07:00',
+    jamPulang: jk && jk.JAM_PULANG ? jk.JAM_PULANG : '07:00'
+  };
+}
+
+// Kode shift ('J' = jaga 24 jam / 'L' = libur) sebuah TIM pada tanggal
+// APAPUN — bukan cuma hari ini. Dibaca dari cache shiftData (hasil sync
+// tabel shift_jadwal); bila tanggal itu belum pernah diatur admin, dihitung
+// dari rotasi otomatis 3 tim. Mengembalikan null bila TIM tidak valid.
+function getKodeShift(tim, tglStr) {
+  var t = normalisasiTim(tim);
+  if (!t || !tglStr) return null;
+  var raw = (shiftData[tglStr] && shiftData[tglStr][t])
+    ? String(shiftData[tglStr][t]).trim().toUpperCase()
+    : '';
+  if (!raw) {
+    var idx = SHIFT_TIMS.indexOf(t);
+    raw = idx >= 0 ? String(hitungShiftOtomatis(tglStr, idx)).toUpperCase() : '';
+  }
+  if (raw === 'JAGA'  || raw === 'J') return 'J';
+  if (raw === 'LIBUR' || raw === 'L' || raw === '-') return 'L';
+  return null;
+}
+
+// True bila pegawai ini menjalani piket jaga 24 jam pada tanggal tglStr.
+// PENTING: shift itu dimulai 07:00 tanggal tsb dan baru berakhir 07:00
+// KEESOKAN HARINYA — jadi absen pulang sebelum itu = "Pulang Cepat".
+function isShiftJagaPadaTanggal(u, tglStr) {
+  if (!isSecurityShiftJaga(u)) return false;
+  return getKodeShift(u.Tim || u.tim || u['Tim'] || u['TIM'], tglStr) === 'J';
+}
+
+// ============================================================
 // PENGECUALIAN JAM KERJA PER PEGAWAI (khusus Security)
 // Tabel "Jam Kerja per Pekerjaan/Shift" hanya membedakan jam kerja
 // berdasarkan PEKERJAAN + SHIFT (mis. Security - Jaga 24 Jam), belum bisa
 // membedakan per anggota TIM atau per individu. Untuk pegawai Security
-// yang jam kerjanya TIDAK mengikuti pola shift 24 jam (mis. anggota TIM 4
-// yang bertugas seperti Pramubakti), daftarkan namanya di sini.
+// yang jam kerjanya TIDAK mengikuti pola shift 24 jam DAN jamnya berbeda
+// dari jam Pramubakti, daftarkan namanya di sini.
 // - jamMasuk / jamPulang: jam kerja tetap pegawai ybs.
 // - liburMingguan: true artinya hari libur mengikuti Sabtu & Minggu
 //   (jadwal_libur / isHariLibur), BUKAN kode "L" pada jadwal shift TIM-nya.
@@ -3956,6 +4096,19 @@ function genId(prefix) {
   return prefix + Date.now().toString(36).toUpperCase();
 }
 
+// Tambah n hari ke tanggal 'YYYY-MM-DD', hasil 'YYYY-MM-DD'.
+// Dipakai untuk menghitung tanggal pulang shift yang melewati tengah
+// malam (mis. Security Jaga 24 Jam: masuk hari H, pulang hari H+1).
+function tambahHari(tglStr, n) {
+  const [y, m, d] = tglStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getUTCDate()).padStart(2, '0');
+  return yy + '-' + mm + '-' + dd;
+}
+
 // ============================================================
 // WAKTU SERVER (ANTI-MANIPULASI JAM/TANGGAL HP)
 // ------------------------------------------------------------
@@ -4536,7 +4689,7 @@ async function callAPI(action, params={}) {
       case 'saveShift': {
         const rows = [];
         (params.rows||[]).forEach(function(r){
-          ['TIM 1','TIM 2','TIM 3','TIM 4'].forEach(function(t){
+          SHIFT_TIMS.forEach(function(t){
             if (r[t] !== undefined) rows.push({ tanggal: r.Tanggal, tim: t, kode: r[t] });
           });
         });
@@ -5623,10 +5776,11 @@ function isPegawaiLiburOnDate(peg, tanggalStr) {
   if (!peg) return isHariLibur(tanggalStr);
   var job = peg.pekerjaan || peg['PEKERJAAN'] || '';
   if (job === 'Security') {
-    var tim = peg.Tim || peg.tim || peg['Tim'] || peg['TIM'] || '';
+    var tim = normalisasiTim(peg.Tim || peg.tim || peg['Tim'] || peg['TIM'] || '');
+    // Security tanpa TIM (atau eks-TIM 4) mengikuti jam kerja & hari libur
+    // Pramubakti, bukan jadwal shift jaga 24 jam.
     if (!tim) return isHariLibur(tanggalStr);
-    var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
-    var idx = tims.indexOf(tim);
+    var idx = SHIFT_TIMS.indexOf(tim);
     var val = (shiftData[tanggalStr] && shiftData[tanggalStr][tim])
       ? String(shiftData[tanggalStr][tim]).toUpperCase()
       : (idx >= 0 ? hitungShiftOtomatis(tanggalStr, idx) : 'L');
@@ -6212,8 +6366,23 @@ function updatePulangCard() {
   if (!pdPulangCard || !currentUser || currentUser.status === 'Admin') return;
 
   var u = currentUser;
-  var todayAbsen = localAbsensi.find(function(a){ return a.idPegawai===u.idPegawai && a.tanggal===today(); });
+  var tglIni = todayVerified();
+  var todayAbsen = localAbsensi.find(function(a){ return a.idPegawai===u.idPegawai && a.tanggal===tglIni; });
   var jamPulang = getJamPulangHariIni(u);
+
+  // Shift jaga 24 jam KEMARIN yang belum ditutup masih berjalan sampai
+  // 07:00 hari ini — kartu harus menunjuk ke record itu, bukan hari ini.
+  var tglKemarin = tambahHari(tglIni, -1);
+  if (isSecurityShiftJaga(u) && (!todayAbsen || !todayAbsen.absenMasuk)) {
+    var absenKemarin = localAbsensi.find(function(a){
+      return a.idPegawai===u.idPegawai && a.tanggal===tglKemarin;
+    });
+    if (absenKemarin && absenKemarin.absenMasuk && !absenKemarin.absenPulang
+        && getKodeShift(u.Tim, tglKemarin) === 'J') {
+      todayAbsen = absenKemarin;
+      jamPulang  = getJamKerjaSecurityJaga().jamPulang;
+    }
+  }
 
   if (todayAbsen && todayAbsen.absenPulang) {
     pdPulangVal.textContent = fmtTime(todayAbsen.absenPulang) + ' WIB';
@@ -6232,9 +6401,15 @@ function updatePulangCard() {
     return;
   }
 
-  var now = new Date();
-  var nowHM = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-  var sudahWaktunya = nowHM >= jamPulang;
+  // Bandingkan sebagai datetime penuh memakai waktu SERVER (bukan jam
+  // perangkat): untuk shift jaga 24 jam target pulangnya jatuh di HARI
+  // BERIKUTNYA, jadi perbandingan "jam saja" akan salah — kartu bisa
+  // berkedip "Waktunya Pulang!" sejak sore padahal shift baru selesai
+  // pukul 07:00 besok pagi.
+  var target = hitungTargetPulang(u, todayAbsen.tanggal, jamPulang);
+  var nowHM  = jamServerWIB(serverAdjustedNow());
+  var sudahWaktunya = selisihMenit(tglIni, nowHM, target.tanggal, target.jam) >= 0;
+  pdPulangVal.textContent = target.jam + ' WIB' + (target.lintasHari ? ' (' + fmtDate(target.tanggal) + ')' : '');
   pdPulangTag.textContent = sudahWaktunya ? '⏰ Waktunya Pulang!' : 'Terjadwal';
   pdPulangCard.classList.toggle('blinking', sudahWaktunya);
 }
@@ -6648,6 +6823,17 @@ async function initAbsensiPage() {
   // jam/tanggal perangkat yang bisa diubah manual.
   await syncServerTime();
 
+  // Cek dulu: adakah shift jaga 24 jam KEMARIN yang belum ditutup? Kalau
+  // ada, halaman absensi hari ini dipakai untuk menutup shift tersebut.
+  absenTargetTanggal = null;
+  var shiftJagaBelumTutup = await cariShiftJagaBelumTutup(u);
+  // Hanya arahkan absen pulang ke tanggal kemarin bila memang ADA record
+  // absen masuk yang menggantung. Kalau tidak ada, biarkan null supaya
+  // alur absen hari ini tidak ikut terganggu.
+  if (shiftJagaBelumTutup && shiftJagaBelumTutup.record) {
+    absenTargetTanggal = shiftJagaBelumTutup.tanggal;
+  }
+
   // Determine shift
   let jamMasuk = '-', jamPulang = '-';
   var pengecualianJK = getPengecualianJamKerja(u);
@@ -6666,6 +6852,37 @@ async function initAbsensiPage() {
       jamMasuk  = pengecualianJK.jamMasuk;
       jamPulang = pengecualianJK.jamPulang;
     }
+  } else if (u.pekerjaan === 'Security' && shiftJagaBelumTutup) {
+    // PRIORITAS: shift jaga 24 jam KEMARIN masih menggantung.
+    // Hari ini kode shift TIM-nya 'L' (libur), dan dulu itu membuat seluruh
+    // form absensi disembunyikan sehingga shift kemarin tidak pernah bisa
+    // ditutup. Sekarang form tetap dibuka sampai batas toleransi.
+    var jkJaga = getJamKerjaSecurityJaga();
+    var recKemarin = shiftJagaBelumTutup.record;
+    document.getElementById('offDayNotice').style.display = 'block';
+    document.getElementById('holidayNotice').style.display = 'none';
+
+    if (recKemarin && recKemarin.absenMasuk) {
+      document.getElementById('offDayNotice').textContent =
+        '🌙 Anda masih dalam shift jaga 24 jam yang dimulai ' + fmtDate(shiftJagaBelumTutup.tanggal) +
+        ' pukul ' + fmtTime(recKemarin.absenMasuk) +
+        '. Shift berakhir pukul ' + jkJaga.jamPulang + ' hari ini — silakan absen pulang untuk menutup shift tersebut' +
+        ' (paling lambat pukul ' + BATAS_TUTUP_SHIFT_KEMARIN + ').';
+      document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display=''; });
+      document.getElementById('absenShiftInfo').style.display = 'block';
+      document.getElementById('absenShiftLabel').textContent =
+        'Jaga 24 Jam ' + fmtDate(shiftJagaBelumTutup.tanggal) + ' (berakhir ' + jkJaga.jamPulang + ' hari ini)';
+    } else {
+      // Terjadwal piket kemarin tapi TIDAK ADA absen masuk sama sekali.
+      // Tidak ada yang bisa ditutup — beri keterangan jujur, jangan
+      // menampilkan "Anda OFF" yang menyesatkan.
+      document.getElementById('offDayNotice').textContent =
+        '⚠ Anda terjadwal piket jaga ' + fmtDate(shiftJagaBelumTutup.tanggal) +
+        ', tetapi tidak ada catatan absen masuk pada tanggal tersebut. Absen pulang tidak bisa dilakukan — hubungi admin untuk perbaikan data.';
+      document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display='none'; });
+    }
+    jamMasuk  = jkJaga.jamMasuk;
+    jamPulang = jkJaga.jamPulang;
   } else if (u.pekerjaan === 'Security') {
     // Pastikan shiftData hari ini sudah ada — fetch dari Sheets jika belum
     var shiftVal = getSecurityShiftToday();
@@ -6677,7 +6894,7 @@ async function initAbsensiPage() {
           var tgl = r['Tanggal'] || r['tanggal'] || '';
           if (!tgl) return;
           if (!shiftData[tgl]) shiftData[tgl] = {};
-          ['TIM 1','TIM 2','TIM 3','TIM 4'].forEach(function(t){
+          SHIFT_TIMS.forEach(function(t){
             if (r[t]) shiftData[tgl][t] = r[t];
           });
         });
@@ -6686,7 +6903,28 @@ async function initAbsensiPage() {
       }
     }
     // Tampilkan hasil
-    if (shiftVal === null || shiftVal === undefined) {
+    if (shiftVal === 'PRAMUBAKTI') {
+      // Security di luar TIM 1-3 (eks-TIM 4 / kolom Tim kosong): tidak ikut
+      // rotasi piket 24 jam. Jam kerjanya mengikuti Pramubakti dan hari
+      // liburnya mengikuti hari libur kantor.
+      await ensureLiburLoaded();
+      document.getElementById('offDayNotice').style.display = 'none';
+      if (isHariLibur(todayVerified())) {
+        document.getElementById('holidayNotice').style.display = 'block';
+        document.getElementById('holidayNotice').textContent =
+          '🗓 Hari ini adalah hari libur' + (getKeteranganLibur(todayVerified()) ? ' (' + getKeteranganLibur(todayVerified()) + ')' : '') + '. Tidak perlu melakukan absensi.';
+        document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display='none'; });
+      } else {
+        document.getElementById('holidayNotice').style.display = 'none';
+        document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display=''; });
+        var jkPB = getJamKerjaPramubakti();
+        jamMasuk  = jkPB.jamMasuk;
+        jamPulang = jkPB.jamPulang;
+        document.getElementById('absenShiftInfo').style.display = 'block';
+        document.getElementById('absenShiftLabel').textContent =
+          'Ikut Jam Kerja Pramubakti (' + jkPB.jamMasuk + ' - ' + jkPB.jamPulang + ')';
+      }
+    } else if (shiftVal === null || shiftVal === undefined) {
       // Data shift tidak tersedia
       document.getElementById('offDayNotice').style.display='block';
       document.getElementById('offDayNotice').textContent='⚠ Data jadwal shift hari ini belum tersedia. Hubungi admin.';
@@ -6727,10 +6965,13 @@ async function initAbsensiPage() {
   updateClock();
   document.getElementById('absenDateDisplay').textContent = todayStr(serverAdjustedNow());
 
-  // Cek absensi hari ini dari Sheets (prioritas) supaya tidak dobel
+  // Cek absensi hari ini dari Sheets (prioritas) supaya tidak dobel.
+  // Kalau sedang menutup shift jaga kemarin, yang dimuat adalah record
+  // tanggal KEMARIN (absenTargetTanggal), bukan hari ini.
+  var tglRecord = absenTargetTanggal || today();
   todayAbsenData = null;
   if (SCRIPT_URL) {
-    const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: today(), to: today() });
+    const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: tglRecord, to: tglRecord });
     if (res && res.success && res.data.length > 0) {
       // Ambil yang paling lengkap jika ada >1 (seharusnya tidak, tapi antisipasi)
       todayAbsenData = res.data.reduce(function(best, cur){
@@ -6742,7 +6983,7 @@ async function initAbsensiPage() {
   if (!todayAbsenData) {
     const existing = localAbsensi.filter(function(a){
       return String(a.idPegawai||'').toUpperCase() === String(u.idPegawai||'').toUpperCase()
-          && a.tanggal === today();
+          && a.tanggal === tglRecord;
     });
     if (existing.length > 0) {
       todayAbsenData = existing.reduce(function(best, cur){
@@ -6764,11 +7005,102 @@ async function initAbsensiPage() {
   loadAbsenHistory();
 }
 
-function getSecurityShiftToday() {
-  const tim    = currentUser.Tim;          // e.g. "TIM 4"
-  const tgl    = todayVerified();          // "YYYY-MM-DD" hasil verifikasi server
+// Cari shift jaga 24 jam KEMARIN yang sudah absen masuk tapi belum absen
+// pulang. Shift jaga baru berakhir pukul 07:00 hari ini, jadi satpam yang
+// baru menekan "Absen Pulang" pagi ini harus menutup record KEMARIN —
+// bukan membuat record baru bertanggal hari ini (dulu record kemarin tidak
+// pernah bisa ditutup karena halaman absensi hanya memuat data hari ini).
+//
+// PATOKAN UTAMA adalah RECORD ABSENSI-nya, bukan kode shift di database.
+// Alasannya: tabel shift_jadwal bisa saja masih berisi jadwal lama yang
+// tidak cocok dengan rotasi sekarang (mis. TIM 1 tertulis "L" pada tanggal
+// dia sebenarnya piket). Kalau kode shift dijadikan syarat wajib, satpam
+// yang JELAS-JELAS sudah absen masuk kemarin malah terkunci dan shiftnya
+// tidak bisa ditutup selamanya. Adanya record masuk yang belum ditutup
+// sudah membuktikan dia memang bertugas.
+async function cariShiftJagaBelumTutup(u) {
+  if (!isSecurityShiftJaga(u)) {
+    console.log('[shift-24jam] Bukan security shift jaga — dilewati.', {
+      pekerjaan: u && u.pekerjaan,
+      tim: u && u.Tim,
+      timTerbaca: normalisasiTim(u && u.Tim),
+      pengecualianJamKerja: !!getPengecualianJamKerja(u)
+    });
+    return null;
+  }
+  var tglIni = todayVerified();
+  var tglKemarin = tambahHari(tglIni, -1);
 
-  // Baca dari shiftData (sudah di-sync dari sheet Shift Satpam)
+  // Toleransi: shift berakhir 07:00, tapi masih boleh ditutup sampai
+  // BATAS_TUTUP_SHIFT_KEMARIN (17:00) kalau satpam lupa/telat absen.
+  var jamKini = jamServerWIB(serverAdjustedNow());
+  if (jamKini > BATAS_TUTUP_SHIFT_KEMARIN) {
+    console.log('[shift-24jam] Sudah lewat batas toleransi ' + BATAS_TUTUP_SHIFT_KEMARIN + ' (sekarang ' + jamKini + ').');
+    return null;
+  }
+
+  // Ambil record kemarin — dari database dulu, lalu cache lokal.
+  var rec = null;
+  if (SCRIPT_URL) {
+    try {
+      var res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: tglKemarin, to: tglKemarin });
+      if (res && res.success && res.data.length > 0) {
+        rec = res.data.reduce(function(best, cur){
+          return (cur.absenPulang && !best.absenPulang) ? cur : best;
+        }, res.data[0]);
+      }
+    } catch (err) { console.log('Gagal memuat absensi kemarin:', err); }
+  }
+  if (!rec) {
+    rec = localAbsensi.find(function(a){
+      return String(a.idPegawai||'').toUpperCase() === String(u.idPegawai||'').toUpperCase()
+          && a.tanggal === tglKemarin;
+    }) || null;
+  }
+
+  console.log('[shift-24jam] Cek shift kemarin (' + tglKemarin + ')', {
+    jamSekarang: jamKini,
+    batasToleransi: BATAS_TUTUP_SHIFT_KEMARIN,
+    tim: normalisasiTim(u.Tim),
+    kodeShiftKemarin: getKodeShift(u.Tim, tglKemarin),
+    adaRecord: !!rec,
+    absenMasuk: rec ? rec.absenMasuk : null,
+    absenPulang: rec ? rec.absenPulang : null
+  });
+
+  // Sudah absen masuk kemarin & belum absen pulang → shift masih terbuka.
+  if (rec && rec.absenMasuk && !rec.absenPulang) {
+    console.log('[shift-24jam] ✅ Shift ' + tglKemarin + ' masih terbuka — form absen pulang dibuka.');
+    return { record: rec, tanggal: tglKemarin };
+  }
+
+  // Tidak ada record masuk sama sekali. Kalau menurut jadwal/rotasi dia
+  // memang piket kemarin, tetap laporkan supaya halaman absensi bisa
+  // memberi keterangan yang jujur (bukan sekadar "Anda OFF hari ini").
+  await ensureShiftRangeLoaded(tglKemarin, tglIni);
+  if (!rec && getKodeShift(u.Tim, tglKemarin) === 'J') {
+    return { record: null, tanggal: tglKemarin, tanpaAbsenMasuk: true };
+  }
+  return null;
+}
+
+// PENTING — dua sudut pandang yang TIDAK boleh dicampur:
+//  1. getSecurityShiftToday()  → shift yang MULAI hari ini (tanggal
+//     kalender). Dipakai halaman absensi untuk absen MASUK, supaya satpam
+//     yang datang lebih awal (mis. 06:45) tetap boleh absen masuk.
+//  2. getSecurityShiftPiketBerjalan() → siapa yang SEDANG bertugas detik
+//     ini. Dipakai kartu tampilan piket; sebelum 07:00 jawabannya masih
+//     tim yang mulai jaga kemarin pagi.
+function getSecurityShiftToday(tglOverride) {
+  const tim = normalisasiTim(currentUser.Tim);   // '' bila eks-TIM 4 / tanpa tim
+  const tgl = tglOverride || todayVerified();
+
+  // Bukan anggota tim shift (eks-TIM 4 / tanpa TIM) — tidak punya kode shift
+  // sama sekali; jam kerjanya mengikuti Pramubakti, ditangani terpisah di
+  // initAbsensiPage.
+  if (!tim) return 'PRAMUBAKTI';
+
+  // Baca dari shiftData (sudah di-sync dari tabel shift_jadwal)
   var val = shiftData[tgl] && shiftData[tgl][tim]
     ? String(shiftData[tgl][tim]).trim().toUpperCase()
     : null;
@@ -6779,6 +7111,12 @@ function getSecurityShiftToday() {
 
   // Tidak ada data shift hari ini di localStorage → coba muat dari Sheets
   return null; // ditangani di initAbsensiPage
+}
+
+// Shift yang SEDANG berjalan detik ini (lihat catatan di atas). Dipakai
+// kartu-kartu tampilan piket, bukan alur absen masuk.
+function getSecurityShiftPiketBerjalan() {
+  return getSecurityShiftToday(hariPiketBerjalan());
 }
 
 // Pastikan data shift untuk hari ini sudah ada di cache lokal (shiftData),
@@ -6795,7 +7133,7 @@ async function ensureShiftTodayLoaded() {
         var t = r['Tanggal'] || r['tanggal'] || '';
         if (!t) return;
         if (!shiftData[t]) shiftData[t] = {};
-        ['TIM 1','TIM 2','TIM 3','TIM 4'].forEach(function(tm){
+        SHIFT_TIMS.forEach(function(tm){
           if (r[tm]) shiftData[t][tm] = r[tm];
         });
       });
@@ -6804,12 +7142,39 @@ async function ensureShiftTodayLoaded() {
   } catch(err) { console.log('Gagal memuat shift hari ini:', err); }
 }
 
-// Kode shift (J/L) sebuah TIM untuk hari ini, dari cache shiftData atau
-// hasil hitung rotasi otomatis bila belum diatur manual.
+// Pastikan data shift untuk rentang tanggal tertentu ada di cache lokal.
+// Dipakai halaman absensi yang perlu tahu jadwal KEMARIN juga (shift jaga
+// 24 jam kemarin baru berakhir pukul 07:00 hari ini).
+async function ensureShiftRangeLoaded(from, to) {
+  if (!SCRIPT_URL) return;
+  var perluFetch = false;
+  for (var t = from; t <= to; t = tambahHari(t, 1)) {
+    if (!shiftData[t] || !Object.keys(shiftData[t]).length) { perluFetch = true; break; }
+  }
+  if (!perluFetch) return;
+  try {
+    var sRes = await callAPI('getShift', { from: from, to: to });
+    if (sRes && sRes.success && sRes.data.length > 0) {
+      sRes.data.forEach(function(r) {
+        var t = r['Tanggal'] || r['tanggal'] || '';
+        if (!t) return;
+        if (!shiftData[t]) shiftData[t] = {};
+        SHIFT_TIMS.forEach(function(tm){
+          if (r[tm]) shiftData[t][tm] = r[tm];
+        });
+      });
+      localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
+    }
+  } catch(err) { console.log('Gagal memuat shift rentang tanggal:', err); }
+}
+
+// Kode shift (J/L) sebuah TIM untuk HARI PIKET yang sedang berjalan, dari
+// cache shiftData atau hasil hitung rotasi otomatis bila belum diatur admin.
+// Memakai hariPiketBerjalan(), jadi pada pukul 00:00–07:00 yang ditampilkan
+// masih tim yang menjaga sejak kemarin — bukan tim berikutnya.
 function getTimShiftToday(tim) {
-  var tgl = today();
-  var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
-  var idx = tims.indexOf(tim);
+  var tgl = hariPiketBerjalan();
+  var idx = SHIFT_TIMS.indexOf(tim);
   var val = (shiftData[tgl] && shiftData[tgl][tim])
     ? String(shiftData[tgl][tim]).toUpperCase()
     : (idx >= 0 ? hitungShiftOtomatis(tgl, idx) : 'L');
@@ -6821,32 +7186,49 @@ function getTimShiftToday(tim) {
 // Kumpulkan seluruh TIM security & anggotanya, dikelompokkan berdasarkan
 // shift hari ini: Jaga 24 Jam (J), Libur (L).
 async function buildPiketOverviewHariIni() {
+  // Muat kemarin juga: sebelum 07:00, hari piket yang berlaku = kemarin.
+  await ensureShiftRangeLoaded(tambahHari(todayVerified(), -1), todayVerified());
   await ensureShiftTodayLoaded();
   if (SCRIPT_URL) await refreshAllPegawai();
   var pegawaiList = getPegawaiListForStats().filter(function(p){
     return p.pekerjaan === 'Security' && !isPengecualianJamKerjaByNama(p.namaPegawai);
   });
-  var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
-  var groups = { J: [], L: [] };
-  tims.forEach(function(tim){
+  var groups = { J: [], L: [], P: [] };
+  SHIFT_TIMS.forEach(function(tim){
     var val = getTimShiftToday(tim);
     if (!groups[val]) groups[val] = [];
-    var anggota = pegawaiList.filter(function(p){ return (p.Tim||'').trim().toUpperCase() === tim; });
+    var anggota = pegawaiList.filter(function(p){ return normalisasiTim(p.Tim) === tim; });
     groups[val].push({ tim: tim, anggota: anggota });
   });
+
+  // Security yang tidak ikut rotasi piket (eks-TIM 4 / tanpa TIM) —
+  // ditampilkan terpisah karena jam kerjanya mengikuti Pramubakti.
+  var nonShift = pegawaiList.filter(function(p){ return !normalisasiTim(p.Tim); });
+  if (nonShift.length) {
+    groups.P.push({ tim: 'Jam Kerja Pramubakti', anggota: nonShift });
+  }
   return groups;
 }
 
-// Render HTML 2 kolom (Jaga 24 Jam / Libur) berisi tim & anggotanya,
+// Render HTML berisi tim & anggotanya per kategori shift hari ini,
 // dipakai bersama oleh dashboard admin & dashboard security.
 function renderPiketOverviewHtml(groups) {
+  var jkPB = getJamKerjaPramubakti();
+  // Tunjukkan tanggal piketnya secara eksplisit. Pada dini hari (sebelum
+  // 07:00) hari piket masih tanggal kemarin, dan tanpa keterangan ini
+  // pengguna bisa mengira datanya salah.
+  var hp = hariPiketBerjalan();
+  var subJaga = 'Piket ' + fmtDate(hp) + ' pukul 07:00 → ' + fmtDate(tambahHari(hp, 1)) + ' pukul 07:00';
   var sections = [
-    { key:'J', label:'🔒 Jaga 24 Jam', sub:'07:00–07:00 keesokan hari', color:'#16a34a' },
-    { key:'L', label:'😴 Libur', sub:'Tidak piket hari ini', color:'#6b7280' }
+    { key:'J', label:'🔒 Jaga 24 Jam', sub:subJaga, color:'#16a34a' },
+    { key:'L', label:'😴 Libur', sub:'Tidak piket pada shift ini', color:'#6b7280' },
+    { key:'P', label:'🧹 Ikut Jam Pramubakti', sub:jkPB.jamMasuk + '–' + jkPB.jamPulang + ', libur mengikuti hari libur kantor', color:'#8b5cf6' }
   ];
   var html = '<div class="tim-roster-grid">';
   sections.forEach(function(sec){
     var teams = groups[sec.key] || [];
+    // Kartu "Ikut Jam Pramubakti" hanya muncul kalau memang ada orangnya
+    if (sec.key === 'P' && !teams.length) return;
     var totalOrang = teams.reduce(function(s,t){ return s + t.anggota.length; }, 0);
     html += '<div class="tim-roster-card" style="border-top:3px solid ' + sec.color + '">';
     html += '<div class="trc-head"><span class="trc-name" style="color:' + sec.color + '">' + sec.label + '</span>' +
@@ -6906,20 +7288,22 @@ async function renderTimPiketHariIni(u) {
   if (!wrap || !body || !title) return;
 
   if (u.pekerjaan !== 'Security') { wrap.style.display = 'none'; return; }
-  if (getPengecualianJamKerja(u)) {
-    // Pegawai dengan jam kerja tetap (bukan shift 24 jam) tidak ikut
-    // ditampilkan di widget piket jaga TIM-nya.
+  if (!isSecurityShiftJaga(u)) {
+    // Security yang tidak ikut rotasi piket (eks-TIM 4 / tanpa TIM / jam
+    // kerja tetap) tidak punya kartu piket TIM — jam kerjanya Pramubakti.
     wrap.style.display = 'none';
     return;
   }
   wrap.style.display = '';
   body.innerHTML = '<div class="alert alert-info">⏳ Memuat data tim...</div>';
 
-  var tim = u.Tim;
-  var tgl = today();
+  var tim = normalisasiTim(u.Tim);
+  // Hari piket berjalan, bukan tanggal kalender: pada pukul 00:00–07:00
+  // tim yang sedang bertugas adalah tim yang mulai jaga KEMARIN pagi.
+  var tgl = hariPiketBerjalan();
 
-  // Pastikan data shift hari ini sudah ada di cache — fetch dari Sheets bila perlu
-  var shiftVal = getSecurityShiftToday();
+  // Pastikan data shift hari piket ini sudah ada di cache — fetch bila perlu
+  var shiftVal = getSecurityShiftPiketBerjalan();
   if (shiftVal === null && SCRIPT_URL) {
     try {
       var sRes = await callAPI('getShift', { from: tgl, to: tgl });
@@ -6928,7 +7312,7 @@ async function renderTimPiketHariIni(u) {
           var t = r['Tanggal'] || r['tanggal'] || '';
           if (!t) return;
           if (!shiftData[t]) shiftData[t] = {};
-          ['TIM 1','TIM 2','TIM 3','TIM 4'].forEach(function(tm){
+          SHIFT_TIMS.forEach(function(tm){
             if (r[tm]) shiftData[t][tm] = r[tm];
           });
         });
@@ -6941,15 +7325,19 @@ async function renderTimPiketHariIni(u) {
 
   if (SCRIPT_URL) await refreshAllPegawai();
   var anggota = getPegawaiListForStats().filter(function(p){
-    return p.pekerjaan === 'Security' && (p.Tim||'').trim().toUpperCase() === (tim||'').trim().toUpperCase()
+    return p.pekerjaan === 'Security' && normalisasiTim(p.Tim) === tim
       && !isPengecualianJamKerjaByNama(p.namaPegawai);
   });
 
-  var shiftLabelTxt = shiftVal === 'J' ? 'Jaga 24 Jam (07:00–07:00 keesokan hari)' : 'Libur';
-  title.textContent = '👥 ' + (tim || 'Tim Anda') + ' — Piket ' + shiftLabelTxt + ' Hari Ini';
+  if (shiftVal === 'J') {
+    title.textContent = '👥 ' + (tim || 'Tim Anda') + ' — Jaga 24 Jam: ' +
+      fmtDate(tgl) + ' 07:00 → ' + fmtDate(tambahHari(tgl, 1)) + ' 07:00';
+  } else {
+    title.textContent = '👥 ' + (tim || 'Tim Anda') + ' — Libur (Tidak Piket)';
+  }
 
   if (shiftVal === '-') {
-    body.innerHTML = '<div class="alert alert-info">😴 ' + (tim||'Tim Anda') + ' sedang OFF/libur hari ini. Tidak ada anggota yang piket.</div>';
+    body.innerHTML = '<div class="alert alert-info">😴 ' + (tim||'Tim Anda') + ' sedang OFF/libur pada shift ini. Tidak ada anggota yang piket.</div>';
     return;
   }
   if (!anggota.length) {
@@ -6976,6 +7364,11 @@ function getJamPulangHariIni(u) {
   }
   if (u.pekerjaan === 'Security') {
     var shiftVal = getSecurityShiftToday();
+    // Security di luar TIM 1-3 → jam pulang mengikuti Pramubakti.
+    if (shiftVal === 'PRAMUBAKTI') {
+      if (isHariLibur(todayVerified())) return null;
+      return getJamKerjaPramubakti().jamPulang;
+    }
     if (!shiftVal || shiftVal === '-') return null;
     var jkSec = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN==='Security' && j.SHIFT==='Jaga'; });
     return jkSec ? jkSec.JAM_PULANG : '07:00';
@@ -7002,7 +7395,11 @@ function updateAbsenButtons() {
   const allOk    = cameraOk && locationOk;
 
   // Tombol MASUK — hanya bisa 1x
-  if (todayAbsenData && todayAbsenData.absenMasuk) {
+  if (absenTargetTanggal) {
+    // Sedang menutup shift jaga kemarin — tidak boleh absen masuk lagi.
+    btnMasuk.disabled    = true;
+    btnMasuk.textContent = '🌙 Shift ' + fmtDate(absenTargetTanggal) + ' belum ditutup';
+  } else if (todayAbsenData && todayAbsenData.absenMasuk) {
     btnMasuk.disabled    = true;
     btnMasuk.textContent = '✅ Sudah Masuk (' + fmtTime(todayAbsenData.absenMasuk) + ')';
   } else {
@@ -7144,12 +7541,78 @@ function getStatusMasuk(jamKerjaStr, jamSekarangStr) {
   return nowMs > jamKerjaMs + 5 ? 'Terlambat' : 'Tepat Waktu';
 }
 
-function getStatusPulang(jamPulangStr, jamSekarangStr) {
-  const [h,m] = jamPulangStr.split(':').map(Number);
-  const jamPulangMs = h*60+m;
-  const [hs,ms] = jamSekarangStr.split(':').map(Number);
-  const nowMs = hs*60+ms;
-  return nowMs < jamPulangMs - 5 ? 'Pulang Cepat' : 'Tepat Waktu';
+// PENTING: untuk shift yang melewati tengah malam (mis. Security Jaga
+// 24 Jam: masuk 07:00 hari ini -> pulang 07:00 BESOK), membandingkan
+// jam saja (HH:MM) tanpa tanggal itu SALAH — bisa memberi status
+// "Pulang Cepat" padahal belum genap waktunya, atau sebaliknya
+// meloloskan pulang jauh lebih awal dari seharusnya, tergantung jam
+// berapa "sekarang" secara kebetulan berada di atas/bawah 07:00.
+//
+// Parameter tglTargetPulangStr (opsional) menyatakan TANGGAL berakhirnya
+// jam kerja secara EKSPLISIT. Ini penting untuk shift jaga 24 jam: masuk
+// 07:00 tanggal H, target pulang 07:00 tanggal H+1. Sebelumnya tanggal
+// target ditebak dari perbandingan jamPulang <= jamMasuk, dan tebakan itu
+// SALAH untuk satpam yang absen masuk lebih awal (mis. 06:45): karena
+// 07:00 > 06:45, shift dikira berakhir hari itu juga, sehingga absen
+// pulang siang/sore hari yang sama malah berstatus "Tepat Waktu" padahal
+// seharusnya "Pulang Cepat". Tebakan lama hanya dipakai sebagai fallback
+// bila pemanggil tidak mengirim tanggal target.
+//
+// tglSekarangStr WAJIB diisi dengan tanggal server (todayServer/
+// todayVerified) untuk perbandingan yang akurat, bukan tanggal perangkat.
+function getStatusPulang(jamPulangStr, jamSekarangStr, tglMasukStr, tglSekarangStr, jamMasukStr, tglTargetPulangStr) {
+  const [hp, mp] = jamPulangStr.split(':').map(Number);
+  const [hs, ms] = jamSekarangStr.split(':').map(Number);
+  const jamPulangMenit   = hp * 60 + mp;
+  const jamSekarangMenit = hs * 60 + ms;
+
+  // Mode lama (tanpa info tanggal) — dipertahankan sebagai fallback
+  // supaya pemanggilan lama yang belum sempat dikirimi tanggal tidak
+  // rusak, tapi TIDAK dipakai lagi untuk alur absen pulang Security.
+  if (!tglMasukStr || !tglSekarangStr) {
+    return jamSekarangMenit < jamPulangMenit - 5 ? 'Pulang Cepat' : 'Tepat Waktu';
+  }
+
+  // Tanggal target pulang: pakai yang dikirim pemanggil bila ada.
+  var targetTglPulang = tglTargetPulangStr || tglMasukStr;
+  if (!tglTargetPulangStr && jamMasukStr) {
+    const [hm, mm] = jamMasukStr.split(':').map(Number);
+    const jamMasukMenit = hm * 60 + mm;
+    if (jamPulangMenit <= jamMasukMenit) {
+      targetTglPulang = tambahHari(tglMasukStr, 1);
+    }
+  }
+
+  // Bandingkan sebagai datetime penuh (tanggal + jam) dalam milidetik,
+  // bukan jam saja, supaya lintas tengah malam dihitung dengan benar.
+  const targetTs   = Date.parse(targetTglPulang + 'T00:00:00Z') + jamPulangMenit * 60000;
+  const sekarangTs = Date.parse(tglSekarangStr + 'T00:00:00Z') + jamSekarangMenit * 60000;
+
+  return sekarangTs < targetTs - 5 * 60000 ? 'Pulang Cepat' : 'Tepat Waktu';
+}
+
+// Kapan (tanggal + jam) pegawai `u` seharusnya absen pulang untuk record
+// absensi tertanggal tglMasukStr. Sumber kebenaran tunggal yang dipakai
+// oleh doAbsen(), kartu dashboard, dan perhitungan durasi kerja.
+function hitungTargetPulang(u, tglMasukStr, jamPulangDefault) {
+  // Shift jaga 24 jam SELALU berakhir 07:00 KEESOKAN HARINYA.
+  if (isShiftJagaPadaTanggal(u, tglMasukStr)) {
+    return {
+      tanggal: tambahHari(tglMasukStr, 1),
+      jam: getJamKerjaSecurityJaga().jamPulang,
+      lintasHari: true
+    };
+  }
+  return { tanggal: tglMasukStr, jam: jamPulangDefault, lintasHari: false };
+}
+
+// Selisih menit antara dua titik waktu (tanggal + jam), boleh lintas hari.
+function selisihMenit(tglA, jamA, tglB, jamB) {
+  var a = jamA.split(':').map(Number);
+  var b = jamB.split(':').map(Number);
+  var tsA = Date.parse(tglA + 'T00:00:00Z') + (a[0] * 60 + a[1]) * 60000;
+  var tsB = Date.parse(tglB + 'T00:00:00Z') + (b[0] * 60 + b[1]) * 60000;
+  return Math.round((tsA - tsB) / 60000);
 }
 
 // Fungsi terpusat: selalu simpan 1 row per idPegawai per tanggal di localAbsensi
@@ -7192,9 +7655,15 @@ async function doAbsen(type) {
   todayServer = tanggalServerWIB(serverNow);
   nowStr = jamServerWIB(serverNow);
 
+  // Tanggal record yang dikerjakan. Untuk satpam yang sedang menutup shift
+  // jaga 24 jam kemarin, ini tanggal KEMARIN — absen pulangnya harus masuk
+  // ke record shift itu, bukan bikin record baru hari ini. Absen MASUK
+  // selalu memakai tanggal hari ini.
+  var tglRecord = (type === 'pulang' && absenTargetTanggal) ? absenTargetTanggal : todayServer;
+
   // ── Selalu ambil state terbaru dari Sheets sebelum aksi ──
   if (SCRIPT_URL) {
-    const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: todayServer, to: todayServer });
+    const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: tglRecord, to: tglRecord });
     if (res && res.success && res.data.length > 0) {
       // Sheets bisa kembalikan >1 baris jika masih ada duplikat lama — ambil yang paling lengkap
       todayAbsenData = res.data.reduce(function(best, cur){
@@ -7208,7 +7677,7 @@ async function doAbsen(type) {
   if (!todayAbsenData) {
     const existing = localAbsensi.filter(function(a){
       return String(a.idPegawai||'').toUpperCase() === String(u.idPegawai||'').toUpperCase()
-          && a.tanggal === todayServer;
+          && a.tanggal === tglRecord;
     });
     if (existing.length > 0) {
       todayAbsenData = existing.reduce(function(best, cur){
@@ -7235,6 +7704,13 @@ async function doAbsen(type) {
   }
 
   if (type === 'masuk') {
+    // Blok absen masuk selama masih ada shift jaga kemarin yang terbuka —
+    // satpam harus menutup shift itu dulu (todayAbsenData saat ini berisi
+    // record KEMARIN, bukan hari ini).
+    if (absenTargetTanggal) {
+      showAlert('absenAlert', 'warn', '⚠ Anda masih dalam shift jaga 24 jam tanggal ' + fmtDate(absenTargetTanggal) + '. Silakan absen pulang dulu untuk menutup shift tersebut.');
+      updateAbsenButtons(); return;
+    }
     // Blok jika sudah masuk
     if (todayAbsenData && todayAbsenData.absenMasuk) {
       showAlert('absenAlert', 'warn', '⚠ Anda sudah absen masuk hari ini pukul ' + fmtTime(todayAbsenData.absenMasuk));
@@ -7302,11 +7778,19 @@ async function doAbsen(type) {
     }
     // Tidak diblokir meski sudah pulang sebelumnya — jam terakhir yang dipakai
 
-    const statusPulang = jamPulangEl !== '-' ? getStatusPulang(jamPulangEl, nowStr) : 'Tepat Waktu';
-    const [hm, mm2]    = todayAbsenData.absenMasuk.split(':').map(Number);
-    const [hp, mp]     = nowStr.split(':').map(Number);
-    var diff = (hp*60+mp) - (hm*60+mm2);
-    if (diff < 0) diff += 24*60;
+    // Target pulang dihitung EKSPLISIT dari jenis jadwal pegawai pada
+    // tanggal record absensinya. Untuk shift jaga 24 jam, targetnya 07:00
+    // tanggal masuk + 1 hari — bukan hasil tebakan dari jam masuk.
+    var target = hitungTargetPulang(u, todayAbsenData.tanggal, jamPulangEl);
+    const statusPulang = jamPulangEl !== '-'
+      ? getStatusPulang(target.jam, nowStr, todayAbsenData.tanggal, todayServer, todayAbsenData.absenMasuk, target.tanggal)
+      : 'Tepat Waktu';
+
+    // Durasi kerja dihitung dari selisih datetime penuh, supaya shift yang
+    // melewati tengah malam (bahkan lebih dari 24 jam) tetap benar dan
+    // tidak terpotong oleh pembungkusan "+24 jam" seperti sebelumnya.
+    var diff = selisihMenit(todayServer, nowStr, todayAbsenData.tanggal, todayAbsenData.absenMasuk);
+    if (diff < 0) diff = 0;
     const durasi = Math.floor(diff/60) + 'j ' + (diff%60) + 'm';
 
     const sudahPulangSebelumnya = !!todayAbsenData.absenPulang;
@@ -7321,10 +7805,13 @@ async function doAbsen(type) {
     if (fotoUrl) todayAbsenData.fotoPulang = fotoUrl;
 
     upsertLocalAbsen(todayAbsenData);
+    var infoShift = target.lintasHari
+      ? ' (shift jaga ' + fmtDate(todayAbsenData.tanggal) + ', target pulang ' + target.jam + ' ' + fmtDate(target.tanggal) + ')'
+      : '';
     const pesanPulang = sudahPulangSebelumnya
-      ? '🔄 Jam pulang diperbarui: ' + nowStr + ' — Durasi: ' + durasi
-      : '🏠 Absen pulang berhasil! ' + nowStr + ' — Durasi: ' + durasi;
-    showAlert('absenAlert', 'success', pesanPulang);
+      ? '🔄 Jam pulang diperbarui: ' + nowStr + ' — Durasi: ' + durasi + ' — Status: ' + statusPulang + infoShift
+      : '🏠 Absen pulang berhasil! ' + nowStr + ' — Durasi: ' + durasi + ' — Status: ' + statusPulang + infoShift;
+    showAlert('absenAlert', statusPulang === 'Pulang Cepat' ? 'warn' : 'success', pesanPulang);
     if (SCRIPT_URL) {
       var saveResPulang = await postAPI('saveAbsensi', todayAbsenData);
       if (!saveResPulang || !saveResPulang.success) {
@@ -7334,6 +7821,15 @@ async function doAbsen(type) {
       }
     } else if (fotoUploadError) {
       showAlert('absenAlert', 'warn', '✅ Absen pulang tersimpan, tapi foto gagal diunggah: ' + fotoUploadError);
+    }
+
+    // Shift jaga kemarin sudah ditutup — halaman kembali ke mode hari ini.
+    if (absenTargetTanggal) {
+      absenTargetTanggal = null;
+      var offNotice = document.getElementById('offDayNotice');
+      if (offNotice) {
+        offNotice.textContent = '✅ Shift jaga 24 jam sudah ditutup. Hari ini Anda OFF sesuai jadwal shift.';
+      }
     }
   }
 
@@ -8347,7 +8843,7 @@ function switchShiftTab(tab) {
   if (tab === 'rekap' && !document.getElementById('filterRekapPiketFrom').value) loadRekapPiketSecurity();
 }
 
-// Daftar anggota tim security, dikelompokkan per TIM (TIM 1-4), ditampilkan
+// Daftar anggota tim security, dikelompokkan per TIM (TIM 1-3), ditampilkan
 // di bawah judul "Jadwal Shift Security" supaya admin bisa langsung lihat
 // siapa saja anggota tiap tim sebelum mengatur jadwal.
 async function renderShiftTimRoster() {
@@ -8358,11 +8854,10 @@ async function renderShiftTimRoster() {
   if (SCRIPT_URL) await refreshAllPegawai();
 
   var pegawaiList = getPegawaiListForStats().filter(function(p){ return p.pekerjaan === 'Security'; });
-  var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
 
   var html = '<div class="tim-roster-grid">';
-  tims.forEach(function(tim){
-    var anggota = pegawaiList.filter(function(p){ return (p.Tim||'').trim().toUpperCase() === tim; });
+  SHIFT_TIMS.forEach(function(tim){
+    var anggota = pegawaiList.filter(function(p){ return normalisasiTim(p.Tim) === tim; });
     html += '<div class="tim-roster-card">';
     html += '<div class="trc-head"><span class="trc-name">👤 ' + tim + '</span><span style="font-size:11.5px;color:var(--text-muted)">' + anggota.length + ' orang</span></div>';
     if (!anggota.length) {
@@ -8374,6 +8869,21 @@ async function renderShiftTimRoster() {
     }
     html += '</div>';
   });
+
+  // Security di luar 3 tim shift (eks-TIM 4 / kolom Tim kosong / jam kerja
+  // tetap): tidak ikut rotasi piket, jam kerjanya mengikuti Pramubakti.
+  var nonShift = pegawaiList.filter(function(p){ return !normalisasiTim(p.Tim); });
+  if (nonShift.length) {
+    var jkPB = getJamKerjaPramubakti();
+    html += '<div class="tim-roster-card" style="border-top:3px solid #8b5cf6">';
+    html += '<div class="trc-head"><span class="trc-name" style="color:#8b5cf6">🧹 Ikut Jam Pramubakti</span><span style="font-size:11.5px;color:var(--text-muted)">' + nonShift.length + ' orang</span></div>';
+    html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">' + jkPB.jamMasuk + '–' + jkPB.jamPulang + ' • tidak ikut piket 24 jam</div>';
+    html += '<ul class="trc-members">' + nonShift.map(function(p){
+      return '<li>' + (p.namaPegawai || '-') + '</li>';
+    }).join('') + '</ul>';
+    html += '</div>';
+  }
+
   html += '</div>';
   wrap.innerHTML = html;
 }
@@ -8574,26 +9084,49 @@ function onShiftChange(el) {
 // Hitung otomatis shift berdasarkan rotasi
 // Hitung jadwal 1 hari untuk seluruh TIM sekaligus, mengikuti pola shift
 // 24 jam: setiap hari hanya 1 TIM yang Jaga (24 jam penuh, 07:00–07:00
-// keesokan hari), 3 TIM lainnya Libur. Giliran tim yang kebagian jaga
-// dirotasi tiap hari (round-robin) supaya adil bergantian, dan berlaku
-// sama baik hari kerja maupun hari libur.
+// keesokan hari), 2 TIM lainnya Libur. Giliran tim yang kebagian jaga
+// dirotasi tiap hari (round-robin 3 hari) supaya adil bergantian, dan
+// berlaku sama baik hari kerja maupun hari libur.
+//
+// PENTING: rotasi dihitung dari SHIFT_ANCHOR_DATE (jumlah hari sejak
+// tanggal jangkar), BUKAN dari "hari ke-berapa dalam tahun ini". Memakai
+// day-of-year membuat rotasi patah tiap pergantian tahun (31 Des ke 1 Jan
+// bisa membuat tim yang sama jaga 2 hari berturut-turut), dan pola bulan
+// berikutnya tidak nyambung dengan bulan sebelumnya.
+// PATOKAN RESMI: pada 24 Agustus 2026, TIM 1 yang jaga — yaitu piket
+// 24 Agt pukul 07:00 sampai 25 Agt pukul 07:00. Urutan berikutnya NAIK:
+//   24 Agt → TIM 1 | 25 Agt → TIM 2 | 26 Agt → TIM 3 | 27 Agt → TIM 1 ...
+// Semua tanggal lain (sebelum maupun sesudah) dihitung dari patokan ini.
+var SHIFT_TIMS = ['TIM 1','TIM 2','TIM 3'];
+var SHIFT_ANCHOR_DATE = '2026-08-24';
+// Urutan giliran jaga terhitung dari tanggal jangkar
+var SHIFT_ROTASI = ['TIM 1','TIM 2','TIM 3'];
+
+// Selisih hari antara dua tanggal 'YYYY-MM-DD' (UTC, bebas zona waktu)
+function selisihHari(tglA, tglB) {
+  var a = tglA.split('-').map(Number);
+  var b = tglB.split('-').map(Number);
+  var msA = Date.UTC(a[0], a[1]-1, a[2]);
+  var msB = Date.UTC(b[0], b[1]-1, b[2]);
+  return Math.round((msA - msB) / 86400000);
+}
+
 function hitungShiftHarianOtomatis(dateStr) {
-  var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
-  var d = new Date(dateStr + 'T00:00:00');
-  var dayOfYear = Math.floor((d - new Date(d.getFullYear(),0,0)) / 86400000);
-  var timJagaIdx = dayOfYear % tims.length;
+  var n = selisihHari(dateStr, SHIFT_ANCHOR_DATE);
+  // Modulo yang aman untuk tanggal sebelum jangkar (hasil negatif)
+  var idx = ((n % SHIFT_ROTASI.length) + SHIFT_ROTASI.length) % SHIFT_ROTASI.length;
+  var timJaga = SHIFT_ROTASI[idx];
 
   var hasil = {};
-  tims.forEach(function(tim, idx) {
-    hasil[tim] = (idx === timJagaIdx) ? 'J' : 'L';
+  SHIFT_TIMS.forEach(function(tim) {
+    hasil[tim] = (tim === timJaga) ? 'J' : 'L';
   });
   return hasil;
 }
 
 function hitungShiftOtomatis(dateStr, timIdx) {
-  var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
   var hasil = hitungShiftHarianOtomatis(dateStr);
-  return hasil[tims[timIdx]] || 'L';
+  return hasil[SHIFT_TIMS[timIdx]] || 'L';
 }
 
 async function loadShiftData() {
@@ -8604,7 +9137,7 @@ async function loadShiftData() {
   var year = parts[0], month = parts[1];
   var daysInMonth = new Date(year, month, 0).getDate();
   var tbody = document.getElementById('shiftBody');
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
 
   shiftMonthHasData = true; // default aman kalau Supabase belum dikonfigurasi
 
@@ -8621,10 +9154,7 @@ async function loadShiftData() {
           var tgl = r['Tanggal'] || r['tanggal'] || '';
           if (!tgl) return;
           if (!shiftData[tgl]) shiftData[tgl] = {};
-          if (r['TIM 1']) shiftData[tgl]['TIM 1'] = r['TIM 1'];
-          if (r['TIM 2']) shiftData[tgl]['TIM 2'] = r['TIM 2'];
-          if (r['TIM 3']) shiftData[tgl]['TIM 3'] = r['TIM 3'];
-          if (r['TIM 4']) shiftData[tgl]['TIM 4'] = r['TIM 4'];
+          SHIFT_TIMS.forEach(function(t){ if (r[t]) shiftData[tgl][t] = r[t]; });
         });
         localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
       }
@@ -8649,7 +9179,7 @@ function renderShiftTable(year, month, daysInMonth) {
     return;
   }
 
-  var tims  = ['TIM 1','TIM 2','TIM 3','TIM 4'];
+  var tims  = SHIFT_TIMS;
   var days  = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
 
   var dayList = [];
@@ -8678,7 +9208,7 @@ function renderShiftTable(year, month, daysInMonth) {
     });
     row += '</tr>';
     return row;
-  }, 5, 'Tidak ada data');
+  }, SHIFT_TIMS.length + 1, 'Tidak ada data');
 }
 
 // Tampilan khusus saat bulan yang dipilih di tab "Data Jadwal" belum punya
@@ -8689,7 +9219,7 @@ function renderShiftEmptyState(year, month) {
   var tbody = document.getElementById('shiftBody');
   if (tbody) {
     tbody.innerHTML =
-      '<tr><td colspan="5" style="text-align:center;padding:40px 20px">' +
+      '<tr><td colspan="4" style="text-align:center;padding:40px 20px">' +
         '<div style="font-size:32px;margin-bottom:8px">📭</div>' +
         '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Jadwal shift bulan ' + namaBulan + ' belum dibuat</div>' +
         '<div style="font-size:13px;color:var(--text-muted);max-width:420px;margin:0 auto 16px">Belum ada data jadwal shift bulan ini yang tersimpan di database. Silakan buat terlebih dahulu di tab Generator Jadwal.</div>' +
@@ -8722,11 +9252,10 @@ function bukaGeneratorUntukBulanIni() {
 var shiftGenData = {};
 
 function shiftSelectGen(dateStr, tim, val) {
-  val = (val || '-').toUpperCase();
+  val = (val || 'L').toUpperCase();
   return '<select class="shift-gen-select" data-date="'+dateStr+'" data-tim="'+tim+'" onchange="onShiftGenChange(this)">' +
     '<option value="J"'+(val==='J'?' selected':'')+'>JAGA</option>' +
     '<option value="L"'+(val==='L'?' selected':'')+'>LIBUR</option>' +
-    '<option value="-"'+(val==='-'?' selected':'')+'>PRAMUBAKTI</option>' +
   '</select>';
 }
 
@@ -8738,7 +9267,7 @@ function onShiftGenChange(el) {
 }
 
 function renderShiftGenTable(year, month, daysInMonth) {
-  var tims = ['TIM 1','TIM 2','TIM 3','TIM 4'];
+  var tims = SHIFT_TIMS;
   var days = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
   var dayList = [];
   for (var day = 1; day <= daysInMonth; day++) dayList.push(day);
@@ -8760,7 +9289,7 @@ function renderShiftGenTable(year, month, daysInMonth) {
     });
     row += '</tr>';
     return row;
-  }, 5, 'Tidak ada data');
+  }, SHIFT_TIMS.length + 1, 'Tidak ada data');
 }
 
 // Menghitung rotasi 1 bulan penuh dan menampilkannya sebagai PRATINJAU.
@@ -8776,21 +9305,14 @@ async function generateJadwalShiftOtomatis() {
   shiftGenData = {};
   for (var day = 1; day <= daysInMonth; day++) {
     var dateStr = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-    var hasilHari = hitungShiftHarianOtomatis(dateStr);
-
-    shiftGenData[dateStr] = {
-      'TIM 1': hasilHari['TIM 1'],
-      'TIM 2': hasilHari['TIM 2'],
-      'TIM 3': hasilHari['TIM 3'],
-      'TIM 4': '-'
-    };
+    shiftGenData[dateStr] = hitungShiftHarianOtomatis(dateStr);
   }
 
   document.getElementById('shiftGenTableWrap').style.display = 'block';
   document.getElementById('btnSimpanShiftGen').style.display = 'inline-flex';
   document.getElementById('btnBatalShiftGen').style.display  = 'inline-flex';
   renderShiftGenTable(year, month, daysInMonth);
-  showAlert('shiftGenAlert','warn','🪄 Pratinjau jadwal berhasil dibuat mengikuti pola Agustus. Hanya <strong>TIM 1, TIM 2, dan TIM 3</strong> yang dijadwalkan. <strong>TIM 4 mengikuti jam pramubakti</strong>. Jadwal ini <strong>belum tersimpan ke database</strong>.');
+  showAlert('shiftGenAlert','warn','🪄 Pratinjau jadwal berhasil dibuat: rotasi <strong>3 hari</strong> dengan urutan <strong>TIM 1 → TIM 2 → TIM 3</strong> — tiap hari tepat 1 tim jaga 24 jam (07:00 sampai 07:00 keesokan hari). Patokan: 24 Agustus 2026 = TIM 1. Rotasi berlanjut mulus dari bulan sebelumnya. Jadwal ini <strong>belum tersimpan ke database</strong>.');
 }
 
 // Membatalkan pratinjau generator (tidak menghapus apa pun di database,
@@ -8824,13 +9346,9 @@ async function simpanJadwalShiftGenerator() {
 
   var rows = [];
   Object.keys(shiftGenData).forEach(function(tgl) {
-    rows.push({
-      Tanggal: tgl,
-      'TIM 1': shiftGenData[tgl]['TIM 1'] || 'L',
-      'TIM 2': shiftGenData[tgl]['TIM 2'] || 'L',
-      'TIM 3': shiftGenData[tgl]['TIM 3'] || 'L',
-      'TIM 4': shiftGenData[tgl]['TIM 4'] || '-'
-    });
+    var row = { Tanggal: tgl };
+    SHIFT_TIMS.forEach(function(t){ row[t] = shiftGenData[tgl][t] || 'L'; });
+    rows.push(row);
   });
 
   if (!rows.length) {
@@ -8911,13 +9429,9 @@ async function simpanJadwalShift() {
   if (SCRIPT_URL) {
     var rows = [];
     Object.keys(shiftData).forEach(function(tgl) {
-      rows.push({
-        Tanggal: tgl,
-        'TIM 1': shiftData[tgl]['TIM 1'] || 'L',
-        'TIM 2': shiftData[tgl]['TIM 2'] || 'L',
-        'TIM 3': shiftData[tgl]['TIM 3'] || 'L',
-        'TIM 4': shiftData[tgl]['TIM 4'] || '-'
-      });
+      var row = { Tanggal: tgl };
+      SHIFT_TIMS.forEach(function(t){ row[t] = shiftData[tgl][t] || 'L'; });
+      rows.push(row);
     });
     var res = await callAPI('saveShift', { rows: rows });
     if (res && res.success) {
@@ -8944,7 +9458,7 @@ async function simpanJadwalShift() {
   }
 }
 
-// Menghapus SELURUH jadwal shift (TIM 1-4) untuk bulan yang dipilih di tab
+// Menghapus SELURUH jadwal shift (TIM 1-3) untuk bulan yang dipilih di tab
 // "Data Jadwal" — baik dari database maupun cache lokal. Dipakai kalau
 // misalnya jadwal sebulan penuh perlu digenerate ulang dari awal.
 async function hapusJadwalShiftBulan() {
@@ -8962,7 +9476,7 @@ async function hapusJadwalShiftBulan() {
     return;
   }
 
-  if (!confirm('Hapus SELURUH jadwal shift (TIM 1-4) bulan ' + namaBulan + ' dari database? Tindakan ini tidak bisa dibatalkan.')) return;
+  if (!confirm('Hapus SELURUH jadwal shift (TIM 1-3) bulan ' + namaBulan + ' dari database? Tindakan ini tidak bisa dibatalkan.')) return;
 
   var from = year+'-'+String(month).padStart(2,'0')+'-01';
   var to   = year+'-'+String(month).padStart(2,'0')+'-'+String(daysInMonth).padStart(2,'0');
@@ -9037,12 +9551,14 @@ function parseShiftCSV(csv) {
 
   var headers = headerLine.split(delim).map(function(h){ return h.trim().replace(/"/g,''); });
   var tglIdx  = headers.findIndex(function(h){ return h.toLowerCase().includes('tanggal') || h.toLowerCase().includes('date'); });
-  var tim1Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim1'; });
-  var tim2Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim2'; });
-  var tim3Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim3'; });
-  var tim4Idx = headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === 'tim4'; });
+  // Cari kolom tiap TIM shift (TIM 1-3). Kolom "TIM 4" pada file lama
+  // sengaja diabaikan karena tim itu sudah dihapus dari jadwal shift.
+  var timIdx = SHIFT_TIMS.map(function(t){
+    var key = t.replace(/ /g,'').toLowerCase();   // 'tim1'
+    return headers.findIndex(function(h){ return h.replace(/ /g,'').toLowerCase() === key; });
+  });
 
-  if (tglIdx < 0) { alert('Kolom Tanggal tidak ditemukan. Pastikan format file sesuai template (kolom: Tanggal, TIM 1, TIM 2, TIM 3, TIM 4).'); return; }
+  if (tglIdx < 0) { alert('Kolom Tanggal tidak ditemukan. Pastikan format file sesuai template (kolom: Tanggal, TIM 1, TIM 2, TIM 3).'); return; }
 
   var count = 0;
   var skipped = 0;
@@ -9056,10 +9572,10 @@ function parseShiftCSV(csv) {
     if (!m) { skipped++; return; }
     var tgl = m[1];
     if (!shiftData[tgl]) shiftData[tgl] = {};
-    if (tim1Idx >= 0 && cols[tim1Idx]) shiftData[tgl]['TIM 1'] = cols[tim1Idx].toUpperCase();
-    if (tim2Idx >= 0 && cols[tim2Idx]) shiftData[tgl]['TIM 2'] = cols[tim2Idx].toUpperCase();
-    if (tim3Idx >= 0 && cols[tim3Idx]) shiftData[tgl]['TIM 3'] = cols[tim3Idx].toUpperCase();
-    if (tim4Idx >= 0 && cols[tim4Idx]) shiftData[tgl]['TIM 4'] = cols[tim4Idx].toUpperCase();
+    SHIFT_TIMS.forEach(function(t, i){
+      var idx = timIdx[i];
+      if (idx >= 0 && cols[idx]) shiftData[tgl][t] = cols[idx].toUpperCase();
+    });
     count++;
   });
 
@@ -9094,17 +9610,14 @@ function downloadTemplateShift() {
   }
   daysInMonth = new Date(year, month, 0).getDate();
 
-  var csv = 'Tanggal,TIM 1,TIM 2,TIM 3,TIM 4\n';
+  var csv = 'Tanggal,' + SHIFT_TIMS.join(',') + '\n';
   for (var day = 1; day <= daysInMonth; day++) {
     var dateStr = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
     var hasilHari = hitungShiftHarianOtomatis(dateStr);
-    csv += [
-      dateStr,
-      (shiftData[dateStr] && shiftData[dateStr]['TIM 1']) ? shiftData[dateStr]['TIM 1'] : hasilHari['TIM 1'],
-      (shiftData[dateStr] && shiftData[dateStr]['TIM 2']) ? shiftData[dateStr]['TIM 2'] : hasilHari['TIM 2'],
-      (shiftData[dateStr] && shiftData[dateStr]['TIM 3']) ? shiftData[dateStr]['TIM 3'] : hasilHari['TIM 3'],
-      (shiftData[dateStr] && shiftData[dateStr]['TIM 4']) ? shiftData[dateStr]['TIM 4'] : '-'
-    ].join(',')+'\n';
+    var cols = [dateStr].concat(SHIFT_TIMS.map(function(t){
+      return (shiftData[dateStr] && shiftData[dateStr][t]) ? shiftData[dateStr][t] : hasilHari[t];
+    }));
+    csv += cols.join(',')+'\n';
   }
 
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -9139,7 +9652,9 @@ function exportShiftExcel() {
   html += '<' + '/style><' + '/head><body>';
   html += '<h2 style="color:#0b3d2e">JADWAL SHIFT SECURITY</h2>';
   html += '<p style="color:#666">Bulan: <strong>' + bulanNames[month] + ' ' + year + '</strong></p>';
-  html += '<table><thead><tr><th>Tgl</th><th>Hari</th><th>TIM 1</th><th>TIM 2</th><th>TIM 3</th><th>TIM 4</th></tr><' + '/thead><tbody>';
+  html += '<table><thead><tr><th>Tgl</th><th>Hari</th>' +
+    SHIFT_TIMS.map(function(t){ return '<th>'+t+'</th>'; }).join('') +
+    '</tr><' + '/thead><tbody>';
 
   for (var day = 1; day <= daysInMonth; day++) {
     var d       = new Date(year, month-1, day);
@@ -9148,7 +9663,7 @@ function exportShiftExcel() {
     var rowClass = isWeekend ? ' class="weekend"' : '';
     html += '<tr'+rowClass+'>';
     html += '<td><strong>'+day+'</strong></td><td>'+days[d.getDay()]+'</td>';
-    ['TIM 1','TIM 2','TIM 3','TIM 4'].forEach(function(tim, idx) {
+    SHIFT_TIMS.forEach(function(tim, idx) {
       var val = (shiftData[dateStr] && shiftData[dateStr][tim])
         ? shiftData[dateStr][tim].toUpperCase()
         : hitungShiftOtomatis(dateStr, idx);
@@ -10268,7 +10783,7 @@ async function loadAdminPotongan() {
         var tgl = r['Tanggal'] || r['tanggal'] || '';
         if (!tgl) return;
         if (!shiftData[tgl]) shiftData[tgl] = {};
-        ['TIM 1','TIM 2','TIM 3','TIM 4'].forEach(function(t){ if (r[t]) shiftData[tgl][t] = r[t]; });
+        SHIFT_TIMS.forEach(function(t){ if (r[t]) shiftData[tgl][t] = r[t]; });
       });
       localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
     }
@@ -10770,5 +11285,85 @@ document.addEventListener('DOMContentLoaded', function() {
   if (el && !el.value) el.value = new Date().getFullYear();
 });
 </script>
+<script>
+// ===== PWA: register service worker + tombol/banner Install App =====
+(function () {
+  var DISMISS_KEY = 'ppnpn_pwa_install_dismissed_at';
+  var DISMISS_DAYS = 7; // banner muncul lagi setelah 7 hari kalau belum install
+  var deferredPrompt = null;
+  var banner = document.getElementById('pwaInstallBanner');
+  var subEl = document.getElementById('pwaInstallSub');
+  var installBtn = document.getElementById('pwaInstallBtn');
+
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           window.navigator.standalone === true; // iOS Safari
+  }
+
+  function wasDismissedRecently() {
+    var t = localStorage.getItem(DISMISS_KEY);
+    if (!t) return false;
+    var diffDays = (Date.now() - parseInt(t, 10)) / 86400000;
+    return diffDays < DISMISS_DAYS;
+  }
+
+  function showBanner() {
+    if (isStandalone() || wasDismissedRecently() || !banner) return;
+    banner.style.display = 'flex';
+  }
+
+  window.pwaDismissBanner = function () {
+    if (banner) banner.style.display = 'none';
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+  };
+
+  window.pwaDoInstall = function () {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.finally(function () {
+        deferredPrompt = null;
+        if (banner) banner.style.display = 'none';
+      });
+    } else {
+      // iOS Safari (atau browser lain tanpa beforeinstallprompt): tampilkan panduan manual
+      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      var msg = isIOS
+        ? 'Di iPhone/iPad: tekan tombol Bagikan (ikon kotak dengan panah ke atas) di Safari, lalu pilih "Add to Home Screen" / "Tambah ke Layar Utama".'
+        : 'Buka menu browser (⋮ atau ...), lalu pilih "Install app" / "Add to Home screen".';
+      alert(msg);
+    }
+  };
+
+  // Android/Chrome/Edge: event resmi untuk deteksi app installable
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (subEl) subEl.textContent = 'Pasang di layar utama HP untuk akses lebih cepat.';
+    showBanner();
+  });
+
+  window.addEventListener('appinstalled', function () {
+    if (banner) banner.style.display = 'none';
+    deferredPrompt = null;
+  });
+
+  // iOS Safari tidak punya beforeinstallprompt -> tampilkan banner dengan panduan manual
+  var isIOSSafari = /iphone|ipad|ipod/i.test(navigator.userAgent) && /safari/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent);
+  if (isIOSSafari && !isStandalone()) {
+    if (subEl) subEl.textContent = 'Tap Install untuk panduan tambah ke Layar Utama.';
+    setTimeout(showBanner, 1200);
+  }
+
+  // Register service worker (syarat wajib supaya Chrome menganggap app installable)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function (err) {
+        console.warn('SW register gagal:', err);
+      });
+    });
+  }
+})();
+</script>
+
 </body>
 </html>
