@@ -1476,6 +1476,7 @@
     </button>
     <div class="login-error" id="loginError"></div>
     <button type="button" class="btn-login-userlist" onclick="openLoginUserListModal()">📋 Lihat Daftar User</button>
+    <button type="button" id="loginInstallBtn" class="btn-login-userlist" onclick="pwaDoInstall()" style="display:none;margin-top:8px;">⬇️ Install Aplikasi di HP</button>
   </div>
 </div>
 
@@ -11294,6 +11295,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var banner = document.getElementById('pwaInstallBanner');
   var subEl = document.getElementById('pwaInstallSub');
   var installBtn = document.getElementById('pwaInstallBtn');
+  var loginInstallBtn = document.getElementById('loginInstallBtn');
 
   function isStandalone() {
     return window.matchMedia('(display-mode: standalone)').matches ||
@@ -11308,19 +11310,30 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showBanner() {
+    // Banner otomatis (pop-up bawah layar) tetap menghormati "tutup" 7 hari,
+    // supaya tidak mengganggu user yang sudah menutupnya.
     if (isStandalone() || wasDismissedRecently() || !banner) return;
     banner.style.display = 'flex';
+  }
+
+  // Tombol Install di halaman LOGIN sengaja TIDAK tunduk pada wasDismissedRecently(),
+  // supaya user yang terlanjur klik tanda silang (✕) di banner tetap punya cara pasang app.
+  function updateLoginInstallBtn() {
+    if (!loginInstallBtn) return;
+    loginInstallBtn.style.display = isStandalone() ? 'none' : 'block';
   }
 
   window.pwaDismissBanner = function () {
     if (banner) banner.style.display = 'none';
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    // loginInstallBtn TIDAK ikut disembunyikan di sini — tetap tersedia di halaman login.
   };
 
   window.pwaDoInstall = function () {
     if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.finally(function () {
+      var promptEvent = deferredPrompt;
+      promptEvent.prompt();
+      promptEvent.userChoice.finally(function () {
         deferredPrompt = null;
         if (banner) banner.style.display = 'none';
       });
@@ -11329,22 +11342,26 @@ document.addEventListener('DOMContentLoaded', function() {
       var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
       var msg = isIOS
         ? 'Di iPhone/iPad: tekan tombol Bagikan (ikon kotak dengan panah ke atas) di Safari, lalu pilih "Add to Home Screen" / "Tambah ke Layar Utama".'
-        : 'Buka menu browser (⋮ atau ...), lalu pilih "Install app" / "Add to Home screen".';
+        : 'App belum siap di-install otomatis (masih memuat), atau browser ini tidak mendukung install otomatis.\n\nCoba: buka menu browser (⋮ atau ...), lalu pilih "Install app" / "Add to Home screen".';
       alert(msg);
     }
   };
 
-  // Android/Chrome/Edge: event resmi untuk deteksi app installable
+  // Android/Chrome/Edge: event resmi untuk deteksi app installable.
+  // Event ini tersimpan di `deferredPrompt` terlepas dari status "dismiss" banner,
+  // supaya tombol Install di halaman login tetap berfungsi walau banner sudah ditutup.
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
     if (subEl) subEl.textContent = 'Pasang di layar utama HP untuk akses lebih cepat.';
     showBanner();
+    updateLoginInstallBtn();
   });
 
   window.addEventListener('appinstalled', function () {
     if (banner) banner.style.display = 'none';
     deferredPrompt = null;
+    updateLoginInstallBtn();
   });
 
   // iOS Safari tidak punya beforeinstallprompt -> tampilkan banner dengan panduan manual
@@ -11353,6 +11370,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (subEl) subEl.textContent = 'Tap Install untuk panduan tambah ke Layar Utama.';
     setTimeout(showBanner, 1200);
   }
+
+  // Tombol Install permanen di halaman login: tampil di semua browser mobile
+  // (Android akan pakai prompt asli kalau sudah siap, selain itu tampilkan panduan manual).
+  updateLoginInstallBtn();
 
   // Register service worker (syarat wajib supaya Chrome menganggap app installable)
   if ('serviceWorker' in navigator) {
