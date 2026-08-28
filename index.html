@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -1588,6 +1589,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
         Penugasan & SPK Lembur
       </a>
+      <a class="nav-item" onclick="showPage('adminPotonganGaji')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Potongan PPNPN
+      </a>
       
       <a class="nav-item" onclick="showPage('adminPengaturan')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -2389,7 +2394,7 @@
           <div class="import-hint">📋 Format kolom: ID Pegawai | Nama | NIK | Pekerjaan | Tim | No HP</div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th style="width:36px"><input type="checkbox" id="chkAllPegawai" onchange="toggleAllPegawai(this)"></th><th>ID</th><th>Nama</th><th>NIK</th><th>Pekerjaan</th><th>Tim</th><th>Password</th><th>Hak Cuti</th><th>Aksi</th></tr></thead>
+              <thead><tr><th style="width:36px"><input type="checkbox" id="chkAllPegawai" onchange="toggleAllPegawai(this)"></th><th>ID</th><th>Nama</th><th>NIK</th><th>Pekerjaan</th><th>Tim</th><th>Gaji SPK</th><th>Password</th><th>Hak Cuti</th><th>Aksi</th></tr></thead>
               <tbody id="adminPegawaiBody"></tbody>
             </table>
           </div>
@@ -2526,6 +2531,184 @@
               <div class="field"><label>Jabatan Penandatangan</label><input type="text" id="spk-jabatan-ttd" placeholder="mis. Kepala Kantor Pelayanan Pajak Pratama Subang"></div>
             </div>
             <button class="btn btn-success" onclick="generateSpkLemburDocx()" style="width:100%;justify-content:center;padding:13px">📄 Generate SPK Lembur</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ADMIN: POTONGAN GAJI PPNPN (BPJS TK / Utang / Paguyuban) ===== -->
+      <div class="page" id="page-adminPotonganGaji">
+        <div class="tabs" id="potGajiMainTabs" style="margin-bottom:16px">
+          <div class="tab active" onclick="switchPotGajiTab('input')">✏️ Input Potongan</div>
+          <div class="tab" onclick="switchPotGajiTab('riwayat')">🕒 Riwayat Pemotongan</div>
+          <div class="tab" onclick="switchPotGajiTab('rekap')">📊 Rekapitulasi Bulanan</div>
+          <div class="tab" onclick="switchPotGajiTab('pengantar')">🖨️ Cetak Pengantar</div>
+        </div>
+
+        <!-- ===== SUB: INPUT POTONGAN ===== -->
+        <div id="potGajiInputWrap">
+        <div class="card">
+          <div class="card-title">💰 Potongan Gaji PPNPN</div>
+          <div class="filter-bar">
+            <div class="field"><label>Bulan</label><input type="month" id="potGajiBulan"></div>
+            <button class="btn btn-primary" onclick="generatePotonganGaji()">🔄 Generate</button>
+            <button class="btn btn-success" id="btnSimpanPotGaji" style="display:none" onclick="simpanSemuaPotonganGaji()">💾 Simpan Semua</button>
+            <button class="btn btn-outline" id="btnExportPotGaji" style="display:none" onclick="exportPotonganGajiExcel()">⬇ Export Excel</button>
+          </div>
+          <div class="alert alert-info" style="margin-bottom:14px;font-size:12.5px">
+            Rumus BPJS TK otomatis: <b>(3,7% + 2% + 0,24% + 0,3%) × Gaji sesuai SPK = 6,24% × Gaji</b>. Nilai ini otomatis menyesuaikan jika gaji pegawai berubah, namun tetap bisa ditimpa manual per baris bila diperlukan. Klik ✏️ pada kolom "Utang ke Pegawai" untuk mencatat rincian nama pemberi pinjaman. Klik 🗑 pada kolom "Aksi" untuk membatalkan/menghapus data seorang pegawai jika terjadi kesalahan saat input atau simpan.
+          </div>
+          <div class="stats-grid" id="potGajiStats" style="display:none;margin-bottom:14px">
+            <div class="stat-card blue"><div class="label">Total Gaji SPK</div><div class="value" id="pg-total-gaji">-</div></div>
+            <div class="stat-card amber"><div class="label">Total Potongan</div><div class="value" id="pg-total-potongan">-</div></div>
+            <div class="stat-card green"><div class="label">Total Net Gaji</div><div class="value" id="pg-total-net">-</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th rowspan="2">No</th><th rowspan="2">Nama</th><th rowspan="2">Jabatan</th><th rowspan="2">Gaji sesuai SPK</th>
+                  <th colspan="3" style="text-align:center">Potongan</th>
+                  <th rowspan="2">Total Potongan</th><th rowspan="2">Net Gaji</th><th rowspan="2">Aksi</th>
+                </tr>
+                <tr>
+                  <th>BPJS TK</th><th>Utang Ke Pegawai</th><th>Paguyuban</th>
+                </tr>
+              </thead>
+              <tbody id="potGajiBody"><tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">Pilih bulan lalu klik "Generate" untuk memuat data pegawai.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+
+        <!-- ===== SUB: RIWAYAT PEMOTONGAN ===== -->
+        <div id="potGajiRiwayatWrap" style="display:none">
+        <div class="card">
+          <div class="card-title">🕒 Riwayat Pemotongan Gaji PPNPN</div>
+          <div class="filter-bar">
+            <div class="field"><label>Pegawai</label>
+              <select id="rwPotPegawai"><option value="">Semua Pegawai</option></select>
+            </div>
+            <div class="field"><label>Tahun</label>
+              <select id="rwPotTahun"><option value="">Semua Tahun</option></select>
+            </div>
+            <div class="field"><label>Bulan</label>
+              <select id="rwPotBulan">
+                <option value="">Semua Bulan</option>
+                <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+                <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+                <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+                <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="loadRiwayatPotonganGaji()">🔍 Tampilkan</button>
+            <button class="btn btn-success" onclick="exportRiwayatPotonganExcel()" style="background:#16a34a;border-color:#16a34a">⬇ Export Excel</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>No</th><th>Periode</th><th>Nama</th><th>Jabatan</th><th>Gaji sesuai SPK</th><th>BPJS TK</th><th>Utang Ke Pegawai</th><th>Paguyuban</th><th>Total Potongan</th><th>Net Gaji</th><th>Aksi</th></tr></thead>
+              <tbody id="riwayatPotBody"><tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted)">Klik "Tampilkan" untuk memuat riwayat pemotongan.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pgRiwayatPot"></div>
+        </div>
+        </div>
+
+        <!-- ===== SUB: REKAPITULASI BULANAN ===== -->
+        <div id="potGajiRekapWrap" style="display:none">
+        <div class="card">
+          <div class="card-title">📊 Rekapitulasi Pemotongan Per Periode Bulan</div>
+          <div class="filter-bar">
+            <div class="field"><label>Tahun</label><select id="rekapPotTahun"></select></div>
+            <div class="field"><label>Bulan Awal</label>
+              <select id="rekapPotBulanAwal">
+                <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+                <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+                <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+                <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+              </select>
+            </div>
+            <div class="field"><label>Bulan Akhir</label>
+              <select id="rekapPotBulanAkhir">
+                <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+                <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+                <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+                <option value="10">Oktober</option><option value="11">November</option><option value="12" selected>Desember</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="loadRekapPotonganBulanan()">🔍 Tampilkan</button>
+            <button class="btn btn-success" onclick="exportRekapPotonganBulananExcel()" style="background:#16a34a;border-color:#16a34a">⬇ Export Excel</button>
+          </div>
+          <div class="stats-grid" id="rekapPotStats" style="display:none;margin-bottom:14px">
+            <div class="stat-card blue"><div class="label">Total Gaji SPK</div><div class="value" id="rp-total-gaji">-</div></div>
+            <div class="stat-card amber"><div class="label">Total Potongan</div><div class="value" id="rp-total-potongan">-</div></div>
+            <div class="stat-card green"><div class="label">Total Net Gaji</div><div class="value" id="rp-total-net">-</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>No</th><th>Bulan</th><th>Jumlah Pegawai</th><th>Total Gaji SPK</th><th>Total BPJS TK</th><th>Total Utang Pegawai</th><th>Total Paguyuban</th><th>Total Potongan</th><th>Total Net Gaji</th></tr></thead>
+              <tbody id="rekapPotBody"><tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Pilih periode lalu klik "Tampilkan".</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+
+        <!-- ===== SUB: CETAK PENGANTAR POTONGAN (BPJS TK) ===== -->
+        <div id="potGajiPengantarWrap" style="display:none">
+        <div class="card">
+          <div class="card-title">🖨️ Cetak Pengantar Potongan BPJS TK</div>
+          <div class="alert alert-info" style="margin-bottom:14px;font-size:12.5px">
+            Fitur ini mencetak 2 (dua) berkas sekaligus untuk diajukan ke bank: <b>Lampiran Potongan Gaji (.xlsx)</b> — daftar rekening pegawai yang didebet sejumlah BPJS TK masing-masing — dan <b>Surat Pengantar Potongan PPNPN (.docx)</b> — surat permohonan pendebetan ke bank. Data jumlah per pegawai diambil dari tabel "Input Potongan" bulan yang sedang dipilih, jadi klik <b>🔄 Generate</b> pada tab tersebut terlebih dahulu. Pastikan juga setiap pegawai sudah punya <b>No. Rekening Tabungan Gaji</b> (menu Data Pegawai).
+          </div>
+
+          <div class="form-row">
+            <div class="field"><label>Nomor Surat</label><input type="text" id="pot-nomor-surat" placeholder="cth: S-123/WPJ.09/KP.0903/2026"></div>
+            <div class="field"><label>Tanggal Surat</label><input type="date" id="pot-tanggal-surat"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Tanggal Pendebetan</label><input type="date" id="pot-tanggal-debet"></div>
+            <div class="field"><label>Kode Cabang Bank</label><input type="text" id="pot-kode-cabang" placeholder="cth: 0123"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>No. Rekening Tujuan (Pelaksana)</label><input type="text" id="pot-rekening-tujuan" placeholder="cth: 438801007905506"></div>
+            <div class="field"><label>Nama Pemilik Rekening Tujuan</label><input type="text" id="pot-nama-rekening-tujuan" placeholder="cth: Suharyanto"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Nama Kepala Kantor (Penandatangan Surat)</label><input type="text" id="pot-nama-kepala-kantor" placeholder="cth: Suharyanto"></div>
+            <div class="field"><label>Kota</label><input type="text" id="pot-kota-surat" placeholder="cth: Subang"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Nama Pembuat Daftar (ttd lampiran Excel)</label><input type="text" id="pot-nama-pembuat-daftar" placeholder="cth: Suharyanto"></div>
+            <div class="field"><label>NIP Pembuat Daftar</label><input type="text" id="pot-nip-pembuat-daftar" placeholder="cth: 197912061999031001"></div>
+          </div>
+
+          <div class="stats-grid" id="pengantarPotStats" style="margin:14px 0">
+            <div class="stat-card amber"><div class="label">Total BPJS TK Bulan Ini</div><div class="value" id="pg-pengantar-total">-</div></div>
+            <div class="stat-card blue"><div class="label">Jumlah Pegawai</div><div class="value" id="pg-pengantar-jumlah">-</div></div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="cetakPengantarPotongan()">🖨️ Cetak Pengantar (Excel + Word)</button>
+          </div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:10px">
+            Pengaturan di atas (rekening tujuan, kode cabang, kepala kantor, pembuat daftar, kota) otomatis tersimpan di perangkat ini untuk pemakaian berikutnya. Berkas Word menggunakan template <code>potongan-ppnpn.docx</code> yang diunggah ke Supabase Storage pada bucket <code>templates-surat</code>.
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- Modal: Rincian Utang ke Pegawai -->
+      <div class="modal-backdrop" id="modalUtangGaji">
+        <div class="modal" style="max-width:520px">
+          <div class="modal-header">
+            <h3 id="modalUtangGajiTitle">Utang ke Pegawai</h3>
+            <button class="modal-close" onclick="closeModal('modalUtangGaji')">✕</button>
+          </div>
+          <div id="utangGajiRows"></div>
+          <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="tambahBarisUtang()">➕ Tambah Baris</button>
+          <div style="margin-top:12px;text-align:right;font-weight:700">Total: <span id="utangGajiTotal">Rp 0</span></div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('modalUtangGaji')">Batal</button>
+            <button class="btn btn-primary" onclick="simpanUtangModal()">💾 Simpan</button>
           </div>
         </div>
       </div>
@@ -3055,6 +3238,10 @@
         </select>
       </div>
       <div class="field"><label>Tim</label><input type="text" id="adm-peg-tim"></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>Gaji sesuai SPK (Rp)</label><input type="number" id="adm-peg-gaji" placeholder="cth: 3900000"></div>
+      <div class="field"><label>No. Rekening Tabungan Gaji</label><input type="text" id="adm-peg-rekening" placeholder="cth: 378201019925535"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('pegawaiAdminModal')">Batal</button>
@@ -4275,7 +4462,7 @@ function getDaftarPeriodeCuti(jumlah) {
 function hariMenujuReset(periode) {
   periode = periode || getPeriodeCuti();
   var msPerHari = 24 * 60 * 60 * 1000;
-  var sisaHari = Math.ceil((new Date(periode.resetBerikutnya) - new Date(today())) / msPerHari);
+  var sisaHari = Math.ceil((new Date(periode.resetBerikutnya) - new Date(todayVerified())) / msPerHari);
   return Math.max(0, sisaHari);
 }
 
@@ -4454,8 +4641,9 @@ async function callAPI(action, params={}) {
             'ID PEGAWAI': r.id_pegawai, 'NAMA': r.nama_pegawai, 'NIK': r.nik,
             'NO HP': r.no_hp, 'TEMPAT LAHIR': r.tempat_lahir, 'TGL LAHIR': r.tgl_lahir,
             'JENIS KELAMIN': r.jenis_kelamin, 'PENDIDIKAN': r.pendidikan, 'ALAMAT': r.alamat,
-            'PEKERJAAN': r.pekerjaan, 'Tim': r.tim, 'TIM': r.tim,
-            'PASSWORD': r.password, 'USERNAME': r.username, 'STATUS': r.status
+            'PEKERJAAN': r.pekerjaan, 'Tim': r.tim, 'TIM': r.tim, 'GAJI': r.gaji,
+            'PASSWORD': r.password, 'USERNAME': r.username, 'STATUS': r.status,
+            'REKENING': r.rekening
           };
         })};
       }
@@ -4479,10 +4667,105 @@ async function callAPI(action, params={}) {
           id_pegawai: params.idPegawai, nama_pegawai: params.NAMA,
           nik: params.NIK, pekerjaan: params.PEKERJAAN, tim: params.TIM,
           no_hp: params.NO_HP, password: params.PASSWORD, username: params.USERNAME,
+          gaji: params.GAJI !== undefined ? params.GAJI : 0,
+          rekening: params.REKENING !== undefined ? params.REKENING : null,
           status: params.STATUS || 'Pegawai'
         };
         const { error } = await supabaseClient.from('pegawai').upsert(row, { onConflict: 'id_pegawai' });
         return { success: !error, error: error?error.message:null };
+      }
+
+      // ===== POTONGAN GAJI PPNPN (BPJS TK, Utang Pegawai, Paguyuban) =====
+      case 'getPotonganGaji': {
+        let q = supabaseClient.from('potongan_gaji_ppnpn').select('*')
+          .eq('bulan', params.bulan).eq('tahun', params.tahun);
+        const { data, error } = await q;
+        if (error) return { success:false, error: error.message };
+        return { success:true, data: (data||[]).map(function(r){
+          return {
+            idPegawai: r.id_pegawai, bulan: r.bulan, tahun: r.tahun,
+            gaji: r.gaji, bpjsTk: r.bpjs_tk, utangPegawai: r.utang_pegawai,
+            paguyuban: r.paguyuban,
+            totalPotongan: r.total_potongan, netGaji: r.net_gaji
+          };
+        })};
+      }
+
+      // Riwayat pemotongan lintas periode (tanpa batas bulan/tahun tunggal),
+      // dipakai oleh tab "Riwayat Pemotongan" & "Rekapitulasi Bulanan".
+      case 'getRiwayatPotonganGaji': {
+        let q = supabaseClient.from('potongan_gaji_ppnpn').select('*');
+        if (params.idPegawai) q = q.eq('id_pegawai', params.idPegawai);
+        if (params.tahun) q = q.eq('tahun', params.tahun);
+        if (params.bulan) q = q.eq('bulan', params.bulan);
+        q = q.order('tahun', { ascending:false }).order('bulan', { ascending:false });
+        const { data, error } = await q;
+        if (error) return { success:false, error: error.message };
+        return { success:true, data: (data||[]).map(function(r){
+          return {
+            idPegawai: r.id_pegawai, bulan: r.bulan, tahun: r.tahun,
+            gaji: r.gaji, bpjsTk: r.bpjs_tk, utangPegawai: r.utang_pegawai,
+            paguyuban: r.paguyuban,
+            totalPotongan: r.total_potongan, netGaji: r.net_gaji
+          };
+        })};
+      }
+
+      case 'savePotonganGaji': {
+        const row = {
+          id_pegawai: params.idPegawai, bulan: params.bulan, tahun: params.tahun,
+          gaji: params.gaji, bpjs_tk: params.bpjsTk,
+          utang_pegawai: params.utangPegawai,
+          paguyuban: params.paguyuban, total_potongan: params.totalPotongan,
+          net_gaji: params.netGaji, updated_at: new Date().toISOString()
+        };
+        const { error } = await supabaseClient.from('potongan_gaji_ppnpn')
+          .upsert(row, { onConflict: 'id_pegawai,bulan,tahun' });
+        return { success: !error, error: error?error.message:null };
+      }
+
+      case 'deletePotonganGaji': {
+        const { error } = await supabaseClient.from('potongan_gaji_ppnpn')
+          .delete().eq('id_pegawai', params.idPegawai).eq('bulan', params.bulan).eq('tahun', params.tahun);
+        // Ikut hapus rincian "Utang ke Pegawai" milik periode yang sama (tabel terpisah)
+        await supabaseClient.from('potongan_utang_pegawai')
+          .delete().eq('id_pegawai', params.idPegawai).eq('bulan', params.bulan).eq('tahun', params.tahun);
+        return { success: !error, error: error?error.message:null };
+      }
+
+      // ===== RINCIAN "UTANG KE PEGAWAI" — tabel terpisah: potongan_utang_pegawai =====
+      case 'getUtangPegawaiPeriode': {
+        let q = supabaseClient.from('potongan_utang_pegawai').select('*')
+          .eq('bulan', params.bulan).eq('tahun', params.tahun);
+        if (params.idPegawai) q = q.eq('id_pegawai', params.idPegawai);
+        const { data, error } = await q;
+        if (error) return { success:false, error: error.message };
+        return { success:true, data: (data||[]).map(function(r){
+          return { id: r.id, idPegawai: r.id_pegawai, bulan: r.bulan, tahun: r.tahun, namaPemberi: r.nama_pemberi, jumlah: r.jumlah };
+        })};
+      }
+
+      case 'saveUtangPegawaiList': {
+        // Pola ganti-semua: hapus rincian lama utk pegawai+periode ini, lalu simpan yang baru
+        const del = await supabaseClient.from('potongan_utang_pegawai')
+          .delete().eq('id_pegawai', params.idPegawai).eq('bulan', params.bulan).eq('tahun', params.tahun);
+        if (del.error) return { success:false, error: del.error.message };
+        const items = params.items || [];
+        if (items.length) {
+          const rows = items
+            .filter(function(it){ return (it.nama && it.nama.trim()) || Number(it.jumlah) > 0; })
+            .map(function(it){
+              return {
+                id_pegawai: params.idPegawai, bulan: params.bulan, tahun: params.tahun,
+                nama_pemberi: it.nama || '-', jumlah: Number(it.jumlah) || 0
+              };
+            });
+          if (rows.length) {
+            const { error } = await supabaseClient.from('potongan_utang_pegawai').insert(rows);
+            if (error) return { success:false, error: error.message };
+          }
+        }
+        return { success:true };
       }
 
       case 'deletePegawai': {
@@ -4986,7 +5269,7 @@ function periodKeyFor(periode, d) {
   if (periode === 'Mingguan') return 'W' + getWeekNumber(d) + '-' + d.getFullYear();
   if (periode === 'Bulanan')  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
   if (periode === 'Insidentil') return 'INSIDENTIL';
-  return today(); // Harian -> reset tiap hari
+  return todayVerified(); // Harian -> reset tiap hari
 }
 
 // Ambil (dan cache) seluruh daftar_tugas dari database. Jika tabel masih
@@ -5098,7 +5381,7 @@ async function loadChecklist() {
   // Tampilkan status persetujuan & catatan admin untuk hari ini (jika sudah dinilai)
   var banner = document.getElementById('checklistApprovalBanner');
   if (banner) {
-    var todayAppr = await getChecklistApprovalForDate(today());
+    var todayAppr = await getChecklistApprovalForDate(todayVerified());
     var mine = todayAppr.find(function(a){ return a.idPegawai === u.idPegawai; });
     if (mine && mine.status && mine.status !== 'Menunggu') {
       var isOk = mine.status === 'Disetujui';
@@ -5122,7 +5405,7 @@ async function toggleChecklistTugas(el) {
   var pk = periodKeyFor(periode);
   var payload = {
     idTugas: idTugas, idPegawai: u.idPegawai, namaPegawai: u.namaPegawai,
-    tanggal: today(), periode: periode, periodKey: pk, selesai: el.checked
+    tanggal: todayVerified(), periode: periode, periodKey: pk, selesai: el.checked
   };
   el.disabled = true;
   if (SCRIPT_URL) {
@@ -5137,7 +5420,7 @@ async function toggleChecklistTugas(el) {
   // Cache lokal (untuk fallback offline / evaluasi cepat)
   var id = u.idPegawai + '_' + pk + '_' + idTugas;
   localChecklistTugas = (localChecklistTugas||[]).filter(function(r){ return r.id !== id; });
-  localChecklistTugas.push({ id: id, idTugas: idTugas, idPegawai: u.idPegawai, namaPegawai: u.namaPegawai, tanggal: today(), periode: periode, periodKey: pk, selesai: el.checked });
+  localChecklistTugas.push({ id: id, idTugas: idTugas, idPegawai: u.idPegawai, namaPegawai: u.namaPegawai, tanggal: todayVerified(), periode: periode, periodKey: pk, selesai: el.checked });
   localStorage.setItem('ppnpn_checklist_tugas', JSON.stringify(localChecklistTugas));
   el.disabled = false;
 }
@@ -5270,11 +5553,11 @@ async function onFotoTugasSelected(event, idTugas, periode, pk) {
   var btn = document.getElementById('fotobtn_' + slug);
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
 
-  var res = await uploadFotoChecklist(file, u.idPegawai, u.namaPegawai, u.username, today(), 'tugas_' + idTugas);
+  var res = await uploadFotoChecklist(file, u.idPegawai, u.namaPegawai, u.username, todayVerified(), 'tugas_' + idTugas);
   if (res.url) {
     var payload = {
       idTugas: idTugas, idPegawai: u.idPegawai, namaPegawai: u.namaPegawai,
-      tanggal: today(), periode: periode, periodKey: pk, selesai: true, fotoUrl: res.url
+      tanggal: todayVerified(), periode: periode, periodKey: pk, selesai: true, fotoUrl: res.url
     };
     var saveRes = SCRIPT_URL ? await callAPI('saveChecklistTugas', payload) : null;
     if (SCRIPT_URL && saveRes && saveRes.success === false) {
@@ -5286,7 +5569,7 @@ async function onFotoTugasSelected(event, idTugas, periode, pk) {
     var id = u.idPegawai + '_' + pk + '_' + idTugas;
     localChecklistTugas = (localChecklistTugas||[]).filter(function(r){ return r.id !== id; });
     localChecklistTugas.push({ id:id, idTugas:idTugas, idPegawai:u.idPegawai, namaPegawai:u.namaPegawai,
-      tanggal:today(), periode:periode, periodKey:pk, selesai:true, fotoUrl:res.url });
+      tanggal:todayVerified(), periode:periode, periodKey:pk, selesai:true, fotoUrl:res.url });
     localStorage.setItem('ppnpn_checklist_tugas', JSON.stringify(localChecklistTugas));
 
     var cb = document.querySelector('#page-checklist input[data-id-tugas="'+idTugas+'"][data-periode="'+periode+'"]');
@@ -5306,16 +5589,16 @@ async function loadFotoUmumChecklist() {
   if (!u) return;
   var data = [];
   if (SCRIPT_URL) {
-    var res = await callAPI('getChecklistFotoUmum', { idPegawai: u.idPegawai, tanggal: today() });
+    var res = await callAPI('getChecklistFotoUmum', { idPegawai: u.idPegawai, tanggal: todayVerified() });
     if (res && res.success) {
       data = res.data;
       localChecklistFotoUmum = (localChecklistFotoUmum||[]).filter(function(r){
-        return !(r.idPegawai === u.idPegawai && r.tanggal === today());
+        return !(r.idPegawai === u.idPegawai && r.tanggal === todayVerified());
       }).concat(data);
       localStorage.setItem('ppnpn_checklist_foto_umum', JSON.stringify(localChecklistFotoUmum));
     }
   } else {
-    data = (localChecklistFotoUmum||[]).filter(function(r){ return r.idPegawai === u.idPegawai && r.tanggal === today(); });
+    data = (localChecklistFotoUmum||[]).filter(function(r){ return r.idPegawai === u.idPegawai && r.tanggal === todayVerified(); });
   }
   renderFotoUmumGallery(data);
 }
@@ -5338,14 +5621,14 @@ async function onFotoUmumSelected(event) {
   var u = currentUser;
   var gagalDb = false, pesanErrorDb = '';
   for (var i = 0; i < files.length; i++) {
-    var res = await uploadFotoChecklist(files[i], u.idPegawai, u.namaPegawai, u.username, today(), 'umum');
+    var res = await uploadFotoChecklist(files[i], u.idPegawai, u.namaPegawai, u.username, todayVerified(), 'umum');
     if (res.url) {
-      var idFoto = u.idPegawai + '_' + today() + '_' + Date.now() + '_' + i;
+      var idFoto = u.idPegawai + '_' + todayVerified() + '_' + Date.now() + '_' + i;
       if (SCRIPT_URL) {
-        var saveRes = await callAPI('saveChecklistFotoUmum', { id: idFoto, idPegawai: u.idPegawai, namaPegawai: u.namaPegawai, tanggal: today(), fotoUrl: res.url });
+        var saveRes = await callAPI('saveChecklistFotoUmum', { id: idFoto, idPegawai: u.idPegawai, namaPegawai: u.namaPegawai, tanggal: todayVerified(), fotoUrl: res.url });
         if (saveRes && saveRes.success === false) { gagalDb = true; pesanErrorDb = saveRes.error || 'Unknown error'; continue; }
       }
-      localChecklistFotoUmum.push({ id: idFoto, idPegawai: u.idPegawai, namaPegawai: u.namaPegawai, tanggal: today(), fotoUrl: res.url });
+      localChecklistFotoUmum.push({ id: idFoto, idPegawai: u.idPegawai, namaPegawai: u.namaPegawai, tanggal: todayVerified(), fotoUrl: res.url });
       localStorage.setItem('ppnpn_checklist_foto_umum', JSON.stringify(localChecklistFotoUmum));
     } else {
       alert('❌ Gagal upload salah satu foto: ' + (res.error || 'Unknown error'));
@@ -5397,7 +5680,7 @@ async function ensureCSPegawaiList(forceRefresh) {
 async function loadAdminChecklistCS() {
   var tgl = document.getElementById('admFilterTglCS').value;
   if (!tgl) {
-    tgl = today();
+    tgl = todayVerified();
     document.getElementById('admFilterTglCS').value = tgl;
   }
   var d = new Date(tgl);
@@ -6261,7 +6544,7 @@ function showPage(name) {
   var isAdmin = u && u.status === 'Admin';
 
   // Access guard — pegawai tidak bisa akses halaman admin
-  var adminPages = ['adminAbsensi','adminCuti','adminPegawai','adminPengaturan', 'adminChecklistCS', 'adminLembur']; 
+  var adminPages = ['adminAbsensi','adminCuti','adminPegawai','adminPengaturan', 'adminChecklistCS', 'adminLembur', 'adminPotonganGaji']; 
   var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga'];
   if (!isAdmin && adminPages.indexOf(name) >= 0) {
     alert('Akses ditolak. Halaman ini hanya untuk admin.');
@@ -6291,6 +6574,7 @@ function showPage(name) {
     adminCuti: '✅ Persetujuan Cuti & Ijin Keluar',
     adminPegawai: '👥 Data Pegawai & Hak Cuti',
     adminLembur: '🔥 Penugasan & SPK Lembur',
+    adminPotonganGaji: '💰 Potongan Gaji PPNPN',
     adminPengaturan: '⏰ Jam Kerja, Libur & Konfig',
     
     libur: '🗓 Jadwal Hari Libur'
@@ -6306,7 +6590,7 @@ function showPage(name) {
 
   // Load page data
   if (name === 'adminChecklistCS') {
-    document.getElementById('admFilterTglCS').value = today();
+    document.getElementById('admFilterTglCS').value = todayVerified();
     loadAdminChecklistCS();
     loadDaftarTugasAdminTable();
   }
@@ -6320,6 +6604,7 @@ function showPage(name) {
   if (name === 'adminPegawai') { switchPegawaiMainTab('pegawai'); }
   
   if (name === 'adminLembur') initAdminLembur();
+  if (name === 'adminPotonganGaji') initPotonganGaji();
   if (name === 'adminPengaturan') { switchPengaturanTab('pengaturan'); }
   
   if (name === 'libur') loadLiburUserPage();
@@ -6345,8 +6630,8 @@ function goToAdminAbsensiByJob(job) {
   var fromEl = document.getElementById('admFilterFrom');
   var toEl = document.getElementById('admFilterTo');
   if (jabEl) jabEl.value = job;
-  if (fromEl) fromEl.value = today();
-  if (toEl) toEl.value = today();
+  if (fromEl) fromEl.value = todayVerified();
+  if (toEl) toEl.value = todayVerified();
   loadAdminAbsensi();
 }
 
@@ -6444,11 +6729,11 @@ async function loadDashboard() {
 
     // ---- ADMIN DASHBOARD ----
     var pegawaiListDb = getPegawaiListForStats();
-    var todayAll = localAbsensi.filter(function(a){ return a.tanggal===today(); });
+    var todayAll = localAbsensi.filter(function(a){ return a.tanggal===todayVerified(); });
     var totalPegawai = pegawaiListDb.length;
     var pendingCuti = localPermohonan.filter(function(p){ return p.Status==='Menunggu'; }).length;
     var cutiHariIni = localPermohonan.filter(function(p){
-      return p.Status==='Disetujui' && p.Tanggal_Mulai<=today() && p.Tanggal_Selesai>=today();
+      return p.Status==='Disetujui' && p.Tanggal_Mulai<=todayVerified() && p.Tanggal_Selesai>=todayVerified();
     }).length;
 
     document.getElementById('ds-hadir').textContent = todayAll.length;
@@ -6501,7 +6786,7 @@ async function loadDashboard() {
     // Recent absensi all pegawai — default 1 bulan
     var now2 = new Date();
     var defFrom = now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-01';
-    var defTo   = today();
+    var defTo   = todayVerified();
     if (!document.getElementById('dashAbsenFrom').value) {
       document.getElementById('dashAbsenFrom').value = defFrom;
       document.getElementById('dashAbsenTo').value   = defTo;
@@ -6517,7 +6802,7 @@ async function loadDashboard() {
     pegawaiWrap.style.display = '';
 
     // ---- PEGAWAI DASHBOARD (desain baru) ----
-    var todayAbsen = localAbsensi.find(function(a){ return a.idPegawai===u.idPegawai && a.tanggal===today(); });
+    var todayAbsen = localAbsensi.find(function(a){ return a.idPegawai===u.idPegawai && a.tanggal===todayVerified(); });
     var saldoCutiPd = hitungSaldoCuti(u.idPegawai);
     var pakai = saldoCutiPd.pakai;
     var sisa = saldoCutiPd.sisa;
@@ -6643,7 +6928,7 @@ async function loadDashboard() {
     var defFrom2 = now3.getFullYear()+'-'+String(now3.getMonth()+1).padStart(2,'0')+'-01';
     if (!document.getElementById('pdAbsenFrom').value) {
       document.getElementById('pdAbsenFrom').value = defFrom2;
-      document.getElementById('pdAbsenTo').value   = today();
+      document.getElementById('pdAbsenTo').value   = todayVerified();
     }
     filterPdAbsen();
   }
@@ -6738,7 +7023,7 @@ async function filterDashAbsen() {
 function resetDashAbsen() {
   var now = new Date();
   document.getElementById('dashAbsenFrom').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
-  document.getElementById('dashAbsenTo').value   = today();
+  document.getElementById('dashAbsenTo').value   = todayVerified();
   filterDashAbsen();
 }
 
@@ -6810,7 +7095,7 @@ async function filterPdAbsen() {
 function resetPdAbsen() {
   var now = new Date();
   document.getElementById('pdAbsenFrom').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
-  document.getElementById('pdAbsenTo').value   = today();
+  document.getElementById('pdAbsenTo').value   = todayVerified();
   filterPdAbsen();
 }
 
@@ -6969,7 +7254,7 @@ async function initAbsensiPage() {
   // Cek absensi hari ini dari Sheets (prioritas) supaya tidak dobel.
   // Kalau sedang menutup shift jaga kemarin, yang dimuat adalah record
   // tanggal KEMARIN (absenTargetTanggal), bukan hari ini.
-  var tglRecord = absenTargetTanggal || today();
+  var tglRecord = absenTargetTanggal || todayVerified();
   todayAbsenData = null;
   if (SCRIPT_URL) {
     const res = await callAPI('getAbsensi', { idPegawai: u.idPegawai, from: tglRecord, to: tglRecord });
@@ -7002,7 +7287,7 @@ async function initAbsensiPage() {
   const d = new Date();
   d.setDate(d.getDate()-30);
   document.getElementById('filterAbsenFrom').value = d.toISOString().split('T')[0];
-  document.getElementById('filterAbsenTo').value = today();
+  document.getElementById('filterAbsenTo').value = todayVerified();
   loadAbsenHistory();
 }
 
@@ -7124,7 +7409,7 @@ function getSecurityShiftPiketBerjalan() {
 // fetch dari Sheets bila belum tersedia. Dipakai bersama oleh dashboard
 // admin & security serta halaman absensi.
 async function ensureShiftTodayLoaded() {
-  var tgl = today();
+  var tgl = todayVerified();
   if (shiftData[tgl] && Object.keys(shiftData[tgl]).length) return;
   if (!SCRIPT_URL) return;
   try {
@@ -8219,7 +8504,7 @@ async function loadAdminAbsensi() {
     return true;
   }).sort(function(a,b){ return b.tanggal.localeCompare(a.tanggal)||a.namaPegawai.localeCompare(b.namaPegawai); });
 
-  var todayData = data.filter(function(a){ return a.tanggal===today(); });
+  var todayData = data.filter(function(a){ return a.tanggal===todayVerified(); });
   document.getElementById('adm-hadir').textContent  = todayData.length;
   document.getElementById('adm-late').textContent   = todayData.filter(function(a){ return a.statusAbsenMasuk==='Terlambat'; }).length;
   var pegawaiListDbAdm = getPegawaiListForStats();
@@ -8254,7 +8539,7 @@ async function loadAdminAbsensi() {
 // Menampilkan pegawai yang belum absen masuk, atau sudah masuk tapi belum absen pulang,
 // pada tanggal yang dipilih di filter "Dari" (default hari ini jika kosong).
 function bukaBelumAbsen() {
-  var tgl = document.getElementById('admFilterFrom').value || today();
+  var tgl = document.getElementById('admFilterFrom').value || todayVerified();
   var jab = document.getElementById('admFilterJab').value;
 
   // Pakai data pegawai REAL dari database (getPegawaiListForStats), bukan
@@ -8578,7 +8863,7 @@ function switchIjinTab(tab) {
 }
 
 function loadIjinKeluarPage() {
-  if (!document.getElementById('ijinTanggal').value) document.getElementById('ijinTanggal').value = today();
+  if (!document.getElementById('ijinTanggal').value) document.getElementById('ijinTanggal').value = todayVerified();
   switchIjinTab('form');
 }
 
@@ -8752,7 +9037,7 @@ async function hapusIjinBulk() {
 async function loadAdminPegawai() {
   const filter = document.getElementById('filterPegawai').value;
   const tbody  = document.getElementById('adminPegawaiBody');
-  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
 
   var pegawaiList = [];
   if (SCRIPT_URL) {
@@ -8786,7 +9071,7 @@ async function loadAdminPegawai() {
     }
   }
 
-  if (!pegawaiList.length) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data</td></tr>'; document.getElementById('pgAdminPegawai').innerHTML=''; return; }
+  if (!pegawaiList.length) { tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data</td></tr>'; document.getElementById('pgAdminPegawai').innerHTML=''; return; }
   renderPaged('adminPegawai', pegawaiList, 'adminPegawaiBody', 'pgAdminPegawai', function(p){
     var idPeg = p['ID PEGAWAI'] || p['idPegawai'] || '';
     
@@ -8805,6 +9090,7 @@ async function loadAdminPegawai() {
       <td style="font-family:'Space Mono',monospace;font-size:12px">${p['NIK']||'-'}</td>
       <td><span class="badge badge-blue">${p['PEKERJAAN']||'-'}</span></td>
       <td><span class="badge badge-gray">${p['Tim']||'-'}</span></td>
+      <td style="font-weight:700">${fmtRp(p['GAJI']||0)}</td>
       <td style="font-family:'Space Mono',monospace;font-size:12px;color:var(--danger)">${p['PASSWORD']||'-'}</td>
       <td><span style="font-weight:700;color:${sisa>0?'var(--accent2)':'var(--danger)'}">Sisa ${sisa}/6</span></td>
       <td style="display:flex;gap:4px;">
@@ -9692,10 +9978,10 @@ function exportShiftExcel() {
 async function initAdminLembur() {
   try {
     // 1. Set default tanggal ke hari ini
-    if (document.getElementById('lb-tanggal')) document.getElementById('lb-tanggal').value = today();
-    if (document.getElementById('lbFilterFrom')) document.getElementById('lbFilterFrom').value = today();
-    if (document.getElementById('lbFilterTo')) document.getElementById('lbFilterTo').value = today();
-    if (document.getElementById('spk-tanggal-surat') && !document.getElementById('spk-tanggal-surat').value) document.getElementById('spk-tanggal-surat').value = today();
+    if (document.getElementById('lb-tanggal')) document.getElementById('lb-tanggal').value = todayVerified();
+    if (document.getElementById('lbFilterFrom')) document.getElementById('lbFilterFrom').value = todayVerified();
+    if (document.getElementById('lbFilterTo')) document.getElementById('lbFilterTo').value = todayVerified();
+    if (document.getElementById('spk-tanggal-surat') && !document.getElementById('spk-tanggal-surat').value) document.getElementById('spk-tanggal-surat').value = todayVerified();
     if (document.getElementById('spk-tahun-anggaran') && !document.getElementById('spk-tahun-anggaran').value) document.getElementById('spk-tahun-anggaran').value = String(new Date().getFullYear());
 
     // 1b. Isi default Nama & Jabatan Penandatangan dari Pengaturan SPK Lembur
@@ -11004,6 +11290,791 @@ function exportPotonganExcel() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+// ============================================================
+// ADMIN: POTONGAN GAJI PPNPN (BPJS TK / Utang Pegawai / Paguyuban)
+// ============================================================
+function fmtRp(n) {
+  var num = Math.round(Number(n) || 0);
+  return 'Rp ' + num.toLocaleString('id-ID');
+}
+function parseRpInput(v) {
+  var n = parseFloat(String(v).replace(/[^0-9.-]/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+function fmtBulanTahun(bulanVal) {
+  var parts = bulanVal.split('-');
+  var namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  return namaBulan[parseInt(parts[1], 10)] + ' ' + parts[0];
+}
+// Rumus BPJS TK: (3,7% + 2% + (0,24% + 0,3%)) x Gaji sesuai SPK = 6,24% x Gaji
+function hitungBpjsTk(gaji) {
+  return Math.round(((3.7 + 2 + (0.24 + 0.3)) / 100) * (Number(gaji) || 0));
+}
+function hitungUtangTotal(items) {
+  return (items || []).reduce(function (s, it) { return s + (Number(it.jumlah) || 0); }, 0);
+}
+
+var potonganGajiState = {}; // idPegawai -> {nama, jabatan, gaji, bpjsTk, utangItems:[{nama,jumlah}], paguyuban}
+var utangModalIdPeg = null;
+
+function initPotonganGaji() {
+  if (!document.getElementById('potGajiBulan').value) {
+    var now = new Date();
+    document.getElementById('potGajiBulan').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  }
+}
+
+async function generatePotonganGaji() {
+  var bulanVal = document.getElementById('potGajiBulan').value;
+  if (!bulanVal) { alert('Pilih bulan terlebih dahulu!'); return; }
+  var tahun = parseInt(bulanVal.split('-')[0], 10);
+  var bulan = parseInt(bulanVal.split('-')[1], 10);
+  var tbody = document.getElementById('potGajiBody');
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+
+  var pegawaiList = [];
+  if (SCRIPT_URL) {
+    var res = await callAPI('getPegawai', {});
+    if (res && res.success) pegawaiList = res.data;
+  }
+  pegawaiList = pegawaiList.filter(function (p) { return (p['STATUS'] || 'Pegawai') !== 'Admin'; });
+
+  if (!pegawaiList.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data pegawai. Pastikan data pegawai & "Gaji sesuai SPK" sudah diisi di menu Data Pegawai.</td></tr>';
+    document.getElementById('btnSimpanPotGaji').style.display = 'none';
+    document.getElementById('btnExportPotGaji').style.display = 'none';
+    document.getElementById('potGajiStats').style.display = 'none';
+    return;
+  }
+
+  // Ambil data potongan yang sudah pernah disimpan untuk bulan ini (jika ada)
+  var existing = {};
+  var utangByPeg = {};
+  if (SCRIPT_URL) {
+    var potRes = await callAPI('getPotonganGaji', { bulan: bulan, tahun: tahun });
+    if (potRes && potRes.success) {
+      potRes.data.forEach(function (r) { existing[r.idPegawai] = r; });
+    }
+    // Rincian "Utang ke Pegawai" diambil dari tabel terpisah (potongan_utang_pegawai)
+    var utangRes = await callAPI('getUtangPegawaiPeriode', { bulan: bulan, tahun: tahun });
+    if (utangRes && utangRes.success) {
+      utangRes.data.forEach(function (it) {
+        if (!utangByPeg[it.idPegawai]) utangByPeg[it.idPegawai] = [];
+        utangByPeg[it.idPegawai].push({ nama: it.namaPemberi, jumlah: it.jumlah });
+      });
+    }
+  }
+
+  potonganGajiState = {};
+  pegawaiList
+    .sort(function (a, b) { return String(a['NAMA']).localeCompare(String(b['NAMA'])); })
+    .forEach(function (p) {
+      var idPeg = p['ID PEGAWAI'] || p['idPegawai'];
+      var gaji = Number(p['GAJI']) || 0;
+      var ex = existing[idPeg];
+      potonganGajiState[idPeg] = {
+        nama: p['NAMA'] || '-',
+        jabatan: p['PEKERJAAN'] || '-',
+        gaji: gaji,
+        bpjsTk: ex ? Number(ex.bpjsTk) : hitungBpjsTk(gaji),
+        utangItems: utangByPeg[idPeg] || [],
+        paguyuban: ex ? Number(ex.paguyuban) : 0
+      };
+    });
+
+  renderPotonganGajiTable();
+  document.getElementById('btnSimpanPotGaji').style.display = '';
+  document.getElementById('btnExportPotGaji').style.display = '';
+  document.getElementById('potGajiStats').style.display = '';
+}
+
+function renderPotonganGajiTable() {
+  var tbody = document.getElementById('potGajiBody');
+  var ids = Object.keys(potonganGajiState);
+  if (!ids.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data</td></tr>'; return; }
+  tbody.innerHTML = ids.map(function (idPeg, i) { return rowPotonganGajiHtml(idPeg, i + 1); }).join('');
+  updatePotGajiStats();
+}
+
+function rowPotonganGajiHtml(idPeg, no) {
+  var r = potonganGajiState[idPeg];
+  var utangTotal = hitungUtangTotal(r.utangItems);
+  var totalPotongan = (Number(r.bpjsTk) || 0) + utangTotal + (Number(r.paguyuban) || 0);
+  var netGaji = (Number(r.gaji) || 0) - totalPotongan;
+  return `<tr id="potRow-${idPeg}">
+    <td>${no}</td>
+    <td><strong>${r.nama}</strong></td>
+    <td>${r.jabatan}</td>
+    <td>${fmtRp(r.gaji)}</td>
+    <td style="background:#fde8d3"><input type="number" value="${Math.round(r.bpjsTk)}" style="width:110px" oninput="onBpjsGajiInput('${idPeg}', this.value)"></td>
+    <td style="background:#fde8d3">${fmtRp(utangTotal)} <button class="btn btn-outline btn-sm" onclick="openUtangModal('${idPeg}')" title="Rincian utang ke pegawai">✏️</button></td>
+    <td style="background:#fde8d3"><input type="number" value="${Math.round(r.paguyuban)}" style="width:100px" oninput="onPaguyubanGajiInput('${idPeg}', this.value)"></td>
+    <td><strong>${fmtRp(totalPotongan)}</strong></td>
+    <td style="background:#e2f0c9"><strong>${fmtRp(netGaji)}</strong></td>
+    <td><button class="btn btn-danger btn-sm" title="Hapus/batalkan data potongan pegawai ini (jika salah input/simpan)" onclick="dropPotonganGajiRow('${idPeg}')">🗑 Drop</button></td>
+  </tr>`;
+}
+
+function onBpjsGajiInput(idPeg, val) {
+  potonganGajiState[idPeg].bpjsTk = parseRpInput(val);
+  updateRowTotalCells(idPeg);
+}
+function onPaguyubanGajiInput(idPeg, val) {
+  potonganGajiState[idPeg].paguyuban = parseRpInput(val);
+  updateRowTotalCells(idPeg);
+}
+function updateRowTotalCells(idPeg) {
+  var r = potonganGajiState[idPeg];
+  var utangTotal = hitungUtangTotal(r.utangItems);
+  var totalPotongan = (Number(r.bpjsTk) || 0) + utangTotal + (Number(r.paguyuban) || 0);
+  var netGaji = (Number(r.gaji) || 0) - totalPotongan;
+  var row = document.getElementById('potRow-' + idPeg);
+  if (row) {
+    row.children[7].innerHTML = '<strong>' + fmtRp(totalPotongan) + '</strong>';
+    row.children[8].innerHTML = '<strong>' + fmtRp(netGaji) + '</strong>';
+  }
+  updatePotGajiStats();
+}
+function updatePotGajiStats() {
+  var ids = Object.keys(potonganGajiState);
+  var totalGaji = 0, totalPot = 0, totalNet = 0;
+  ids.forEach(function (idPeg) {
+    var r = potonganGajiState[idPeg];
+    var utangTotal = hitungUtangTotal(r.utangItems);
+    var tp = (Number(r.bpjsTk) || 0) + utangTotal + (Number(r.paguyuban) || 0);
+    totalGaji += Number(r.gaji) || 0;
+    totalPot += tp;
+    totalNet += (Number(r.gaji) || 0) - tp;
+  });
+  document.getElementById('pg-total-gaji').textContent = fmtRp(totalGaji);
+  document.getElementById('pg-total-potongan').textContent = fmtRp(totalPot);
+  document.getElementById('pg-total-net').textContent = fmtRp(totalNet);
+}
+
+// ---- Modal rincian Utang ke Pegawai ----
+function openUtangModal(idPeg) {
+  utangModalIdPeg = idPeg;
+  var r = potonganGajiState[idPeg];
+  document.getElementById('modalUtangGajiTitle').textContent = 'Utang ke Pegawai — ' + r.nama;
+  var wrap = document.getElementById('utangGajiRows');
+  wrap.innerHTML = '';
+  if (r.utangItems.length) {
+    r.utangItems.forEach(function (it) { tambahBarisUtang(it.nama, it.jumlah); });
+  } else {
+    tambahBarisUtang('', '');
+  }
+  recalcUtangModalTotal();
+  document.getElementById('modalUtangGaji').classList.add('open');
+}
+function tambahBarisUtang(nama, jumlah) {
+  var wrap = document.getElementById('utangGajiRows');
+  var div = document.createElement('div');
+  div.className = 'form-row utang-baris';
+  div.style.marginTop = '8px';
+  div.innerHTML =
+    '<div class="field"><label>Nama Pemberi Pinjaman</label><input type="text" class="utang-nama" value="' + String(nama || '').replace(/"/g, '&quot;') + '" placeholder="mis. Alit Supriatna"></div>' +
+    '<div class="field" style="max-width:150px"><label>Jumlah (Rp)</label><input type="number" class="utang-jumlah" value="' + (jumlah || 0) + '" oninput="recalcUtangModalTotal()"></div>' +
+    '<button class="btn btn-danger btn-sm" style="align-self:flex-end;margin-bottom:2px" onclick="this.parentElement.remove(); recalcUtangModalTotal()">🗑</button>';
+  wrap.appendChild(div);
+}
+function recalcUtangModalTotal() {
+  var total = 0;
+  document.querySelectorAll('#utangGajiRows .utang-jumlah').forEach(function (inp) { total += parseRpInput(inp.value); });
+  document.getElementById('utangGajiTotal').textContent = fmtRp(total);
+}
+function simpanUtangModal() {
+  var items = [];
+  document.querySelectorAll('#utangGajiRows .utang-baris').forEach(function (div) {
+    var nama = div.querySelector('.utang-nama').value.trim();
+    var jumlah = parseRpInput(div.querySelector('.utang-jumlah').value);
+    if (nama || jumlah) items.push({ nama: nama, jumlah: jumlah });
+  });
+  potonganGajiState[utangModalIdPeg].utangItems = items;
+  closeModal('modalUtangGaji');
+  renderPotonganGajiTable();
+}
+
+// ---- Simpan ke Supabase & Export ----
+async function simpanSemuaPotonganGaji() {
+  var bulanVal = document.getElementById('potGajiBulan').value;
+  if (!bulanVal) return;
+  var tahun = parseInt(bulanVal.split('-')[0], 10);
+  var bulan = parseInt(bulanVal.split('-')[1], 10);
+  if (!SCRIPT_URL) { alert('⚠ Supabase belum dikonfigurasi!'); return; }
+  var ids = Object.keys(potonganGajiState);
+  if (!ids.length) return;
+  var btn = document.getElementById('btnSimpanPotGaji');
+  btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+  var gagal = 0;
+  for (var i = 0; i < ids.length; i++) {
+    var idPeg = ids[i];
+    var r = potonganGajiState[idPeg];
+    var utangTotal = hitungUtangTotal(r.utangItems);
+    var totalPotongan = (Number(r.bpjsTk) || 0) + utangTotal + (Number(r.paguyuban) || 0);
+    var netGaji = (Number(r.gaji) || 0) - totalPotongan;
+    var res = await callAPI('savePotonganGaji', {
+      idPegawai: idPeg, bulan: bulan, tahun: tahun, gaji: r.gaji,
+      bpjsTk: Math.round(r.bpjsTk), utangPegawai: utangTotal,
+      paguyuban: Number(r.paguyuban) || 0, totalPotongan: totalPotongan, netGaji: netGaji
+    });
+    // Rincian "Utang ke Pegawai" disimpan terpisah di tabel potongan_utang_pegawai
+    var resUtang = await callAPI('saveUtangPegawaiList', {
+      idPegawai: idPeg, bulan: bulan, tahun: tahun, items: r.utangItems || []
+    });
+    if (!res || !res.success || !resUtang || !resUtang.success) gagal++;
+  }
+  btn.disabled = false; btn.textContent = '💾 Simpan Semua';
+  if (gagal) alert('⚠ ' + gagal + ' data gagal disimpan. Silakan coba lagi.');
+  else alert('✅ Semua data potongan gaji berhasil disimpan!');
+}
+
+// ---- Drop / batalkan data potongan seorang pegawai (jika salah input/simpan) ----
+async function dropPotonganGajiRow(idPeg) {
+  var bulanVal = document.getElementById('potGajiBulan').value;
+  if (!bulanVal) return;
+  var tahun = parseInt(bulanVal.split('-')[0], 10);
+  var bulan = parseInt(bulanVal.split('-')[1], 10);
+  var r = potonganGajiState[idPeg];
+  if (!r) return;
+  if (!confirm('Hapus/batalkan data potongan untuk "' + r.nama + '" pada periode ' + fmtBulanTahun(bulanVal) + '?\n\nData yang sudah tersimpan di database (jika ada) akan ikut terhapus, dan baris akan dikembalikan ke nilai default.')) return;
+
+  if (SCRIPT_URL) {
+    await callAPI('deletePotonganGaji', { idPegawai: idPeg, bulan: bulan, tahun: tahun });
+  }
+  // Kembalikan baris ke nilai default (BPJS dihitung ulang, utang & paguyuban dikosongkan)
+  potonganGajiState[idPeg] = {
+    nama: r.nama, jabatan: r.jabatan, gaji: r.gaji,
+    bpjsTk: hitungBpjsTk(r.gaji), utangItems: [], paguyuban: 0
+  };
+  renderPotonganGajiTable();
+  alert('✅ Data potongan "' + r.nama + '" untuk periode ini telah dihapus/direset.');
+}
+
+// ============================================================
+// ADMIN: TABS Input / Riwayat / Rekap (Potongan Gaji PPNPN)
+// ============================================================
+function switchPotGajiTab(tab) {
+  var tabs = document.querySelectorAll('#potGajiMainTabs .tab');
+  tabs.forEach(function (t, i) {
+    t.classList.toggle('active', (tab === 'input' && i === 0) || (tab === 'riwayat' && i === 1) || (tab === 'rekap' && i === 2) || (tab === 'pengantar' && i === 3));
+  });
+  document.getElementById('potGajiInputWrap').style.display = tab === 'input' ? '' : 'none';
+  document.getElementById('potGajiRiwayatWrap').style.display = tab === 'riwayat' ? '' : 'none';
+  document.getElementById('potGajiRekapWrap').style.display = tab === 'rekap' ? '' : 'none';
+  document.getElementById('potGajiPengantarWrap').style.display = tab === 'pengantar' ? '' : 'none';
+  if (tab === 'riwayat') initRiwayatPotFilter();
+  if (tab === 'rekap') initRekapPotFilter();
+  if (tab === 'pengantar') initPengantarPotongan();
+}
+
+function isiOpsiTahunPotongan(selectEl, tahunTerpilih) {
+  var now = new Date().getFullYear();
+  var html = '';
+  if (selectEl.id === 'rwPotTahun') html += '<option value="">Semua Tahun</option>';
+  for (var y = now + 1; y >= now - 4; y--) {
+    html += '<option value="' + y + '"' + (y === tahunTerpilih ? ' selected' : '') + '>' + y + '</option>';
+  }
+  selectEl.innerHTML = html;
+}
+
+var _potGajiPegawaiCache = null;
+async function getPegawaiCacheForPotongan() {
+  if (_potGajiPegawaiCache) return _potGajiPegawaiCache;
+  var list = [];
+  if (SCRIPT_URL) {
+    var res = await callAPI('getPegawai', {});
+    if (res && res.success) list = res.data;
+  }
+  _potGajiPegawaiCache = list;
+  return list;
+}
+
+// ---- Riwayat Pemotongan ----
+var riwayatPotRowsRaw = [];
+var riwayatPotFilterInited = false;
+async function initRiwayatPotFilter() {
+  isiOpsiTahunPotongan(document.getElementById('rwPotTahun'), new Date().getFullYear());
+  if (riwayatPotFilterInited) return;
+  riwayatPotFilterInited = true;
+  var pegawaiList = await getPegawaiCacheForPotongan();
+  var sel = document.getElementById('rwPotPegawai');
+  var html = '<option value="">Semua Pegawai</option>';
+  pegawaiList
+    .filter(function (p) { return (p['STATUS'] || 'Pegawai') !== 'Admin'; })
+    .sort(function (a, b) { return String(a['NAMA']).localeCompare(String(b['NAMA'])); })
+    .forEach(function (p) {
+      var idPeg = p['ID PEGAWAI'] || p['idPegawai'];
+      html += '<option value="' + idPeg + '">' + p['NAMA'] + '</option>';
+    });
+  sel.innerHTML = html;
+}
+
+async function loadRiwayatPotonganGaji() {
+  var tbody = document.getElementById('riwayatPotBody');
+  tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  var idPegawai = document.getElementById('rwPotPegawai').value;
+  var tahun = document.getElementById('rwPotTahun').value;
+  var bulan = document.getElementById('rwPotBulan').value;
+
+  var res = SCRIPT_URL ? await callAPI('getRiwayatPotonganGaji', {
+    idPegawai: idPegawai || undefined,
+    tahun: tahun ? parseInt(tahun, 10) : undefined,
+    bulan: bulan ? parseInt(bulan, 10) : undefined
+  }) : null;
+
+  var rows = (res && res.success) ? res.data : [];
+  var pegawaiList = await getPegawaiCacheForPotongan();
+  var pegMap = {};
+  pegawaiList.forEach(function (p) { pegMap[p['ID PEGAWAI'] || p['idPegawai']] = p; });
+
+  riwayatPotRowsRaw = rows.map(function (r) {
+    var p = pegMap[r.idPegawai] || {};
+    return {
+      idPegawai: r.idPegawai, bulan: r.bulan, tahun: r.tahun,
+      nama: p['NAMA'] || r.idPegawai, jabatan: p['PEKERJAAN'] || '-',
+      gaji: r.gaji, bpjsTk: r.bpjsTk, utangPegawai: r.utangPegawai,
+      paguyuban: r.paguyuban, totalPotongan: r.totalPotongan, netGaji: r.netGaji
+    };
+  }).sort(function (a, b) { return (b.tahun - a.tahun) || (b.bulan - a.bulan) || String(a.nama).localeCompare(String(b.nama)); });
+
+  renderPaged('riwayatPot', riwayatPotRowsRaw, 'riwayatPotBody', 'pgRiwayatPot', function (r, idx) {
+    return rowRiwayatPotHtml(r);
+  }, 11, 'Tidak ada riwayat pemotongan untuk filter ini.');
+}
+
+function rowRiwayatPotHtml(r) {
+  var idx = riwayatPotRowsRaw.indexOf(r) + 1;
+  return '<tr>' +
+    '<td>' + idx + '</td>' +
+    '<td>' + fmtBulanTahun(r.tahun + '-' + String(r.bulan).padStart(2, '0')) + '</td>' +
+    '<td><strong>' + r.nama + '</strong></td>' +
+    '<td>' + r.jabatan + '</td>' +
+    '<td>' + fmtRp(r.gaji) + '</td>' +
+    '<td>' + fmtRp(r.bpjsTk) + '</td>' +
+    '<td>' + fmtRp(r.utangPegawai) + '</td>' +
+    '<td>' + fmtRp(r.paguyuban) + '</td>' +
+    '<td><strong>' + fmtRp(r.totalPotongan) + '</strong></td>' +
+    '<td>' + fmtRp(r.netGaji) + '</td>' +
+    '<td>' +
+      '<button class="btn btn-outline btn-sm" title="Lihat rincian utang" onclick="lihatDetailUtangRiwayat(\'' + r.idPegawai + '\',' + r.bulan + ',' + r.tahun + ',\'' + r.nama.replace(/'/g, "\\'") + '\')">👁</button> ' +
+      '<button class="btn btn-danger btn-sm" title="Hapus data ini" onclick="hapusRiwayatPotongan(\'' + r.idPegawai + '\',' + r.bulan + ',' + r.tahun + ')">🗑</button>' +
+    '</td>' +
+  '</tr>';
+}
+
+async function lihatDetailUtangRiwayat(idPeg, bulan, tahun, nama) {
+  var res = SCRIPT_URL ? await callAPI('getUtangPegawaiPeriode', { idPegawai: idPeg, bulan: bulan, tahun: tahun }) : null;
+  var items = (res && res.success) ? res.data : [];
+  if (!items.length) { alert('Tidak ada rincian utang ke pegawai untuk ' + nama + ' pada periode ini.'); return; }
+  var msg = 'Rincian Utang ke Pegawai — ' + nama + ' (' + fmtBulanTahun(tahun + '-' + String(bulan).padStart(2, '0')) + ')\n\n';
+  items.forEach(function (it) { msg += '• ' + (it.namaPemberi || '-') + ': ' + fmtRp(it.jumlah) + '\n'; });
+  alert(msg);
+}
+
+async function hapusRiwayatPotongan(idPeg, bulan, tahun) {
+  if (!confirm('Hapus data pemotongan pegawai ini untuk periode ' + fmtBulanTahun(tahun + '-' + String(bulan).padStart(2, '0')) + '? Tindakan ini tidak dapat dibatalkan.')) return;
+  var res = await callAPI('deletePotonganGaji', { idPegawai: idPeg, bulan: bulan, tahun: tahun });
+  if (res && res.success) { alert('✅ Data berhasil dihapus.'); loadRiwayatPotonganGaji(); }
+  else alert('⚠ Gagal menghapus data.');
+}
+
+function exportRiwayatPotonganExcel() {
+  if (!riwayatPotRowsRaw.length) { alert('Tidak ada data untuk diexport. Klik "Tampilkan" terlebih dahulu.'); return; }
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+  html += '<head><meta charset="UTF-8"><' + 'style>th{background:#dbeafe;padding:7px;border:1px solid #888;font-weight:bold}td{padding:5px;border:1px solid #ccc}<' + '/style><' + '/head><body>';
+  html += '<h2>RIWAYAT PEMOTONGAN GAJI PPNPN</h2><table><thead><tr>';
+  html += '<th>No</th><th>Periode</th><th>Nama</th><th>Jabatan</th><th>Gaji</th><th>BPJS TK</th><th>Utang Pegawai</th><th>Paguyuban</th><th>Total Potongan</th><th>Net Gaji</th>';
+  html += '<' + '/tr><' + '/thead><tbody>';
+  riwayatPotRowsRaw.forEach(function (r, i) {
+    html += '<tr><td>' + (i + 1) + '</td><td>' + fmtBulanTahun(r.tahun + '-' + String(r.bulan).padStart(2, '0')) + '</td><td>' + r.nama + '</td><td>' + r.jabatan + '</td>';
+    html += '<td>' + fmtRp(r.gaji) + '</td><td>' + fmtRp(r.bpjsTk) + '</td><td>' + fmtRp(r.utangPegawai) + '</td><td>' + fmtRp(r.paguyuban) + '</td><td>' + fmtRp(r.totalPotongan) + '</td><td>' + fmtRp(r.netGaji) + '</td><' + '/tr>';
+  });
+  html += '<' + '/tbody><' + '/table><' + '/body><' + '/html>';
+  var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'Riwayat_Pemotongan_Gaji_PPNPN.xls';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// ---- Rekapitulasi Bulanan ----
+var rekapPotRowsRaw = [];
+function initRekapPotFilter() {
+  var sel = document.getElementById('rekapPotTahun');
+  if (!sel.options.length) isiOpsiTahunPotongan(sel, new Date().getFullYear());
+}
+
+async function loadRekapPotonganBulanan() {
+  var tbody = document.getElementById('rekapPotBody');
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  var tahun = parseInt(document.getElementById('rekapPotTahun').value, 10);
+  var bulanAwal = parseInt(document.getElementById('rekapPotBulanAwal').value, 10);
+  var bulanAkhir = parseInt(document.getElementById('rekapPotBulanAkhir').value, 10);
+  if (bulanAwal > bulanAkhir) { alert('Bulan awal tidak boleh lebih besar dari bulan akhir!'); return; }
+
+  var res = SCRIPT_URL ? await callAPI('getRiwayatPotonganGaji', { tahun: tahun }) : null;
+  var rows = (res && res.success) ? res.data : [];
+  rows = rows.filter(function (r) { return r.bulan >= bulanAwal && r.bulan <= bulanAkhir; });
+
+  var perBulan = {};
+  for (var b = bulanAwal; b <= bulanAkhir; b++) {
+    perBulan[b] = { bulan: b, jumlahPegawai: 0, totalGaji: 0, totalBpjs: 0, totalUtang: 0, totalPaguyuban: 0, totalPotongan: 0, totalNet: 0 };
+  }
+  rows.forEach(function (r) {
+    var agg = perBulan[r.bulan];
+    if (!agg) return;
+    agg.jumlahPegawai++;
+    agg.totalGaji += Number(r.gaji) || 0;
+    agg.totalBpjs += Number(r.bpjsTk) || 0;
+    agg.totalUtang += Number(r.utangPegawai) || 0;
+    agg.totalPaguyuban += Number(r.paguyuban) || 0;
+    agg.totalPotongan += Number(r.totalPotongan) || 0;
+    agg.totalNet += Number(r.netGaji) || 0;
+  });
+
+  rekapPotRowsRaw = Object.keys(perBulan).map(function (k) { return perBulan[k]; });
+
+  if (!rekapPotRowsRaw.some(function (r) { return r.jumlahPegawai > 0; })) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Belum ada data potongan tersimpan untuk periode ini.</td></tr>';
+    document.getElementById('rekapPotStats').style.display = 'none';
+    return;
+  }
+
+  var namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  var grandGaji = 0, grandPot = 0, grandNet = 0;
+  tbody.innerHTML = rekapPotRowsRaw.map(function (r, i) {
+    grandGaji += r.totalGaji; grandPot += r.totalPotongan; grandNet += r.totalNet;
+    return '<tr><td>' + (i + 1) + '</td><td><strong>' + namaBulan[r.bulan] + ' ' + tahun + '</strong></td><td>' + r.jumlahPegawai + '</td>' +
+      '<td>' + fmtRp(r.totalGaji) + '</td><td>' + fmtRp(r.totalBpjs) + '</td><td>' + fmtRp(r.totalUtang) + '</td><td>' + fmtRp(r.totalPaguyuban) + '</td>' +
+      '<td><strong>' + fmtRp(r.totalPotongan) + '</strong></td><td>' + fmtRp(r.totalNet) + '</td></tr>';
+  }).join('') + '<tr style="background:#fef3c7;font-weight:700"><td colspan="3" style="text-align:right">GRAND TOTAL</td><td>' + fmtRp(grandGaji) + '</td><td></td><td></td><td></td><td>' + fmtRp(grandPot) + '</td><td>' + fmtRp(grandNet) + '</td></tr>';
+
+  document.getElementById('rp-total-gaji').textContent = fmtRp(grandGaji);
+  document.getElementById('rp-total-potongan').textContent = fmtRp(grandPot);
+  document.getElementById('rp-total-net').textContent = fmtRp(grandNet);
+  document.getElementById('rekapPotStats').style.display = '';
+}
+
+function exportRekapPotonganBulananExcel() {
+  if (!rekapPotRowsRaw.length) { alert('Klik "Tampilkan" terlebih dahulu.'); return; }
+  var tahun = document.getElementById('rekapPotTahun').value;
+  var namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+  html += '<head><meta charset="UTF-8"><' + 'style>th{background:#dbeafe;padding:7px;border:1px solid #888;font-weight:bold}td{padding:5px;border:1px solid #ccc}<' + '/style><' + '/head><body>';
+  html += '<h2>REKAPITULASI PEMOTONGAN GAJI PPNPN — TAHUN ' + tahun + '</h2><table><thead><tr>';
+  html += '<th>No</th><th>Bulan</th><th>Jumlah Pegawai</th><th>Total Gaji</th><th>Total BPJS TK</th><th>Total Utang</th><th>Total Paguyuban</th><th>Total Potongan</th><th>Total Net Gaji</th>';
+  html += '<' + '/tr><' + '/thead><tbody>';
+  var grandGaji = 0, grandPot = 0, grandNet = 0;
+  rekapPotRowsRaw.forEach(function (r, i) {
+    grandGaji += r.totalGaji; grandPot += r.totalPotongan; grandNet += r.totalNet;
+    html += '<tr><td>' + (i + 1) + '</td><td>' + namaBulan[r.bulan] + ' ' + tahun + '</td><td>' + r.jumlahPegawai + '</td>';
+    html += '<td>' + fmtRp(r.totalGaji) + '</td><td>' + fmtRp(r.totalBpjs) + '</td><td>' + fmtRp(r.totalUtang) + '</td><td>' + fmtRp(r.totalPaguyuban) + '</td><td>' + fmtRp(r.totalPotongan) + '</td><td>' + fmtRp(r.totalNet) + '</td><' + '/tr>';
+  });
+  html += '<tr style="font-weight:bold"><td colspan="3" style="text-align:right">GRAND TOTAL</td><td>' + fmtRp(grandGaji) + '</td><td></td><td></td><td></td><td>' + fmtRp(grandPot) + '</td><td>' + fmtRp(grandNet) + '</td><' + '/tr>';
+  html += '<' + '/tbody><' + '/table><' + '/body><' + '/html>';
+  var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'Rekapitulasi_Pemotongan_' + tahun + '.xls';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function exportPotonganGajiExcel() {
+  var ids = Object.keys(potonganGajiState);
+  if (!ids.length) { alert('Generate data terlebih dahulu!'); return; }
+  var bulanVal = document.getElementById('potGajiBulan').value;
+  var namaBulan = bulanVal ? fmtBulanTahun(bulanVal) : '';
+
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+  html += '<head><meta charset="UTF-8"><' + 'style>';
+  html += 'body{font-family:Arial,sans-serif;font-size:10pt}';
+  html += 'table{border-collapse:collapse;width:100%}';
+  html += 'th{background:#dbeafe;padding:7px 9px;border:1px solid #888;font-size:9pt;text-align:center;font-weight:bold}';
+  html += 'td{padding:5px 8px;border:1px solid #ccc;font-size:10pt;vertical-align:middle}';
+  html += '.pot{background:#fde8d3} .net{background:#e2f0c9;font-weight:bold}';
+  html += '.total-row td{background:#fef3c7;font-weight:bold;border-top:2px solid #d97706}';
+  html += '<' + '/style><' + '/head><body>';
+
+  html += '<h2 style="margin-bottom:4px">POTONGAN GAJI PPNPN</h2>';
+  html += '<p style="color:#666;font-size:10pt">Bulan: ' + namaBulan + '</p>';
+
+  html += '<table><thead><tr>';
+  html += '<th rowspan="2">No</th><th rowspan="2">Nama</th><th rowspan="2">Jabatan</th><th rowspan="2">Gaji sesuai SPK</th>';
+  html += '<th colspan="3">Potongan</th><th rowspan="2">Total Potongan</th><th rowspan="2">Net Gaji</th>';
+  html += '</tr><tr><th>BPJS TK</th><th>Utang Ke Pegawai</th><th>Paguyuban</th></tr>';
+  html += '<' + '/thead><tbody>';
+
+  var totalGaji = 0, totalBpjs = 0, totalUtang = 0, totalPaguyuban = 0, totalPot = 0, totalNet = 0;
+  ids.forEach(function (idPeg, i) {
+    var r = potonganGajiState[idPeg];
+    var utangTotal = hitungUtangTotal(r.utangItems);
+    var tp = (Number(r.bpjsTk) || 0) + utangTotal + (Number(r.paguyuban) || 0);
+    var net = (Number(r.gaji) || 0) - tp;
+    totalGaji += Number(r.gaji) || 0; totalBpjs += Number(r.bpjsTk) || 0; totalUtang += utangTotal;
+    totalPaguyuban += Number(r.paguyuban) || 0; totalPot += tp; totalNet += net;
+    html += '<tr>';
+    html += '<td style="text-align:center">' + (i + 1) + '</td>';
+    html += '<td>' + r.nama + '</td>';
+    html += '<td>' + r.jabatan + '</td>';
+    html += '<td style="text-align:right">' + fmtRp(r.gaji) + '</td>';
+    html += '<td class="pot" style="text-align:right">' + fmtRp(r.bpjsTk) + '</td>';
+    html += '<td class="pot" style="text-align:right">' + (utangTotal ? fmtRp(utangTotal) : '-') + '</td>';
+    html += '<td class="pot" style="text-align:right">' + (r.paguyuban ? fmtRp(r.paguyuban) : '-') + '</td>';
+    html += '<td style="text-align:right">' + fmtRp(tp) + '</td>';
+    html += '<td class="net" style="text-align:right">' + fmtRp(net) + '</td>';
+    html += '</tr>';
+  });
+
+  html += '<tr class="total-row">';
+  html += '<td colspan="3" style="text-align:right">TOTAL</td>';
+  html += '<td style="text-align:right">' + fmtRp(totalGaji) + '</td>';
+  html += '<td style="text-align:right">' + fmtRp(totalBpjs) + '</td>';
+  html += '<td style="text-align:right">' + fmtRp(totalUtang) + '</td>';
+  html += '<td style="text-align:right">' + fmtRp(totalPaguyuban) + '</td>';
+  html += '<td style="text-align:right">' + fmtRp(totalPot) + '</td>';
+  html += '<td style="text-align:right">' + fmtRp(totalNet) + '</td>';
+  html += '</tr>';
+
+  html += '<' + '/tbody><' + '/table>';
+  html += '<' + '/body><' + '/html>';
+
+  var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'Potongan_Gaji_PPNPN_' + (bulanVal || '') + '.xls';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// CETAK PENGANTAR POTONGAN BPJS TK — output:
+//   1) lampiran_potongan_gaji.xlsx (daftar rekening didebet, format bank)
+//   2) potongan-ppnpn.docx (surat pengantar ke bank, dari template)
+// ============================================================
+var POT_PENGANTAR_SETTING_DEFAULT = {
+  kodeCabang: '', rekeningTujuan: '', namaRekeningTujuan: '',
+  namaKepalaKantor: '', kota: 'Subang',
+  namaPembuatDaftar: '', nipPembuatDaftar: ''
+};
+var potPengantarSetting = JSON.parse(localStorage.getItem('ppnpn_pot_pengantar_setting') || 'null') || POT_PENGANTAR_SETTING_DEFAULT;
+
+// Terbilang (angka -> kata baku Bahasa Indonesia), dipakai untuk kalimat rupiah pada surat.
+function terbilang(n) {
+  n = Math.floor(Math.abs(Number(n) || 0));
+  var satuan = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan',
+    'sepuluh', 'sebelas'];
+  function eja(num) {
+    if (num < 12) return satuan[num];
+    if (num < 20) return eja(num - 10) + ' belas';
+    if (num < 100) return eja(Math.floor(num / 10)) + ' puluh' + (num % 10 ? ' ' + eja(num % 10) : '');
+    if (num < 200) return 'seratus' + (num % 100 ? ' ' + eja(num % 100) : '');
+    if (num < 1000) return eja(Math.floor(num / 100)) + ' ratus' + (num % 100 ? ' ' + eja(num % 100) : '');
+    if (num < 2000) return 'seribu' + (num % 1000 ? ' ' + eja(num % 1000) : '');
+    if (num < 1000000) return eja(Math.floor(num / 1000)) + ' ribu' + (num % 1000 ? ' ' + eja(num % 1000) : '');
+    if (num < 1000000000) return eja(Math.floor(num / 1000000)) + ' juta' + (num % 1000000 ? ' ' + eja(num % 1000000) : '');
+    if (num < 1000000000000) return eja(Math.floor(num / 1000000000)) + ' miliar' + (num % 1000000000 ? ' ' + eja(num % 1000000000) : '');
+    return eja(Math.floor(num / 1000000000000)) + ' triliun' + (num % 1000000000000 ? ' ' + eja(num % 1000000000000) : '');
+  }
+  var kata = num2words_capitalize(eja(n) || 'nol');
+  return kata + ' Rupiah';
+}
+function num2words_capitalize(s) {
+  return s.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+}
+
+function initPengantarPotongan() {
+  document.getElementById('pot-kode-cabang').value = potPengantarSetting.kodeCabang || '';
+  document.getElementById('pot-rekening-tujuan').value = potPengantarSetting.rekeningTujuan || '';
+  document.getElementById('pot-nama-rekening-tujuan').value = potPengantarSetting.namaRekeningTujuan || '';
+  document.getElementById('pot-nama-kepala-kantor').value = potPengantarSetting.namaKepalaKantor || '';
+  document.getElementById('pot-kota-surat').value = potPengantarSetting.kota || 'Subang';
+  document.getElementById('pot-nama-pembuat-daftar').value = potPengantarSetting.namaPembuatDaftar || '';
+  document.getElementById('pot-nip-pembuat-daftar').value = potPengantarSetting.nipPembuatDaftar || '';
+  if (!document.getElementById('pot-tanggal-surat').value) {
+    document.getElementById('pot-tanggal-surat').value = new Date().toISOString().slice(0, 10);
+  }
+  if (!document.getElementById('pot-tanggal-debet').value) {
+    document.getElementById('pot-tanggal-debet').value = new Date().toISOString().slice(0, 10);
+  }
+
+  var ids = Object.keys(potonganGajiState);
+  var totalBpjs = 0;
+  ids.forEach(function (idPeg) { totalBpjs += Number(potonganGajiState[idPeg].bpjsTk) || 0; });
+  document.getElementById('pg-pengantar-total').textContent = ids.length ? fmtRp(totalBpjs) : '-';
+  document.getElementById('pg-pengantar-jumlah').textContent = ids.length ? ids.length : '-';
+}
+
+function simpanPotPengantarSettingDariForm() {
+  potPengantarSetting = {
+    kodeCabang: document.getElementById('pot-kode-cabang').value.trim(),
+    rekeningTujuan: document.getElementById('pot-rekening-tujuan').value.trim(),
+    namaRekeningTujuan: document.getElementById('pot-nama-rekening-tujuan').value.trim(),
+    namaKepalaKantor: document.getElementById('pot-nama-kepala-kantor').value.trim(),
+    kota: document.getElementById('pot-kota-surat').value.trim() || 'Subang',
+    namaPembuatDaftar: document.getElementById('pot-nama-pembuat-daftar').value.trim(),
+    nipPembuatDaftar: document.getElementById('pot-nip-pembuat-daftar').value.trim()
+  };
+  localStorage.setItem('ppnpn_pot_pengantar_setting', JSON.stringify(potPengantarSetting));
+}
+
+// Ambil template surat dari Supabase Storage (bucket "templates-surat", file "potongan-ppnpn.docx"),
+// mengikuti pola yang sama dengan fetchSpkTemplateArrayBuffer().
+async function fetchPotonganTemplateArrayBuffer() {
+  if (!supabaseClient) throw new Error('Supabase belum terhubung.');
+  var dl = await supabaseClient.storage.from('templates-surat').download('potongan-ppnpn.docx');
+  if (dl && dl.data) return await dl.data.arrayBuffer();
+  var pub = supabaseClient.storage.from('templates-surat').getPublicUrl('potongan-ppnpn.docx');
+  if (pub && pub.data && pub.data.publicUrl) {
+    var r = await fetch(pub.data.publicUrl);
+    if (r.ok) return await r.arrayBuffer();
+  }
+  throw new Error((dl && dl.error && dl.error.message) || 'Template potongan-ppnpn.docx tidak ditemukan di Storage (bucket templates-surat). Unggah dahulu file template ke bucket tersebut.');
+}
+
+function ymdToInt(isoDateStr) {
+  return parseInt(String(isoDateStr || '').replace(/-/g, ''), 10) || 0;
+}
+
+// Membangun & mengunduh lampiran_potongan_gaji.xlsx (format bank: Rekening Kredit / Rekening Debet)
+function buildLampiranPotonganXlsx(rows, setting, tanggalDebet, bulanVal) {
+  var n = rows.length;
+  var totalAmount = rows.reduce(function (s, r) { return s + (Number(r.jumlah) || 0); }, 0);
+
+  var aoa = [];
+  aoa.push(['Rekening Kredit', 'Nama', 'Remarks', 'Jumlah amount', 'Jumlah charge', 'jumlah record', 'tanggal', 'cabang']);
+  aoa.push([
+    setting.rekeningTujuan || '', setting.namaRekeningTujuan || '', 'POTONGAN BPJS TK',
+    { f: 'SUM(D4:D' + (3 + n) + ')' }, 0, n, ymdToInt(tanggalDebet), setting.kodeCabang || ''
+  ]);
+  aoa.push(['Rekening Debet', 'Nama', 'Remarks', 'Amount', 'Charge']);
+  rows.forEach(function (r) {
+    aoa.push([r.rekening || '', r.nama || '', 'POTONGAN GAJI', Math.round(Number(r.jumlah) || 0)]);
+  });
+  aoa.push([]);
+  aoa.push([]);
+  var kotaTgl = (setting.kota || 'Subang') + ', ' + fmtHariTanggalIndo(tanggalDebet).split(', ')[1];
+  var rowKotaTgl = 3 + n + 3; // baris kosong lalu "Kota, tanggal" di kolom E
+  var rowPembuatDaftar = rowKotaTgl + 1;
+  var rowTtdElektronik = rowPembuatDaftar + 7;
+  var rowNamaTtd = rowTtdElektronik + 1;
+  var rowNip = rowNamaTtd + 1;
+
+  while (aoa.length < rowKotaTgl - 1) aoa.push([]);
+  var barisKotaTgl = []; barisKotaTgl[4] = kotaTgl; aoa.push(barisKotaTgl);
+  var barisPembuatDaftar = []; barisPembuatDaftar[4] = 'Pembuat Daftar'; aoa.push(barisPembuatDaftar);
+  while (aoa.length < rowTtdElektronik - 1) aoa.push([]);
+  var barisTtdElektronik = []; barisTtdElektronik[4] = 'Ditandatangani secara elektronik'; aoa.push(barisTtdElektronik);
+  var barisNamaTtd = []; barisNamaTtd[4] = setting.namaPembuatDaftar || ''; aoa.push(barisNamaTtd);
+  var barisNip = []; barisNip[4] = setting.nipPembuatDaftar ? ('NIP. ' + setting.nipPembuatDaftar) : ''; aoa.push(barisNip);
+
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{ wch: 18 }, { wch: 30 }, { wch: 23 }, { wch: 19 }, { wch: 18 }, { wch: 17 }, { wch: 13 }, { wch: 11 }];
+  // Format angka Rupiah pada kolom D (baris 2 = total formula, baris 4..3+n = amount per pegawai)
+  var currFmt = '_("Rp"* #,##0_);_("Rp"* \\(#,##0\\);_("Rp"* "-"_);_(@_)';
+  var d2 = ws['D2']; if (d2) d2.z = '_(* #,##0_);_(* \\(#,##0\\);_(* "-"_);_(@_)';
+  for (var i = 0; i < n; i++) {
+    var cellRef = 'D' + (4 + i);
+    if (ws[cellRef]) ws[cellRef].z = currFmt;
+  }
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'cetak');
+  var out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  var blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  var namaFile = 'Lampiran Potongan Gaji - ' + (bulanVal || '') + '.xlsx';
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = namaFile;
+  document.body.appendChild(a); a.click(); a.remove();
+  return { fileName: namaFile, totalAmount: totalAmount };
+}
+
+// Membangun & mengunduh surat pengantar (potongan-ppnpn.docx) dari template Supabase Storage
+async function buildSuratPengantarPotonganDocx(data, bulanVal) {
+  var arrBuf = await fetchPotonganTemplateArrayBuffer();
+  var zip = new PizZip(arrBuf);
+  var doc = new window.docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+  doc.render(data);
+  var out = doc.getZip().generate({
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  });
+  var namaFile = 'Surat Pengantar Potongan PPNPN - ' + (bulanVal || '') + '.docx';
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(out);
+  a.download = namaFile;
+  document.body.appendChild(a); a.click(); a.remove();
+  return namaFile;
+}
+
+async function cetakPengantarPotongan() {
+  var ids = Object.keys(potonganGajiState);
+  if (!ids.length) { alert('⚠ Belum ada data. Buka tab "Input Potongan", pilih bulan, lalu klik "Generate" terlebih dahulu.'); return; }
+
+  var bulanVal = document.getElementById('potGajiBulan').value;
+  var namaBulan = bulanVal ? fmtBulanTahun(bulanVal) : '';
+  var parts = (bulanVal || '').split('-');
+  var namaBulanSaja = namaBulan.split(' ')[0] || '';
+  var tahunSaja = parts[0] || '';
+
+  var nomorSurat = document.getElementById('pot-nomor-surat').value.trim();
+  var tglSurat = document.getElementById('pot-tanggal-surat').value;
+  var tglDebet = document.getElementById('pot-tanggal-debet').value;
+
+  simpanPotPengantarSettingDariForm();
+  var setting = potPengantarSetting;
+
+  if (!nomorSurat) { alert('⚠ Nomor Surat wajib diisi.'); return; }
+  if (!tglSurat) { alert('⚠ Tanggal Surat wajib diisi.'); return; }
+  if (!tglDebet) { alert('⚠ Tanggal Pendebetan wajib diisi.'); return; }
+  if (!setting.rekeningTujuan || !setting.namaRekeningTujuan) { alert('⚠ No. Rekening Tujuan & Nama Pemilik Rekening Tujuan wajib diisi.'); return; }
+  if (!setting.namaKepalaKantor) { alert('⚠ Nama Kepala Kantor (penandatangan surat) wajib diisi.'); return; }
+  if (!setting.namaPembuatDaftar) { alert('⚠ Nama Pembuat Daftar wajib diisi.'); return; }
+
+  // Ambil data pegawai (untuk nomor rekening masing-masing) dari cache yang sudah dipakai tab Input Potongan.
+  var pegawaiList = await getPegawaiCacheForPotongan();
+  var rekeningByNama = {};
+  pegawaiList.forEach(function (p) { rekeningByNama[p['NAMA']] = p['REKENING'] || ''; });
+
+  var rows = [];
+  var tanpaRekening = [];
+  ids.forEach(function (idPeg) {
+    var r = potonganGajiState[idPeg];
+    var rekening = rekeningByNama[r.nama] || '';
+    if (!rekening) tanpaRekening.push(r.nama);
+    rows.push({ rekening: rekening, nama: r.nama, jumlah: r.bpjsTk });
+  });
+
+  if (tanpaRekening.length) {
+    alert('⚠ Pegawai berikut belum punya No. Rekening Tabungan Gaji (isi dahulu di menu Data Pegawai):\n\n- ' + tanpaRekening.join('\n- '));
+    return;
+  }
+
+  var totalBpjs = rows.reduce(function (s, r) { return s + (Math.round(Number(r.jumlah)) || 0); }, 0);
+
+  try {
+    var xlsxResult = buildLampiranPotonganXlsx(rows, setting, tglDebet, bulanVal);
+
+    await buildSuratPengantarPotonganDocx({
+      nomor_surat: nomorSurat,
+      NomorND: nomorSurat,
+      TanggalND: fmtHariTanggalIndo(tglSurat),
+      bulan: namaBulanSaja,
+      tahun: tahunSaja,
+      rupiah: fmtRp(totalBpjs),
+      kalimatrupiah: terbilang(totalBpjs),
+      norek: setting.rekeningTujuan,
+      namarek: setting.namaRekeningTujuan,
+      kepalakantor: setting.namaKepalaKantor,
+      kota: setting.kota
+    }, bulanVal);
+
+    alert('✅ Berhasil dicetak: Lampiran Potongan Gaji (.xlsx) & Surat Pengantar (.docx) untuk periode ' + namaBulan + '.');
+  } catch (err) {
+    alert('❌ Gagal mencetak pengantar potongan: ' + err.message);
+  }
+}
+
 function exportAbsensiExcel() {
   var from = document.getElementById('admFilterFrom').value;
   var to   = document.getElementById('admFilterTo').value;
@@ -11174,6 +12245,8 @@ function openAddPegawai() {
   document.getElementById('adm-peg-nik').value = '';
   document.getElementById('adm-peg-hp').value = '';
   document.getElementById('adm-peg-tim').value = '';
+  document.getElementById('adm-peg-gaji').value = '';
+  document.getElementById('adm-peg-rekening').value = '';
   document.getElementById('pegawaiAdminModal').classList.add('open');
 }
 
@@ -11190,6 +12263,8 @@ function editPegawai(dataStr) {
   document.getElementById('adm-peg-hp').value = p['NO HP'] || '';
   document.getElementById('adm-peg-job').value = p['PEKERJAAN'] || 'Cleaning Service';
   document.getElementById('adm-peg-tim').value = p['Tim'] || '';
+  document.getElementById('adm-peg-gaji').value = p['GAJI'] || '';
+  document.getElementById('adm-peg-rekening').value = p['REKENING'] || '';
   document.getElementById('pegawaiAdminModal').classList.add('open');
 }
 
@@ -11207,6 +12282,8 @@ async function simpanPegawaiAdmin() {
     NO_HP: document.getElementById('adm-peg-hp').value,
     PEKERJAAN: document.getElementById('adm-peg-job').value,
     TIM: document.getElementById('adm-peg-tim').value,
+    GAJI: parseFloat(document.getElementById('adm-peg-gaji').value) || 0,
+    REKENING: document.getElementById('adm-peg-rekening').value.trim(),
     STATUS: document.getElementById('adm-peg-job').value === 'Admin' ? 'Admin' : 'Pegawai'
   };
 
