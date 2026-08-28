@@ -2787,6 +2787,25 @@
             </div>
           </div>
 
+          <!-- TOLERANSI WAKTU -->
+          <div class="card">
+            <div class="card-title">⏱ Toleransi Waktu Absensi</div>
+            <div class="import-hint">Menentukan berapa menit keterlambatan/kecepatan yang masih dianggap "Tepat Waktu" sebelum status berubah jadi "Terlambat" / "Pulang Cepat". Berlaku untuk semua pekerjaan &amp; shift.</div>
+            <div class="field" style="margin-bottom:14px">
+              <label>Toleransi Terlambat (menit)</label>
+              <input type="number" id="setToleransiTerlambat" placeholder="5" min="0" step="1">
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Contoh: jam masuk 07:00, toleransi 5 menit → absen sampai 07:05 masih "Tepat Waktu", lewat itu jadi "Terlambat".</div>
+            </div>
+            <div class="field" style="margin-bottom:6px">
+              <label>Toleransi Pulang Cepat (menit)</label>
+              <input type="number" id="setToleransiPulang" placeholder="5" min="0" step="1">
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Contoh: jam pulang 17:00, toleransi 5 menit → absen pulang mulai 16:55 masih "Tepat Waktu", sebelum itu jadi "Pulang Cepat".</div>
+            </div>
+            <div style="margin-top:14px">
+              <button class="btn btn-success" onclick="saveToleransiSettings()">💾 Simpan Toleransi</button>
+            </div>
+          </div>
+
           <!-- PENYIMPANAN FOTO & DOKUMEN -->
           <div class="card">
             <div class="card-title">📷 Penyimpanan Foto &amp; Dokumen Absensi</div>
@@ -3584,6 +3603,9 @@ var selectedCuti    = new Set();
 var DEMO_USERS = [];
 var DEMO_JAM_KERJA = [];
 var DEMO_RADIUS = {radiusTolerance: 100, officeLat: null, officeLon: null};
+// Toleransi waktu (menit) sebelum status dihitung "Terlambat" / "Pulang Cepat".
+// Default 5/5 — sama seperti nilai yang dulu di-hardcode di getStatusMasuk/getStatusPulang.
+var DEMO_TOLERANSI = { terlambatMenit: 5, pulangCepatMenit: 5 };
 
 // ============================================================
 // TIM SECURITY YANG IKUT SHIFT JAGA 24 JAM
@@ -4219,6 +4241,13 @@ var DEFAULT_LIBUR = [
       if (savedR.officeLat != null) DEMO_RADIUS.officeLat = savedR.officeLat;
       if (savedR.officeLon != null) DEMO_RADIUS.officeLon = savedR.officeLon;
       if (savedR.radiusTolerance != null) DEMO_RADIUS.radiusTolerance = savedR.radiusTolerance;
+    }
+  } catch(e) {}
+  try {
+    var savedTol = JSON.parse(localStorage.getItem('ppnpn_toleransi_setting') || 'null');
+    if (savedTol) {
+      if (savedTol.terlambatMenit != null) DEMO_TOLERANSI.terlambatMenit = savedTol.terlambatMenit;
+      if (savedTol.pulangCepatMenit != null) DEMO_TOLERANSI.pulangCepatMenit = savedTol.pulangCepatMenit;
     }
   } catch(e) {}
 })();
@@ -5023,6 +5052,34 @@ async function callAPI(action, params={}) {
           errRad = (await supabaseClient.from('konfigurasi').insert(Object.assign({id:1}, rowRad))).error;
         }
         return { success: !errRad, error: errRad?errRad.message:null };
+      }
+
+      case 'getToleransi': {
+        const { data, error } = await supabaseClient.from('konfigurasi').select('*').eq('id',1).limit(1);
+        if (error || !data || !data.length) return { success:false };
+        const r = data[0];
+        if (r.toleransi_terlambat_menit == null && r.toleransi_pulang_menit == null) return { success:false };
+        return { success:true, data: {
+          terlambatMenit: r.toleransi_terlambat_menit, pulangCepatMenit: r.toleransi_pulang_menit
+        }};
+      }
+
+      case 'saveToleransi': {
+        // Pola sama seperti saveRadius — cek dulu apakah row id=1 sudah
+        // ada, baru UPDATE atau INSERT, supaya tidak bergantung pada
+        // constraint UNIQUE di kolom id.
+        const existingTol = await supabaseClient.from('konfigurasi').select('id').eq('id',1).limit(1);
+        const rowTol = {
+          toleransi_terlambat_menit: params.terlambatMenit,
+          toleransi_pulang_menit: params.pulangCepatMenit
+        };
+        let errTol;
+        if (existingTol.data && existingTol.data.length) {
+          errTol = (await supabaseClient.from('konfigurasi').update(rowTol).eq('id',1)).error;
+        } else {
+          errTol = (await supabaseClient.from('konfigurasi').insert(Object.assign({id:1}, rowTol))).error;
+        }
+        return { success: !errTol, error: errTol?errTol.message:null };
       }
 
       case 'getSpkSettings': {
@@ -6368,6 +6425,16 @@ var menuCS = document.getElementById('menuChecklistCS');
         r.data.forEach(function(d) { DEMO_JAM_KERJA.push(d); });
       } else {
         console.warn('Jam kerja belum dikonfigurasi di database. Admin perlu mengatur di menu Pengaturan.');
+      }
+    });
+
+    callAPI('getToleransi', {}).then(function(r) {
+      if (r && r.success && r.data) {
+        if (r.data.terlambatMenit != null) DEMO_TOLERANSI.terlambatMenit = parseFloat(r.data.terlambatMenit);
+        if (r.data.pulangCepatMenit != null) DEMO_TOLERANSI.pulangCepatMenit = parseFloat(r.data.pulangCepatMenit);
+        localStorage.setItem('ppnpn_toleransi_setting', JSON.stringify(DEMO_TOLERANSI));
+      } else {
+        console.warn('Toleransi waktu belum dikonfigurasi di database — memakai default 5 menit. Admin bisa mengatur di menu Pengaturan.');
       }
     });
 
@@ -7824,7 +7891,8 @@ function getStatusMasuk(jamKerjaStr, jamSekarangStr) {
   const jamKerjaMs = h*60+m;
   const [hs,ms] = jamSekarangStr.split(':').map(Number);
   const nowMs = hs*60+ms;
-  return nowMs > jamKerjaMs + 5 ? 'Terlambat' : 'Tepat Waktu';
+  const toleransi = DEMO_TOLERANSI.terlambatMenit;
+  return nowMs > jamKerjaMs + toleransi ? 'Terlambat' : 'Tepat Waktu';
 }
 
 // PENTING: untuk shift yang melewati tengah malam (mis. Security Jaga
@@ -7856,7 +7924,7 @@ function getStatusPulang(jamPulangStr, jamSekarangStr, tglMasukStr, tglSekarangS
   // supaya pemanggilan lama yang belum sempat dikirimi tanggal tidak
   // rusak, tapi TIDAK dipakai lagi untuk alur absen pulang Security.
   if (!tglMasukStr || !tglSekarangStr) {
-    return jamSekarangMenit < jamPulangMenit - 5 ? 'Pulang Cepat' : 'Tepat Waktu';
+    return jamSekarangMenit < jamPulangMenit - DEMO_TOLERANSI.pulangCepatMenit ? 'Pulang Cepat' : 'Tepat Waktu';
   }
 
   // Tanggal target pulang: pakai yang dikirim pemanggil bila ada.
@@ -7874,7 +7942,7 @@ function getStatusPulang(jamPulangStr, jamSekarangStr, tglMasukStr, tglSekarangS
   const targetTs   = Date.parse(targetTglPulang + 'T00:00:00Z') + jamPulangMenit * 60000;
   const sekarangTs = Date.parse(tglSekarangStr + 'T00:00:00Z') + jamSekarangMenit * 60000;
 
-  return sekarangTs < targetTs - 5 * 60000 ? 'Pulang Cepat' : 'Tepat Waktu';
+  return sekarangTs < targetTs - DEMO_TOLERANSI.pulangCepatMenit * 60000 ? 'Pulang Cepat' : 'Tepat Waktu';
 }
 
 // Kapan (tanggal + jam) pegawai `u` seharusnya absen pulang untuk record
@@ -10741,6 +10809,8 @@ function loadPengaturanPage() {
   document.getElementById('setOfficeLat').value = officeLat != null ? officeLat : DEMO_RADIUS.officeLat;
   document.getElementById('setOfficeLon').value = officeLon != null ? officeLon : DEMO_RADIUS.officeLon;
   document.getElementById('setOfficeRadius').value = officeRadius != null ? officeRadius : DEMO_RADIUS.radiusTolerance;
+  document.getElementById('setToleransiTerlambat').value = DEMO_TOLERANSI.terlambatMenit;
+  document.getElementById('setToleransiPulang').value = DEMO_TOLERANSI.pulangCepatMenit;
   loadStorageSettingsUI();
   document.getElementById('setSpkNamaTtd').value     = spkSetting.namaTtd || '';
   document.getElementById('setSpkJabatanTtd').value  = spkSetting.jabatanTtd || '';
@@ -10797,6 +10867,39 @@ async function saveJamKerjaSettings() {
 
   var notif = document.createElement('div');
   notif.textContent = '✅ Pengaturan jam kerja tersimpan di database';
+  notif.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;background:#16a34a;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.2)';
+  document.body.appendChild(notif);
+  setTimeout(function(){ notif.remove(); }, 2500);
+}
+
+async function saveToleransiSettings() {
+  var telatRaw  = document.getElementById('setToleransiTerlambat').value.trim();
+  var pulangRaw = document.getElementById('setToleransiPulang').value.trim();
+  var telat  = telatRaw  ? parseFloat(telatRaw)  : 5;
+  var pulang = pulangRaw ? parseFloat(pulangRaw) : 5;
+
+  var errs = [];
+  if (isNaN(telat) || telat < 0) errs.push('Toleransi Terlambat harus angka 0 atau lebih (menit)');
+  if (isNaN(pulang) || pulang < 0) errs.push('Toleransi Pulang Cepat harus angka 0 atau lebih (menit)');
+  if (errs.length) {
+    alert('⚠ Belum bisa disimpan:\n- ' + errs.join('\n- '));
+    return;
+  }
+
+  DEMO_TOLERANSI.terlambatMenit   = telat;
+  DEMO_TOLERANSI.pulangCepatMenit = pulang;
+  localStorage.setItem('ppnpn_toleransi_setting', JSON.stringify(DEMO_TOLERANSI));
+
+  if (SCRIPT_URL) {
+    var res = await postAPI('saveToleransi', { terlambatMenit: telat, pulangCepatMenit: pulang });
+    if (!res || !res.success) {
+      alert('❌ Gagal menyimpan ke database: ' + (res?res.error:'Unknown Error'));
+      return;
+    }
+  }
+
+  var notif = document.createElement('div');
+  notif.textContent = '✅ Pengaturan toleransi waktu tersimpan di database';
   notif.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;background:#16a34a;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.2)';
   document.body.appendChild(notif);
   setTimeout(function(){ notif.remove(); }, 2500);
