@@ -713,45 +713,90 @@
     box-shadow: 0 6px 0 #fff, 0 -6px 0 #fff;
   }
 
-  /* ========= BOTTOM NAV (mobile only) — modern & soft ========= */
+  /* ========= BOTTOM NAV (mobile only) — floating wave FAB ========= */
   .bottom-nav {
     display: none; position: fixed; bottom: 0; left: 0; right: 0;
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-top: 1px solid rgba(15,60,45,0.06);
-    border-radius: 22px 22px 0 0;
-    z-index: 150;
-    padding: 10px 10px calc(8px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -10px 28px rgba(15,60,45,0.10);
+    height: 68px; z-index: 150; overflow: visible;
+  }
+  .bottom-nav-shape {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    filter: drop-shadow(0 -8px 24px rgba(11,61,46,0.35));
+    pointer-events: none;
+  }
+  .bottom-nav-safearea {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: env(safe-area-inset-bottom, 0px);
+    background: linear-gradient(135deg, #146c43 0%, #0b3d2e 100%);
   }
   .bottom-nav-items {
-    display: flex; justify-content: space-around; align-items: center; gap: 4px;
+    position: relative; z-index: 2; height: 100%; width: 100%;
+    display: flex; align-items: center; padding: 0 4px;
   }
+  .bottom-nav-side {
+    flex: 1; min-width: 0; display: flex; justify-content: space-around; align-items: center;
+  }
+  .bottom-nav-spacer { flex: 0 0 68px; }
+  .bottom-nav-item-wrap { position: relative; flex: 1; display: flex; justify-content: center; min-width: 0; }
   .bottom-nav-item {
     display: flex; flex-direction: column; align-items: center;
-    gap: 3px; padding: 7px 8px 8px; cursor: pointer; border: none;
-    background: none; color: #9aa8a0;
-    font-size: 10.5px; font-weight: 600; font-family: inherit;
+    gap: 3px; padding: 6px 6px 7px; cursor: pointer; border: none;
+    background: none; color: rgba(255,255,255,0.62);
+    font-size: 10px; font-weight: 600; font-family: inherit;
     border-radius: 14px; transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
-    flex: 1; min-width: 0; width: 100%; position: relative;
+    width: 100%; max-width: 74px; position: relative;
   }
   .bottom-nav-item svg {
-    width: 21px; height: 21px; transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+    width: 20px; height: 20px; transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
   }
   .bottom-nav-item.active {
-    color: #0d7d5c;
-    background: rgba(16,185,129,0.12);
-    box-shadow: 0 4px 10px rgba(16,185,129,0.14);
+    color: #ffffff;
+    background: rgba(255,255,255,0.16);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
   }
   .bottom-nav-item.active svg { transform: translateY(-1px); }
   .bottom-nav-item:active { transform: scale(0.94); }
   .bottom-nav-item .bnav-dot {
-    width: 7px; height: 7px; background: #ef4444;
-    border: 2px solid #fff;
+    width: 7px; height: 7px; background: #ffb84d;
+    border: 2px solid #146c43;
     border-radius: 50%; position: absolute; top: 2px; right: 12px;
-    box-shadow: 0 0 0 1px rgba(239,68,68,0.25);
+    box-shadow: 0 0 0 1px rgba(255,184,77,0.35);
   }
-  .bottom-nav-item-wrap { position: relative; flex: 1; display: flex; justify-content: center; }
+
+  /* Tombol Absensi timbul di tengah, seperti gelombang yang muncul */
+  .bottom-nav-fab-wrap {
+    position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; z-index: 3;
+  }
+  .bottom-nav-fab {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: var(--grad-warm);
+    border: 4px solid #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 24px rgba(201,162,75,0.55), 0 4px 10px rgba(11,61,46,0.25);
+    cursor: pointer; position: relative;
+    transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s;
+  }
+  .bottom-nav-fab::before {
+    content: ''; position: absolute; inset: -8px; border-radius: 50%;
+    border: 2px solid rgba(232,200,116,0.55);
+    animation: fabPulse 2.4s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes fabPulse {
+    0% { transform: scale(0.85); opacity: 0.9; }
+    70% { transform: scale(1.24); opacity: 0; }
+    100% { transform: scale(1.24); opacity: 0; }
+  }
+  .bottom-nav-fab svg { width: 26px; height: 26px; color: #0b3d2e; position: relative; z-index: 1; }
+  .bottom-nav-fab:active { transform: scale(0.92); }
+  .bottom-nav-fab.fab-active {
+    box-shadow: 0 12px 28px rgba(201,162,75,0.7), 0 0 0 5px rgba(255,255,255,0.35);
+  }
+  .bottom-nav-fab-label {
+    margin-top: 4px; font-size: 10.5px; font-weight: 700;
+    color: #ffffff; letter-spacing: 0.2px;
+    text-shadow: 0 1px 4px rgba(11,61,46,0.45);
+  }
 
   /* ========= RESPONSIVE ========= */
   @media (max-width: 768px) {
@@ -3202,8 +3247,22 @@
 
 <!-- Bottom Navigation (mobile only) -->
 <nav class="bottom-nav" id="bottomNav" style="display:none">
+  <svg class="bottom-nav-shape" viewBox="0 0 400 68" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="bottomNavGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#1f9d6b"></stop>
+        <stop offset="45%" stop-color="#146c43"></stop>
+        <stop offset="100%" stop-color="#0b3d2e"></stop>
+      </linearGradient>
+    </defs>
+    <path d="M0,16 Q0,0 16,0 L150,0 C168,0 170,18 200,18 C230,18 232,0 250,0 L384,0 Q400,0 400,16 L400,68 L0,68 Z" fill="url(#bottomNavGrad)"></path>
+  </svg>
+  <div class="bottom-nav-safearea"></div>
   <div class="bottom-nav-items" id="bottomNavItems">
-    <!-- items injected by JS based on role -->
+    <!-- items kiri/kanan diisi JS sesuai peran (role) -->
+  </div>
+  <div class="bottom-nav-fab-wrap" id="bottomNavFabWrap">
+    <!-- tombol Absensi timbul diisi JS -->
   </div>
 </nav>
 </div>
@@ -12293,26 +12352,59 @@ function buildBottomNav() {
   var u       = currentUser;
   var isAdmin = u && u.status === 'Admin';
   var nav     = document.getElementById('bottomNavItems');
+  var fabWrap = document.getElementById('bottomNavFabWrap');
   var bnav    = document.getElementById('bottomNav');
 
+  var iconAbsensi = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>';
+  var iconDashboard = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>';
+  var iconCutiAdmin = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
+  var iconCuti = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  var iconPegawai = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>';
+  var iconMenu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+  var iconTugas = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
+
+  var leftItems, rightItems, absensiPage;
+
   if (isAdmin) {
-    nav.innerHTML =
-      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-dashboard" onclick="showPage(\'dashboard\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</button></div>' +
-      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-adminAbsensi" onclick="showPage(\'adminAbsensi\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Absensi</button></div>' +
-      '<div class="bottom-nav-item-wrap" style="position:relative"><button class="bottom-nav-item" id="bn-adminCuti" onclick="showPage(\'adminCuti\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Cuti</button><span class="bnav-dot" id="bnavDot" style="display:none;position:absolute;top:4px;right:14px"></span></div>' +
-      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-adminPegawai" onclick="showPage(\'adminPegawai\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Pegawai</button></div>' +
-      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-more" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Menu</button></div>';
+    absensiPage = 'adminAbsensi';
+    leftItems = [
+      { id:'bn-dashboard', onclick:"showPage('dashboard')", label:'Dashboard', svg:iconDashboard },
+      { id:'bn-adminCuti', onclick:"showPage('adminCuti')", label:'Cuti', svg:iconCutiAdmin, dot:true }
+    ];
+    rightItems = [
+      { id:'bn-adminPegawai', onclick:"showPage('adminPegawai')", label:'Pegawai', svg:iconPegawai },
+      { id:'bn-more', onclick:"toggleSidebar()", label:'Menu', svg:iconMenu }
+    ];
   } else {
-    var extraNav = '';
+    absensiPage = 'absensi';
+    leftItems = [
+      { id:'bn-dashboard', onclick:"showPage('dashboard')", label:'Beranda', svg:iconDashboard },
+      { id:'bn-cuti', onclick:"showPage('cuti')", label:'Cuti', svg:iconCuti }
+    ];
+    rightItems = [];
     if (u.pekerjaan === 'Cleaning Service') {
-      extraNav = '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-checklist" onclick="showPage(\'checklist\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Tugas</button></div>';
+      rightItems.push({ id:'bn-checklist', onclick:"showPage('checklist')", label:'Tugas', svg:iconTugas });
     }
-    nav.innerHTML =
-      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-dashboard" onclick="showPage(\'dashboard\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Beranda</button></div>' +
-      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-absensi" onclick="showPage(\'absensi\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>Absensi</button></div>' + extraNav +
-      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-cuti" onclick="showPage(\'cuti\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Cuti</button></div>' +
-      '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="bn-more" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Menu</button></div>';
+    rightItems.push({ id:'bn-more', onclick:"toggleSidebar()", label:'Menu', svg:iconMenu });
   }
+
+  function renderGroup(items) {
+    return items.map(function(it){
+      var dot = it.dot ? '<span class="bnav-dot" id="bnavDot" style="display:none;position:absolute;top:4px;right:14px"></span>' : '';
+      return '<div class="bottom-nav-item-wrap"><button class="bottom-nav-item" id="' + it.id + '" onclick="' + it.onclick + '">' + it.svg + it.label + '</button>' + dot + '</div>';
+    }).join('');
+  }
+
+  nav.innerHTML =
+    '<div class="bottom-nav-side">' + renderGroup(leftItems) + '</div>' +
+    '<div class="bottom-nav-spacer"></div>' +
+    '<div class="bottom-nav-side">' + renderGroup(rightItems) + '</div>';
+
+  // Tombol Absensi timbul di tengah, seperti gelombang muncul dari nav bar
+  fabWrap.innerHTML =
+    '<button class="bottom-nav-fab" id="bn-absensi-fab" onclick="showPage(\'' + absensiPage + '\')" aria-label="Absensi">' + iconAbsensi + '</button>' +
+    '<span class="bottom-nav-fab-label">Absensi</span>';
+
   bnav.style.display = window.innerWidth <= 768 ? 'block' : 'none';
 }
 
@@ -12320,6 +12412,14 @@ function updateBottomNavActive(pageName) {
   document.querySelectorAll('.bottom-nav-item').forEach(function(btn){
     btn.classList.remove('active');
   });
+  var fab = document.getElementById('bn-absensi-fab');
+  if (fab) fab.classList.remove('fab-active');
+
+  if (pageName === 'absensi' || pageName === 'adminAbsensi') {
+    if (fab) fab.classList.add('fab-active');
+    return;
+  }
+
   var key = pageName;
   // map sub-pages to bottom nav items
   if (pageName === 'keluarga') key = 'profil';
