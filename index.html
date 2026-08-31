@@ -13080,6 +13080,15 @@ function updateBottomNavActive(pageName) {
 window.addEventListener('resize', function(){
   var bnav = document.getElementById('bottomNav');
   if (bnav) bnav.style.display = window.innerWidth <= 768 ? 'block' : 'none';
+
+  // Jaga-jaga: kalau layar masuk ke lebar mobile, pastikan sidebar
+  // tidak nyangkut dalam mode "minimized" (ikon saja). Kalau lebar
+  // kembali ke desktop, terapkan lagi sesuai preferensi tersimpan.
+  if (window.innerWidth <= 768) {
+    document.body.classList.remove('sidebar-minimized');
+  } else if (localStorage.getItem('ppnpn_sidebar_minimized') === 'true') {
+    document.body.classList.add('sidebar-minimized');
+  }
 });
 
 // ============================================================
@@ -13174,6 +13183,7 @@ async function hapusPegawai(idPeg) {
 
 // Desktop Toggle Sidebar
 function toggleDesktopSidebar() {
+  if (window.innerWidth <= 768) return; // tombol ini memang khusus desktop
   document.body.classList.toggle('sidebar-minimized');
   localStorage.setItem('ppnpn_sidebar_minimized', document.body.classList.contains('sidebar-minimized'));
 }
@@ -13187,7 +13197,11 @@ window.onload = () => {
   initSupabaseClient();
   SCRIPT_URL = supabaseClient ? 'supabase' : '';
 
-  if (localStorage.getItem('ppnpn_sidebar_minimized') === 'true') {
+  // Mode "minimized" (ikon saja) itu khusus desktop. Jangan pernah
+  // diterapkan di layar mobile walau localStorage-nya kebetulan
+  // "true" dari sesi sebelumnya (mis. sempat dibuka via mode
+  // "Situs Desktop"), supaya sidebar mobile selalu tampil lengkap.
+  if (window.innerWidth > 768 && localStorage.getItem('ppnpn_sidebar_minimized') === 'true') {
     document.body.classList.add('sidebar-minimized');
   }
   // Isi kembali username/password jika "ingat saya" pernah dicentang
