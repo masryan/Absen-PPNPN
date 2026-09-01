@@ -466,6 +466,26 @@
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--surface); }
 
+  /* ========= TABEL: PENCARIAN & SORT (ditambahkan) ========= */
+  .ta-search-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .ta-search-wrap input.ta-search-input {
+    flex: 1; min-width: 180px; max-width: 320px; padding: 9px 14px; border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 13px; font-family: inherit; background: var(--card); color: var(--text);
+    outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  .ta-search-wrap input.ta-search-input:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(26,122,82,0.14); }
+  .ta-search-wrap input.ta-search-input::placeholder { color: var(--text-muted); }
+  .ta-search-clear {
+    border: none; background: var(--surface); color: var(--text-muted); width: 30px; height: 30px; border-radius: 8px;
+    cursor: pointer; font-size: 13px; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .ta-search-clear:hover { background: var(--border); color: var(--text); }
+  .ta-search-count { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
+  th.ta-sortable { cursor: pointer; user-select: none; }
+  th.ta-sortable:hover { color: var(--primary-light); }
+  th.ta-sortable .ta-sort-ind { display: inline-block; margin-left: 5px; font-size: 9px; opacity: .35; }
+  th.ta-sortable.ta-sort-asc .ta-sort-ind, th.ta-sortable.ta-sort-desc .ta-sort-ind { opacity: 1; color: var(--primary-light); }
+
   /* ========= BADGES ========= */
   .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
   .badge-green { background: #dcfce7; color: #15803d; }
@@ -2045,9 +2065,10 @@
         </div>
         <div id="cutiTabForm">
           <div class="card">
-            <div class="card-title">📝 Pengajuan Cuti / Ijin</div>
+            <div class="card-title" id="cutiFormTitle">📝 Pengajuan Cuti / Ijin</div>
             <div id="cutiSaldoInfo" class="alert alert-info" style="margin-bottom:16px"></div>
             <div id="cutiFormAlert"></div>
+            <input type="hidden" id="cutiEditId" value="">
             <div class="form-row">
               <div class="field">
                 <label>Jenis Cuti</label>
@@ -2088,11 +2109,13 @@
               <div class="field">
                 <label>Lampiran (PDF/Gambar - Wajib)</label>
                 <input type="file" id="cutiLampiran" accept=".pdf,.jpg,.jpeg,.png">
+                <div id="cutiLampiranCurrent" style="font-size:12px;margin-top:6px;color:var(--text-muted)"></div>
               </div>
             </div>
             <div class="alert alert-info" id="cutiHitungInfo" style="display:none"></div>
             <div style="margin-top:16px">
-              <button class="btn btn-primary" onclick="ajukanCuti()">📤 Ajukan Permohonan</button>
+              <button class="btn btn-primary" id="cutiSubmitBtn" onclick="ajukanCuti()">📤 Ajukan Permohonan</button>
+              <button class="btn btn-outline" id="cutiCancelEditBtn" style="display:none;margin-left:8px" onclick="batalEditCuti()">✖ Batal Edit</button>
             </div>
           </div>
         </div>
@@ -2101,7 +2124,7 @@
             <div class="card-title">📋 Riwayat Permohonan Saya</div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>No</th><th>Jenis</th><th>Mulai</th><th>Selesai</th><th>Hari</th><th>Alasan</th><th>Status</th></tr></thead>
+                <thead><tr><th>No</th><th>Jenis</th><th>Mulai</th><th>Selesai</th><th>Hari</th><th>Alasan</th><th>Status</th><th>Dokumen</th><th>Aksi</th></tr></thead>
                 <tbody id="cutiHistoryBody"></tbody>
               </table>
             </div>
@@ -2399,7 +2422,7 @@
             <div class="import-hint">📋 Format kolom: ID Karyawan | Nama | Jenis Cuti | Tanggal Mulai | Tanggal Selesai | Jumlah Hari | Alasan | Status</div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th style="width:36px"><input type="checkbox" id="chkAllCuti" onchange="toggleAllCuti(this)"></th><th>ID</th><th>Nama</th><th>Jenis</th><th>Mulai</th><th>Selesai</th><th>Hari</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead>
+                <thead><tr><th style="width:36px"><input type="checkbox" id="chkAllCuti" onchange="toggleAllCuti(this)"></th><th>ID</th><th>Nama</th><th>Jenis</th><th>Mulai</th><th>Selesai</th><th>Hari</th><th>Alasan</th><th>Dokumen</th><th>Status</th><th>Aksi</th></tr></thead>
                 <tbody id="adminCutiBody"></tbody>
               </table>
             </div>
@@ -3683,6 +3706,57 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('editAbsensiModal')">Batal</button>
       <button class="btn btn-primary" onclick="simpanEditAbsensi()">💾 Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edit Pengajuan Cuti/Ijin (Admin, sebelum diproses) -->
+<div class="modal-backdrop" id="editCutiAdminModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>✏️ Edit Pengajuan Cuti/Ijin</h3>
+      <button class="modal-close" onclick="closeModal('editCutiAdminModal')">✕</button>
+    </div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">
+      <strong id="eca-nama">-</strong> — <span id="eca-id" style="font-family:'Space Mono',monospace"></span>
+    </div>
+    <div id="editCutiAdminAlert"></div>
+    <div class="form-row">
+      <div class="field">
+        <label>Jenis Cuti</label>
+        <select id="eca-jenis" onchange="onJenisCutiAdminChange()">
+          <option value="Cuti Tahunan">Cuti Tahunan</option>
+          <option value="Cuti Sakit">Cuti Sakit</option>
+          <option value="Cuti Alasan Penting">Cuti Alasan Penting</option>
+          <option value="Ijin">Ijin</option>
+        </select>
+      </div>
+      <div class="field" id="eca-halfday-field" style="display:none">
+        <label>Jenis Hari</label>
+        <select id="eca-halfday" onchange="hitungHariCutiAdmin()">
+          <option value="full">Satu Hari Penuh</option>
+          <option value="pagi">Setengah Hari Pagi</option>
+          <option value="siang">Setengah Hari Siang</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>Tanggal Mulai</label><input type="date" id="eca-mulai" onchange="hitungHariCutiAdmin()"></div>
+      <div class="field"><label>Tanggal Selesai</label><input type="date" id="eca-selesai" onchange="hitungHariCutiAdmin()"></div>
+    </div>
+    <div class="form-row single">
+      <div class="field"><label>Alasan</label><textarea id="eca-alasan" rows="3"></textarea></div>
+    </div>
+    <div class="alert alert-info" id="eca-hitung-info" style="display:none"></div>
+    <div class="form-row single" id="eca-lampiran-wrap">
+      <div class="field">
+        <label>Dokumen Lampiran</label>
+        <div id="eca-lampiran-current" style="font-size:13px;color:var(--text-muted)">Tidak ada dokumen</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('editCutiAdminModal')">Batal</button>
+      <button class="btn btn-primary" id="eca-save-btn" onclick="simpanEditCutiAdmin()">💾 Simpan Perubahan</button>
     </div>
   </div>
 </div>
@@ -5315,8 +5389,19 @@ async function callAPI(action, params={}) {
       }
 
       case 'updatePermohonan': {
+        // Bisa dipakai untuk update sebagian (mis. hanya Status saat approve/tolak)
+        // maupun update lengkap (saat pegawai/admin mengedit pengajuan yang masih
+        // "Menunggu") — hanya field yang dikirim di params yang ikut di-update.
+        const upd = {};
+        if (params.Status !== undefined)          upd.status = params.Status;
+        if (params.Jenis_Cuti !== undefined)       upd.jenis_cuti = params.Jenis_Cuti;
+        if (params.Tanggal_Mulai !== undefined)    upd.tanggal_mulai = params.Tanggal_Mulai;
+        if (params.Tanggal_Selesai !== undefined)  upd.tanggal_selesai = params.Tanggal_Selesai;
+        if (params.Jumlah_Hari !== undefined)      upd.jumlah_hari = params.Jumlah_Hari;
+        if (params.Alasan !== undefined)           upd.alasan = params.Alasan;
+        if (params.Lampiran !== undefined)         upd.lampiran = params.Lampiran;
         const { error } = await supabaseClient.from('permohonan')
-          .update({ status: params.Status }).eq('id_pengajuan', params.ID_Pengajuan);
+          .update(upd).eq('id_pengajuan', params.ID_Pengajuan);
         return { success: !error, error: error?error.message:null };
       }
 
@@ -9057,20 +9142,45 @@ function hitungHariCuti() {
   el.textContent = `📅 Jumlah hari cuti kerja: ${res.hari} hari (tidak termasuk Sabtu-Minggu)`;
 }
 
+// Sebuah nilai Lampiran dianggap dokumen yang bisa dibuka hanya jika berupa
+// URL sungguhan (http/https). Data lama yang cuma menyimpan teks 'uploaded'
+// (sebelum fitur upload nyata ada) TIDAK bisa dibuka — filenya memang tidak
+// pernah benar-benar tersimpan di server manapun.
+function isLampiranUrl(v) {
+  return !!v && /^https?:\/\//i.test(v);
+}
+
 async function ajukanCuti() {
   const jenis = document.getElementById('cutiJenis').value;
   const mulai = document.getElementById('cutiMulai').value;
   const selesai = document.getElementById('cutiSelesai').value;
   const alasan = document.getElementById('cutiAlasan').value.trim();
   const halfDay = document.getElementById('cutiHalfDay').value;
+  const editId = document.getElementById('cutiEditId').value;
   const u = currentUser;
 
   if (!jenis||!mulai||!selesai||!alasan) {
     showAlert('cutiFormAlert','error','❌ Lengkapi semua field!'); return;
   }
 
-  // Check if lampiran required
-  if ((jenis==='Cuti Sakit'||jenis==='Cuti Alasan Penting') && !document.getElementById('cutiLampiran').files.length) {
+  // Data existing (mode edit) — dipakai untuk tahu lampiran lama & validasi status
+  const existing = editId ? localPermohonan.find(function(p){ return p.ID_Pengajuan===editId; }) : null;
+  if (editId && !existing) {
+    showAlert('cutiFormAlert','error','❌ Data pengajuan tidak ditemukan (mungkin sudah dihapus).'); return;
+  }
+  if (editId && existing.Status !== 'Menunggu') {
+    showAlert('cutiFormAlert','error','❌ Pengajuan ini sudah diproses admin (' + existing.Status + ') dan tidak bisa diedit lagi.');
+    batalEditCuti();
+    return;
+  }
+
+  const fileInput = document.getElementById('cutiLampiran');
+  const adaFileBaru = fileInput.files.length > 0;
+  const lampiranLama = existing ? existing.Lampiran : null;
+
+  // Check if lampiran required — untuk pengajuan baru wajib upload file baru;
+  // untuk edit, cukup jika sudah ada file lama yang valid ATAU pilih file baru.
+  if ((jenis==='Cuti Sakit'||jenis==='Cuti Alasan Penting') && !adaFileBaru && !isLampiranUrl(lampiranLama)) {
     showAlert('cutiFormAlert','error','❌ Wajib upload lampiran untuk cuti sakit/alasan penting!'); return;
   }
 
@@ -9081,19 +9191,48 @@ async function ajukanCuti() {
   }
   const hari = hasilHari.hari;
 
-  // Pastikan saldo cuti terbaru (bukan cache lama) sebelum submit & sebelum cek saldo
+  // Pastikan saldo cuti & status pengajuan terbaru (bukan cache lama) sebelum submit
   await refreshPermohonan();
+  if (editId) {
+    const cekTerbaru = localPermohonan.find(function(p){ return p.ID_Pengajuan===editId; });
+    if (cekTerbaru && cekTerbaru.Status !== 'Menunggu') {
+      showAlert('cutiFormAlert','error','❌ Pengajuan ini baru saja diproses admin (' + cekTerbaru.Status + ') dan tidak bisa diedit lagi.');
+      batalEditCuti();
+      return;
+    }
+  }
 
   // Check saldo
   if (jenis==='Cuti Tahunan') {
     const saldoCek = hitungSaldoCuti(u.idPegawai);
+    // Saat edit, hari yang sedang diajukan pengajuan ini sendiri tidak
+    // dihitung dua kali sebagai "terpakai" (karena masih Menunggu & belum
+    // disetujui, hitungSaldoCuti memang hanya menghitung yang Disetujui —
+    // jadi perbandingan langsung ke sisa tetap aman).
     if (hari > saldoCek.sisa) {
       showAlert('cutiFormAlert','error',`❌ Saldo cuti tidak cukup! Sisa: ${saldoCek.sisa} hari (periode ${saldoCek.periode.label}), Diajukan: ${hari} hari`); return;
     }
   }
 
+  const idPengajuan = editId || genId('CUT');
+
+  // Upload lampiran (jika ada file baru dipilih) sebelum menyimpan data
+  let lampiranUrl = lampiranLama || '-';
+  const submitBtn = document.getElementById('cutiSubmitBtn');
+  if (adaFileBaru) {
+    submitBtn.disabled = true;
+    showAlert('cutiFormAlert','info','⏳ Mengunggah lampiran...');
+    const up = await uploadLampiranCuti(fileInput.files[0], u.idPegawai, idPengajuan);
+    submitBtn.disabled = false;
+    if (up.error) {
+      showAlert('cutiFormAlert','error','❌ Gagal mengunggah lampiran: ' + up.error + ' — permohonan belum disimpan.');
+      return;
+    }
+    lampiranUrl = up.url || '-';
+  }
+
   const permohonan = {
-    ID_Pengajuan: genId('CUT'),
+    ID_Pengajuan: idPengajuan,
     ID_Karyawan: u.idPegawai,
     Nama_Karyawan: u.namaPegawai,
     Jenis_Cuti: jenis + (jenis==='Cuti Tahunan'&&halfDay!=='full' ? ` (${halfDay})` : ''),
@@ -9102,23 +9241,74 @@ async function ajukanCuti() {
     Jumlah_Hari: hari,
     Alasan: alasan,
     Status: 'Menunggu',
-    Lampiran: document.getElementById('cutiLampiran').files.length ? 'uploaded' : '-',
-    created_at: new Date().toISOString()
+    Lampiran: lampiranUrl,
+    created_at: existing ? existing.created_at : new Date().toISOString()
   };
 
-  localPermohonan.push(permohonan);
+  if (editId) {
+    const idx = localPermohonan.findIndex(function(p){ return p.ID_Pengajuan===editId; });
+    if (idx >= 0) localPermohonan[idx] = permohonan; else localPermohonan.push(permohonan);
+  } else {
+    localPermohonan.push(permohonan);
+  }
   localStorage.setItem('ppnpn_permohonan', JSON.stringify(localPermohonan));
 
-  showAlert('cutiFormAlert','success','✅ Permohonan berhasil diajukan! Menunggu persetujuan admin.');
-  if (SCRIPT_URL) postAPI('savePermohonan', permohonan);
+  showAlert('cutiFormAlert','success', editId ? '✅ Perubahan berhasil disimpan!' : '✅ Permohonan berhasil diajukan! Menunggu persetujuan admin.');
+  if (SCRIPT_URL) {
+    if (editId) await postAPI('updatePermohonan', permohonan);
+    else postAPI('savePermohonan', permohonan);
+  }
+  batalEditCuti(); // reset form kembali ke mode "Ajukan baru"
   loadCutiPage();
+}
+
+// Buka form dalam mode edit, terisi data pengajuan yang statusnya masih
+// "Menunggu" (pegawai hanya boleh mengedit sebelum diproses admin).
+function editCuti(id) {
+  const p = localPermohonan.find(function(x){ return x.ID_Pengajuan===id; });
+  if (!p) { alert('Data pengajuan tidak ditemukan.'); return; }
+  if (p.Status !== 'Menunggu') { alert('Pengajuan ini sudah diproses admin (' + p.Status + ') dan tidak bisa diedit lagi.'); return; }
+
+  switchCutiTab('form');
+
+  var jenisDasar = (p.Jenis_Cuti || '').replace(/\s*\((pagi|siang)\)\s*$/i, '');
+  var halfMatch = /\((pagi|siang)\)/i.exec(p.Jenis_Cuti || '');
+
+  document.getElementById('cutiEditId').value = p.ID_Pengajuan;
+  document.getElementById('cutiJenis').value = jenisDasar;
+  onJenisCutiChange();
+  if (halfMatch) document.getElementById('cutiHalfDay').value = halfMatch[1].toLowerCase();
+  document.getElementById('cutiMulai').value = p.Tanggal_Mulai;
+  document.getElementById('cutiSelesai').value = p.Tanggal_Selesai;
+  document.getElementById('cutiAlasan').value = p.Alasan || '';
+  hitungHariCuti();
+
+  var curEl = document.getElementById('cutiLampiranCurrent');
+  curEl.innerHTML = isLampiranUrl(p.Lampiran)
+    ? '📎 Dokumen saat ini: <a href="' + p.Lampiran + '" target="_blank" rel="noopener">lihat dokumen</a> (pilih file baru untuk mengganti)'
+    : (p.Lampiran ? '⚠ Dokumen lama tidak tersedia untuk dibuka (data lama). Silakan upload ulang.' : '');
+
+  document.getElementById('cutiFormTitle').textContent = '✏️ Edit Pengajuan Cuti / Ijin';
+  document.getElementById('cutiSubmitBtn').textContent = '💾 Simpan Perubahan';
+  document.getElementById('cutiCancelEditBtn').style.display = 'inline-block';
+  showAlert('cutiFormAlert','info','✏️ Mengedit pengajuan ' + p.ID_Pengajuan + '. Hanya bisa disimpan selama status masih "Menunggu".');
+}
+
+function batalEditCuti() {
+  document.getElementById('cutiEditId').value = '';
+  document.getElementById('cutiFormTitle').textContent = '📝 Pengajuan Cuti / Ijin';
+  document.getElementById('cutiSubmitBtn').textContent = '📤 Ajukan Permohonan';
+  document.getElementById('cutiCancelEditBtn').style.display = 'none';
+  document.getElementById('cutiLampiranCurrent').innerHTML = '';
+  document.getElementById('cutiLampiran').value = '';
   document.getElementById('cutiAlasan').value = '';
+  document.getElementById('cutiFormAlert').innerHTML = '';
 }
 
 async function loadCutiHistory() {
   const u = currentUser;
   const tbody = document.getElementById('cutiHistoryBody');
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
 
   if (SCRIPT_URL) {
     var result = await callAPI('getPermohonan', { idKaryawan: u.idPegawai });
@@ -9133,7 +9323,7 @@ async function loadCutiHistory() {
     .filter(function(p){ return p.ID_Karyawan===u.idPegawai; })
     .sort(function(a,b){ return (b.Tanggal_Mulai||'').localeCompare(a.Tanggal_Mulai||''); });
 
-  if (!data.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">Belum ada permohonan</td></tr>'; document.getElementById('pgCutiHistory').innerHTML=''; return; }
+  if (!data.length) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Belum ada permohonan</td></tr>'; document.getElementById('pgCutiHistory').innerHTML=''; return; }
   renderPaged('cutiHistory', data, 'cutiHistoryBody', 'pgCutiHistory', function(p){ return `
     <tr>
       <td>${data.indexOf(p)+1}</td>
@@ -9143,7 +9333,9 @@ async function loadCutiHistory() {
       <td>${p.Jumlah_Hari}</td>
       <td style="max-width:200px;font-size:12px">${p.Alasan}</td>
       <td><span class="badge ${p.Status==='Disetujui'?'badge-green':p.Status==='Ditolak'?'badge-red':'badge-amber'}">${p.Status}</span></td>
-    </tr>`; }, 7, 'Belum ada permohonan');
+      <td>${isLampiranUrl(p.Lampiran) ? '<a href="'+p.Lampiran+'" target="_blank" rel="noopener">📎 Lihat</a>' : (p.Lampiran && p.Lampiran!=='-' ? '<span style="font-size:11px;color:var(--text-muted)">data lama</span>' : '-')}</td>
+      <td>${p.Status==='Menunggu' ? '<button class="btn btn-outline btn-sm" onclick="editCuti(\''+p.ID_Pengajuan+'\')">✏️ Edit</button>' : '-'}</td>
+    </tr>`; }, 9, 'Belum ada permohonan');
 }
 
 // ============================================================
@@ -9550,7 +9742,7 @@ function switchAdminCutiTab(tab) {
 }
 async function loadAdminCuti() {
   const tbody = document.getElementById('adminCutiBody');
-  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
 
   if (SCRIPT_URL) {
     var result = await callAPI('getPermohonan', {});
@@ -9568,7 +9760,7 @@ async function loadAdminCuti() {
   var pending = localPermohonan.filter(function(p){ return p.Status==='Menunggu'; }).length;
   updateApprovalBadge();
 
-  if (!data.length) { tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada permohonan</td></tr>'; document.getElementById('pgAdminCuti').innerHTML=''; return; }
+  if (!data.length) { tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada permohonan</td></tr>'; document.getElementById('pgAdminCuti').innerHTML=''; return; }
   renderPaged('adminCuti', data, 'adminCutiBody', 'pgAdminCuti', function(p){ return `
     <tr>
       <td><input type="checkbox" class="row-chk-cuti" value="${p.ID_Pengajuan}" onchange="toggleSelectCuti('${p.ID_Pengajuan}', this.checked)" ${selectedCuti.has(p.ID_Pengajuan)?'checked':''}></td>
@@ -9579,12 +9771,14 @@ async function loadAdminCuti() {
       <td>${fmtDate(p.Tanggal_Selesai)}</td>
       <td>${p.Jumlah_Hari}</td>
       <td style="max-width:150px;font-size:12px">${p.Alasan}</td>
+      <td>${isLampiranUrl(p.Lampiran) ? '<a href="'+p.Lampiran+'" target="_blank" rel="noopener">📎 Cek Dokumen</a>' : (p.Lampiran && p.Lampiran!=='-' ? '<span style="font-size:11px;color:var(--text-muted)">data lama</span>' : '-')}</td>
       <td><span class="badge ${p.Status==='Disetujui'?'badge-green':p.Status==='Ditolak'?'badge-red':'badge-amber'}">${p.Status}</span></td>
       <td>${p.Status==='Menunggu'?`
-        <button class="btn btn-success btn-sm" onclick="approveReject('${p.ID_Pengajuan}','Disetujui')">✓</button>
+        <button class="btn btn-outline btn-sm" onclick="bukaEditCutiAdmin('${p.ID_Pengajuan}')">✏️</button>
+        <button class="btn btn-success btn-sm" onclick="approveReject('${p.ID_Pengajuan}','Disetujui')" style="margin-left:4px">✓</button>
         <button class="btn btn-danger btn-sm" onclick="approveReject('${p.ID_Pengajuan}','Ditolak')" style="margin-left:4px">✗</button>`:'-'}
       </td>
-    </tr>`; }, 10, 'Tidak ada permohonan');
+    </tr>`; }, 11, 'Tidak ada permohonan');
   updateBulkDeleteBtn('Cuti');
 }
 
@@ -9594,6 +9788,94 @@ async function approveReject(id, status) {
   localPermohonan[idx].Status = status;
   localStorage.setItem('ppnpn_permohonan', JSON.stringify(localPermohonan));
   if (SCRIPT_URL) await callAPI('updatePermohonan', { ID_Pengajuan: id, Status: status });
+  loadAdminCuti();
+}
+
+// ============================================================
+// ADMIN: EDIT PENGAJUAN CUTI/IJIN (hanya selagi status masih "Menunggu")
+// ============================================================
+function onJenisCutiAdminChange() {
+  const jenis = document.getElementById('eca-jenis').value;
+  document.getElementById('eca-halfday-field').style.display = jenis==='Cuti Tahunan' ? 'block' : 'none';
+  if (jenis!=='Cuti Tahunan') document.getElementById('eca-halfday').value = 'full';
+  hitungHariCutiAdmin();
+}
+
+function hitungHariCutiAdmin() {
+  const jenis = document.getElementById('eca-jenis').value;
+  const mulai = document.getElementById('eca-mulai').value;
+  const selesai = document.getElementById('eca-selesai').value;
+  const halfDay = document.getElementById('eca-halfday').value;
+  const el = document.getElementById('eca-hitung-info');
+  if (!mulai || !selesai || !jenis) { el.style.display='none'; return; }
+  const res = hitungCutiInfo(mulai, selesai, jenis, halfDay);
+  if (res.error) { el.style.display='block'; el.className='alert alert-error'; el.textContent='❌ ' + res.error; return; }
+  el.style.display='block';
+  el.className='alert alert-info';
+  el.textContent = `📅 Jumlah hari cuti kerja: ${res.hari} hari (tidak termasuk Sabtu-Minggu)`;
+}
+
+function bukaEditCutiAdmin(id) {
+  const p = localPermohonan.find(function(x){ return x.ID_Pengajuan===id; });
+  if (!p) { alert('Data pengajuan tidak ditemukan.'); return; }
+  if (p.Status !== 'Menunggu') { alert('Pengajuan ini sudah diproses (' + p.Status + ') dan tidak bisa diedit lagi.'); return; }
+
+  document.getElementById('editCutiAdminAlert').innerHTML = '';
+  document.getElementById('eca-nama').textContent = p.Nama_Karyawan + ' (' + p.ID_Karyawan + ')';
+  document.getElementById('eca-id').textContent = p.ID_Pengajuan;
+
+  var jenisDasar = (p.Jenis_Cuti || '').replace(/\s*\((pagi|siang)\)\s*$/i, '');
+  var halfMatch = /\((pagi|siang)\)/i.exec(p.Jenis_Cuti || '');
+  document.getElementById('eca-jenis').value = jenisDasar || 'Cuti Tahunan';
+  onJenisCutiAdminChange();
+  if (halfMatch) document.getElementById('eca-halfday').value = halfMatch[1].toLowerCase();
+  document.getElementById('eca-mulai').value = p.Tanggal_Mulai;
+  document.getElementById('eca-selesai').value = p.Tanggal_Selesai;
+  document.getElementById('eca-alasan').value = p.Alasan || '';
+  hitungHariCutiAdmin();
+
+  var lampEl = document.getElementById('eca-lampiran-current');
+  lampEl.innerHTML = isLampiranUrl(p.Lampiran)
+    ? '📎 <a href="' + p.Lampiran + '" target="_blank" rel="noopener">Buka & cek dokumen lampiran</a>'
+    : (p.Lampiran && p.Lampiran !== '-' ? '⚠ Dokumen lama tidak tersedia untuk dibuka (data lama, tidak pernah benar-benar tersimpan).' : 'Tidak ada dokumen dilampirkan.');
+
+  document.getElementById('eca-save-btn').setAttribute('data-id', p.ID_Pengajuan);
+  document.getElementById('editCutiAdminModal').classList.add('open');
+}
+
+async function simpanEditCutiAdmin() {
+  const id = document.getElementById('eca-save-btn').getAttribute('data-id');
+  const idx = localPermohonan.findIndex(function(p){ return p.ID_Pengajuan===id; });
+  if (idx < 0) { closeModal('editCutiAdminModal'); return; }
+  if (localPermohonan[idx].Status !== 'Menunggu') {
+    showAlert('editCutiAdminAlert','error','❌ Pengajuan ini sudah diproses dan tidak bisa diedit lagi.');
+    return;
+  }
+
+  const jenis = document.getElementById('eca-jenis').value;
+  const mulai = document.getElementById('eca-mulai').value;
+  const selesai = document.getElementById('eca-selesai').value;
+  const alasan = document.getElementById('eca-alasan').value.trim();
+  const halfDay = document.getElementById('eca-halfday').value;
+  if (!jenis||!mulai||!selesai||!alasan) {
+    showAlert('editCutiAdminAlert','error','❌ Lengkapi semua field!'); return;
+  }
+  const hasilHari = hitungCutiInfo(mulai, selesai, jenis, halfDay);
+  if (hasilHari.error) { showAlert('editCutiAdminAlert','error','❌ ' + hasilHari.error); return; }
+
+  const updated = Object.assign({}, localPermohonan[idx], {
+    Jenis_Cuti: jenis + (jenis==='Cuti Tahunan'&&halfDay!=='full' ? ` (${halfDay})` : ''),
+    Tanggal_Mulai: mulai,
+    Tanggal_Selesai: selesai,
+    Jumlah_Hari: hasilHari.hari,
+    Alasan: alasan
+  });
+  localPermohonan[idx] = updated;
+  localStorage.setItem('ppnpn_permohonan', JSON.stringify(localPermohonan));
+
+  if (SCRIPT_URL) await postAPI('updatePermohonan', updated);
+
+  closeModal('editCutiAdminModal');
   loadAdminCuti();
 }
 
@@ -12206,6 +12488,30 @@ async function uploadFotoAbsen(dataUrl, idPegawai, namaPegawai, username, tangga
   }
 }
 
+// Upload lampiran cuti/ijin (surat sakit, dsb — File asli dari <input type=file>,
+// bukan dataURL) ke Supabase Storage, bucket "lampiran-cuti". Mengembalikan
+// { url, error } — url berisi link publik dokumen jika berhasil.
+async function uploadLampiranCuti(file, idPegawai, idPengajuan) {
+  if (!file) return { url: null, error: null };
+  if (!supabaseClient) return { url: null, error: 'Supabase belum terhubung — hubungi admin untuk konfigurasi Konfigurasi Sistem.' };
+  try {
+    var bucket = 'lampiran-cuti';
+    var ext = (file.name.split('.').pop() || 'dat').toLowerCase();
+    var path = 'cuti/' + idPegawai + '/' + idPengajuan + '_' + Date.now() + '.' + ext;
+    var up = await supabaseClient.storage.from(bucket).upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: true });
+    if (up.error) {
+      console.log('Upload lampiran cuti gagal:', up.error.message);
+      return { url: null, error: 'Gagal upload ke bucket "' + bucket + '": ' + up.error.message + ' (pastikan bucket ini sudah dibuat & public di Supabase Storage)' };
+    }
+    var pub = supabaseClient.storage.from(bucket).getPublicUrl(path);
+    var publicUrl = (pub && pub.data) ? pub.data.publicUrl : null;
+    return { url: publicUrl, error: publicUrl ? null : 'Upload berhasil tapi gagal mendapatkan URL publik.' };
+  } catch (err) {
+    console.log('Gagal upload lampiran cuti:', err);
+    return { url: null, error: err.message || 'Terjadi kesalahan tak terduga saat upload lampiran.' };
+  }
+}
+
 // ============================================================
 // ADMIN: REKAPITULASI POTONGAN
 // ============================================================
@@ -13888,6 +14194,216 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('SW register gagal:', err);
       });
     });
+  }
+})();
+</script>
+
+<script>
+// ============================================================
+// FITUR TAMBAHAN: Pencarian & Sort otomatis untuk SEMUA tabel data
+// (bekerja generik lewat DOM, tidak mengubah fungsi render yang sudah ada)
+// ============================================================
+(function () {
+  function taText(el) { return (el.textContent || '').trim(); }
+
+  // Deteksi baris "placeholder" (mis. "Tidak ada data" / "Pilih periode dulu")
+  // yang biasanya berupa 1 sel dengan colspan penuh — baris ini tidak ikut difilter/disortir.
+  function taIsPlaceholderRow(tr) {
+    var tds = tr.children;
+    return tds.length === 1 && tds[0].hasAttribute('colspan');
+  }
+
+  // Ubah teks sel menjadi nilai yang bisa dibandingkan (angka, tanggal, jam, atau teks biasa)
+  function taCellSortInfo(text) {
+    var t = (text || '').trim();
+    if (!t) return { type: 0, v: '' };
+
+    var mdate = t.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[ ,]+(\d{1,2}):(\d{2}))?/);
+    if (mdate) {
+      var d = new Date(+mdate[3], +mdate[2] - 1, +mdate[1], +(mdate[4] || 0), +(mdate[5] || 0));
+      if (!isNaN(d.getTime())) return { type: 1, v: d.getTime() };
+    }
+    var mdate2 = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (mdate2) {
+      var d2 = new Date(+mdate2[1], +mdate2[2] - 1, +mdate2[3]);
+      if (!isNaN(d2.getTime())) return { type: 1, v: d2.getTime() };
+    }
+    var mtime = t.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (mtime) return { type: 1, v: (+mtime[1]) * 3600 + (+mtime[2]) * 60 + (+(mtime[3] || 0)) };
+
+    var cleaned = t.replace(/rp/i, '').replace(/\s/g, '');
+    if (/^-?[\d.,]+%?$/.test(cleaned) && /\d/.test(cleaned)) {
+      var numStr = cleaned.replace(/%/g, '');
+      if (/,\d{1,2}$/.test(numStr) && numStr.indexOf('.') > -1) {
+        numStr = numStr.replace(/\./g, '').replace(',', '.');
+      } else if (numStr.indexOf(',') > -1 && numStr.indexOf('.') === -1) {
+        numStr = numStr.replace(/,/g, '.');
+      } else {
+        numStr = numStr.replace(/,/g, '');
+      }
+      var n = parseFloat(numStr);
+      if (!isNaN(n)) return { type: 1, v: n };
+    }
+    return { type: 0, v: t.toLowerCase() };
+  }
+
+  function taCompare(a, b) {
+    var ia = taCellSortInfo(a), ib = taCellSortInfo(b);
+    if (ia.type !== ib.type) return ia.type - ib.type;
+    if (ia.type === 1) return ia.v - ib.v;
+    return ia.v.localeCompare(ib.v, 'id');
+  }
+
+  // Kalau tabel ini punya kontrol pagination (dropdown "X / hal"), naikkan ke jumlah
+  // maksimum saat user mulai mengetik pencarian, supaya pencarian mencakup seluruh data,
+  // bukan cuma baris yang sedang tampil di halaman saat ini.
+  function taFindPaginationEl(table) {
+    var node = table.closest('.table-wrap') || table;
+    var sib = node.nextElementSibling;
+    var hops = 0;
+    while (sib && hops < 3) {
+      if (sib.classList && sib.classList.contains('pagination')) return sib;
+      sib = sib.nextElementSibling;
+      hops++;
+    }
+    return null;
+  }
+
+  function taBumpPageSize(container) {
+    if (!container) return;
+    var sel = container.querySelector('select.pg-size');
+    if (!sel) return;
+    var opts = Array.prototype.map.call(sel.options, function (o) { return parseInt(o.value, 10); });
+    var max = Math.max.apply(null, opts);
+    if (isFinite(max) && String(sel.value) !== String(max)) {
+      sel.value = String(max);
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  function taApplySearch(table, term) {
+    var tbody = table.tBodies[0];
+    if (!tbody) return;
+    term = (term || '').trim().toLowerCase();
+    var rows = Array.prototype.filter.call(tbody.rows, function (tr) { return !taIsPlaceholderRow(tr); });
+    var matches = 0;
+    rows.forEach(function (tr) {
+      var show = !term || taText(tr).toLowerCase().indexOf(term) !== -1;
+      tr.style.display = show ? '' : 'none';
+      if (show) matches++;
+    });
+    var wrap = table.__taSearchWrap;
+    if (wrap) {
+      var countEl = wrap.querySelector('.ta-search-count');
+      if (countEl) countEl.textContent = (term && rows.length) ? (matches + ' dari ' + rows.length + ' baris cocok') : '';
+      var clearBtn = wrap.querySelector('.ta-search-clear');
+      if (clearBtn) clearBtn.style.display = term ? 'flex' : 'none';
+    }
+  }
+
+  function taAddSearchBox(table) {
+    var refNode = table.closest('.table-wrap') || table;
+    var parent = refNode.parentNode;
+    if (!parent) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'ta-search-wrap';
+    wrap.innerHTML =
+      '<input type="text" class="ta-search-input" placeholder="🔍 Cari di tabel ini...">' +
+      '<button type="button" class="ta-search-clear" title="Hapus pencarian" style="display:none">✕</button>' +
+      '<span class="ta-search-count"></span>';
+    parent.insertBefore(wrap, refNode);
+    table.__taSearchWrap = wrap;
+
+    var input = wrap.querySelector('.ta-search-input');
+    var clearBtn = wrap.querySelector('.ta-search-clear');
+    var bumped = false;
+    input.addEventListener('input', function () {
+      if (input.value.trim() && !bumped) {
+        bumped = true;
+        taBumpPageSize(taFindPaginationEl(table));
+        setTimeout(function () { taApplySearch(table, input.value); }, 60);
+        return;
+      }
+      if (!input.value.trim()) bumped = false;
+      taApplySearch(table, input.value);
+    });
+    clearBtn.addEventListener('click', function () {
+      input.value = '';
+      bumped = false;
+      taApplySearch(table, '');
+      input.focus();
+    });
+  }
+
+  function taSortTable(table, th) {
+    var tbody = table.tBodies[0];
+    if (!tbody) return;
+    var headRow = th.parentNode;
+    var colIndex = Array.prototype.indexOf.call(headRow.children, th);
+    var curDir = th.getAttribute('data-ta-dir') || '';
+    var newDir = curDir === 'asc' ? 'desc' : 'asc';
+    Array.prototype.forEach.call(headRow.children, function (h) {
+      h.classList.remove('ta-sort-asc', 'ta-sort-desc');
+      h.removeAttribute('data-ta-dir');
+    });
+    th.setAttribute('data-ta-dir', newDir);
+    th.classList.add(newDir === 'asc' ? 'ta-sort-asc' : 'ta-sort-desc');
+
+    var rows = Array.prototype.filter.call(tbody.rows, function (tr) { return !taIsPlaceholderRow(tr); });
+    rows.sort(function (a, b) {
+      var ca = a.children[colIndex], cb = b.children[colIndex];
+      var res = taCompare(ca ? taText(ca) : '', cb ? taText(cb) : '');
+      return newDir === 'asc' ? res : -res;
+    });
+    rows.forEach(function (tr) { tbody.appendChild(tr); });
+  }
+
+  // Hanya buat kolom bisa disortir kalau header tabelnya 1 baris (bukan rowspan/colspan
+  // bertingkat), supaya indeks kolom header tetap selaras dengan indeks sel data.
+  function taMakeSortable(table) {
+    if (!table.tHead || table.tHead.rows.length !== 1) return;
+    var headRow = table.tHead.rows[0];
+    Array.prototype.forEach.call(headRow.children, function (th) {
+      if (th.hasAttribute('colspan') || th.hasAttribute('rowspan')) return;
+      if (th.querySelector('input, select, button')) return;
+      if (!taText(th)) return;
+      th.classList.add('ta-sortable');
+      var ind = document.createElement('span');
+      ind.className = 'ta-sort-ind';
+      ind.textContent = '⇅';
+      th.appendChild(ind);
+      th.addEventListener('click', function () { taSortTable(table, th); });
+    });
+  }
+
+  function taEnhanceTable(table) {
+    if (table.__taEnhanced) return;
+    if (!table.tHead || !table.tBodies.length) return;
+    if (!table.tHead.querySelector('th')) return;
+    table.__taEnhanced = true;
+
+    taAddSearchBox(table);
+    taMakeSortable(table);
+
+    // Kalau isi tbody diganti (pindah halaman / data dimuat ulang) sementara pencarian
+    // sedang aktif, terapkan ulang filternya secara otomatis.
+    var tbody = table.tBodies[0];
+    var mo = new MutationObserver(function () {
+      var wrap = table.__taSearchWrap;
+      var input = wrap && wrap.querySelector('.ta-search-input');
+      if (input && input.value.trim()) taApplySearch(table, input.value);
+    });
+    mo.observe(tbody, { childList: true });
+  }
+
+  function taInit() {
+    Array.prototype.forEach.call(document.querySelectorAll('table'), taEnhanceTable);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', taInit);
+  } else {
+    taInit();
   }
 })();
 </script>
