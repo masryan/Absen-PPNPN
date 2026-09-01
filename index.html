@@ -1577,6 +1577,11 @@
         Cek List Tugas
       </a>
 
+    <a class="nav-item" id="menuTukarShift" onclick="showPage('tukarShiftKoordinator')" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Tukar Shift
+      </a>
+
     <div class="nav-section" id="pegawaiMenu">
       <div class="nav-section-label">Menu Utama</div>
       <a class="nav-item active" onclick="showPage('dashboard')">
@@ -3049,6 +3054,7 @@
           <div class="tab active" onclick="switchShiftTab('generator')">🪄 Generator Jadwal</div>
           <div class="tab" onclick="switchShiftTab('data')">📋 Data Jadwal</div>
           <div class="tab" onclick="switchShiftTab('rekap')">📊 Rekap Piket</div>
+          <div class="tab" onclick="switchShiftTab('tukar')">🔁 Tukar Shift</div>
         </div>
 
         <!-- ===== TAB 1: GENERATOR JADWAL ===== -->
@@ -3170,6 +3176,53 @@
             </div>
           </div>
         </div>
+
+        <!-- ===== TAB 4: TUKAR SHIFT (OVERRIDE INDIVIDUAL) ===== -->
+        <div id="shiftTabTukar" style="display:none">
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title">🔁 Catat Tukar Shift</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+              Dipakai untuk perbaikan jadwal <strong>sementara</strong> pada 1 tanggal tertentu — mis. ada anggota yang berhalangan masuk, lalu bertukar jaga dengan anggota dari tim lain. Perubahan ini <strong>hanya berlaku untuk tanggal yang dipilih</strong> dan tidak mengubah keanggotaan TIM permanen pegawai maupun rotasi jadwal TIM di tab "Data Jadwal".
+            </p>
+
+            <div id="tukarShiftAlert"></div>
+
+            <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+              <div class="field"><label>Tanggal</label><input type="date" id="tukarShiftTanggal"></div>
+              <div class="field">
+                <label>Anggota yang digantikan (berhalangan)</label>
+                <select id="tukarShiftKeluar"><option value="">-- Pilih anggota --</option></select>
+              </div>
+              <div class="field">
+                <label>Anggota pengganti</label>
+                <select id="tukarShiftMasuk"><option value="">-- Pilih anggota --</option></select>
+              </div>
+              <div class="field" style="min-width:200px">
+                <label>Keterangan (opsional)</label>
+                <input type="text" id="tukarShiftKeterangan" placeholder="mis. sakit, ijin keluarga">
+              </div>
+              <button class="btn btn-primary" onclick="simpanTukarShift()">💾 Simpan Tukar Shift</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📜 Riwayat Tukar Shift</div>
+            <div class="table-wrap">
+              <table id="tukarShiftTable">
+                <thead>
+                  <tr>
+                    <th style="min-width:100px">Tanggal</th>
+                    <th style="min-width:140px">Digantikan</th>
+                    <th style="min-width:140px">Pengganti</th>
+                    <th style="min-width:140px">Keterangan</th>
+                    <th style="min-width:90px">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tukarShiftBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
         </div>
       </div>
       <!-- ===== CHECKLIST CS / PRAMUBAKTI ===== -->
@@ -3213,6 +3266,53 @@
         </div>
 
         <button class="btn btn-primary" onclick="saveChecklistCS()" style="width:100%; padding:14px; font-size:15px; justify-content:center;">💾 Sinkronkan Ulang Progress Tugas</button>
+      </div>
+
+<!-- ===== KOORDINATOR SECURITY: TUKAR SHIFT (akses non-admin) ===== -->
+      <div class="page" id="page-tukarShiftKoordinator">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-title">🔁 Catat Tukar Shift</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+            Dipakai untuk perbaikan jadwal <strong>sementara</strong> pada 1 tanggal tertentu — mis. ada anggota yang berhalangan masuk, lalu bertukar jaga dengan anggota dari tim lain. Perubahan ini <strong>hanya berlaku untuk tanggal yang dipilih</strong> dan tidak mengubah keanggotaan TIM permanen pegawai.
+          </p>
+
+          <div id="koorTukarAlert"></div>
+
+          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+            <div class="field"><label>Tanggal</label><input type="date" id="koorTukarTanggal"></div>
+            <div class="field">
+              <label>Anggota yang digantikan (berhalangan)</label>
+              <select id="koorTukarKeluar"><option value="">-- Pilih anggota --</option></select>
+            </div>
+            <div class="field">
+              <label>Anggota pengganti</label>
+              <select id="koorTukarMasuk"><option value="">-- Pilih anggota --</option></select>
+            </div>
+            <div class="field" style="min-width:200px">
+              <label>Keterangan (opsional)</label>
+              <input type="text" id="koorTukarKeterangan" placeholder="mis. sakit, ijin keluarga">
+            </div>
+            <button class="btn btn-primary" onclick="simpanTukarShiftKoor()">💾 Simpan Tukar Shift</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📜 Riwayat Tukar Shift</div>
+          <div class="table-wrap">
+            <table id="koorTukarTable">
+              <thead>
+                <tr>
+                  <th style="min-width:100px">Tanggal</th>
+                  <th style="min-width:140px">Digantikan</th>
+                  <th style="min-width:140px">Pengganti</th>
+                  <th style="min-width:140px">Keterangan</th>
+                  <th style="min-width:90px">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="koorTukarBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
 <!-- ===== ADMIN: EVALUASI CHECKLIST CS ===== -->
@@ -3876,10 +3976,108 @@ function getKodeShift(tim, tglStr) {
   return null;
 }
 
+// ============================================================
+// KOORDINATOR TUKAR SHIFT (hak akses tambahan selain Admin)
+// Pegawai yang didaftarkan di sini boleh membuka & mengelola fitur
+// "Tukar Shift" (catat & hapus override individual per tanggal) TANPA
+// perlu status Admin penuh — tidak bisa mengakses menu admin lainnya.
+// Cocokkan berdasarkan idPegawai (lebih aman) ATAU nama pegawai (tidak
+// case-sensitive, spasi di awal/akhir diabaikan). Tambahkan koordinator
+// lain dengan menambah baris baru di larik ini.
+// ============================================================
+var KOORDINATOR_TUKAR_SHIFT = [
+  { idPegawai: 'SC5', nama: 'Salman Mulyono' }
+];
+
+function isKoordinatorTukarShift(u) {
+  if (!u) return false;
+  var id   = String(u.idPegawai || '').trim().toUpperCase();
+  var nama = String(u.namaPegawai || '').trim().toLowerCase();
+  return KOORDINATOR_TUKAR_SHIFT.some(function(k){
+    var kId   = String(k.idPegawai || '').trim().toUpperCase();
+    var kNama = String(k.nama || '').trim().toLowerCase();
+    return (kId && kId === id) || (kNama && kNama === nama);
+  });
+}
+
+// ============================================================
+// TUKAR SHIFT (OVERRIDE INDIVIDUAL PER TANGGAL)
+// Dipakai saat 1 anggota tim security berhalangan masuk pada tanggal
+// tertentu dan digantikan sementara oleh anggota lain (boleh dari TIM
+// berbeda). Override ini HANYA berlaku untuk tanggal & pegawai yang
+// dicatat — tidak mengubah keanggotaan TIM permanen di data pegawai,
+// dan tidak mengubah rotasi otomatis / jadwal TIM di shiftData.
+// Struktur: { 'YYYY-MM-DD': [ { id, idKeluar, namaKeluar, timKeluar,
+//                               idMasuk, namaMasuk, timMasuk, keterangan } ] }
+// ============================================================
+var shiftOverride = JSON.parse(localStorage.getItem('ppnpn_shift_override') || '{}');
+
+function simpanShiftOverrideLocal() {
+  localStorage.setItem('ppnpn_shift_override', JSON.stringify(shiftOverride));
+}
+
+// Daftar override pada 1 tanggal tertentu (array kosong bila tidak ada).
+function getShiftOverridePadaTanggal(tglStr) {
+  return (shiftOverride && shiftOverride[tglStr]) || [];
+}
+
+// Cari apakah 1 pegawai terkena tukar shift (sebagai yang digantikan
+// ATAU sebagai pengganti) pada 1 tanggal tertentu. Dipakai supaya
+// dashboard piket & alur absensi otomatis mengikuti hasil tukar shift,
+// tanpa perlu hard-refresh atau logika terpisah di banyak tempat.
+// Return null bila tidak ada, atau { arah:'keluar'|'masuk', data: <row override> }.
+function getOverrideUntukPegawai(idPegawai, tglStr) {
+  if (!idPegawai) return null;
+  var idNorm = String(idPegawai).trim().toUpperCase();
+  var list = getShiftOverridePadaTanggal(tglStr);
+  for (var i = 0; i < list.length; i++) {
+    var o = list[i];
+    if (String(o.idKeluar||'').trim().toUpperCase() === idNorm) return { arah: 'keluar', data: o };
+    if (String(o.idMasuk ||'').trim().toUpperCase() === idNorm) return { arah: 'masuk',  data: o };
+  }
+  return null;
+}
+
+// Semua override dari seluruh tanggal, digabung jadi 1 larik datar untuk
+// ditampilkan sebagai riwayat, diurutkan dari tanggal terbaru.
+function getSemuaShiftOverride() {
+  var out = [];
+  Object.keys(shiftOverride || {}).forEach(function(tgl){
+    (shiftOverride[tgl] || []).forEach(function(o){ out.push(Object.assign({ tanggal: tgl }, o)); });
+  });
+  out.sort(function(a,b){ return a.tanggal < b.tanggal ? 1 : (a.tanggal > b.tanggal ? -1 : 0); });
+  return out;
+}
+
+// Pastikan data tukar shift untuk rentang tanggal tertentu sudah ada di
+// cache lokal, sinkron dari tabel shift_override lewat callAPI().
+async function ensureShiftOverrideLoaded(from, to) {
+  if (!SCRIPT_URL) return;
+  try {
+    var res = await callAPI('getShiftOverride', { from: from, to: to });
+    if (res && res.success) {
+      (res.data || []).forEach(function(r){
+        if (!shiftOverride[r.tanggal]) shiftOverride[r.tanggal] = [];
+        var sudahAda = shiftOverride[r.tanggal].some(function(o){ return o.id === r.id; });
+        if (!sudahAda) shiftOverride[r.tanggal].push(r);
+      });
+      simpanShiftOverrideLocal();
+    }
+  } catch (err) { console.log('Gagal memuat data tukar shift:', err); }
+}
+
 // True bila pegawai ini menjalani piket jaga 24 jam pada tanggal tglStr.
 // PENTING: shift itu dimulai 07:00 tanggal tsb dan baru berakhir 07:00
 // KEESOKAN HARINYA — jadi absen pulang sebelum itu = "Pulang Cepat".
+// Sumber kebenaran tunggal — dicek dulu: apakah pegawai ini terkena
+// TUKAR SHIFT (override individual) pada tanggal ini? Kalau ya, override
+// ini MENIMPA keanggotaan TIM default (baik menggantikan / digantikan).
 function isShiftJagaPadaTanggal(u, tglStr) {
+  var idU = u && (u.idPegawai || u.id_pegawai || u.ID_PEGAWAI);
+  if (idU) {
+    var ov = getOverrideUntukPegawai(idU, tglStr);
+    if (ov) return ov.arah === 'masuk';
+  }
   if (!isSecurityShiftJaga(u)) return false;
   return getKodeShift(u.Tim || u.tim || u['Tim'] || u['TIM'], tglStr) === 'J';
 }
@@ -5216,6 +5414,44 @@ async function callAPI(action, params={}) {
         if (!params.from || !params.to) return { success:false, error:'Rentang tanggal tidak lengkap' };
         const { error } = await supabaseClient.from('shift_jadwal').delete()
           .gte('tanggal', params.from).lte('tanggal', params.to);
+        return { success: !error, error: error?error.message:null };
+      }
+
+      case 'getShiftOverride': {
+        let q = supabaseClient.from('shift_override').select('*');
+        if (params.from) q = q.gte('tanggal', params.from);
+        if (params.to)   q = q.lte('tanggal', params.to);
+        const { data, error } = await q;
+        if (error) return { success:false, error: error.message };
+        const rows = (data||[]).map(function(r){
+          return {
+            id: r.id, tanggal: r.tanggal,
+            idKeluar: r.id_keluar, namaKeluar: r.nama_keluar, timKeluar: r.tim_keluar,
+            idMasuk: r.id_masuk, namaMasuk: r.nama_masuk, timMasuk: r.tim_masuk,
+            keterangan: r.keterangan || '',
+            dicatatOlehId: r.dicatat_oleh_id || ''
+          };
+        });
+        return { success:true, data: rows };
+      }
+
+      case 'saveShiftOverride': {
+        const row = {
+          id: params.id, tanggal: params.tanggal,
+          id_keluar: params.idKeluar, nama_keluar: params.namaKeluar, tim_keluar: params.timKeluar,
+          id_masuk: params.idMasuk, nama_masuk: params.namaMasuk, tim_masuk: params.timMasuk,
+          keterangan: params.keterangan || null,
+          // Dipakai oleh kebijakan RLS di Supabase untuk memverifikasi hak akses
+          // (Admin atau koordinator tukar shift yang terdaftar).
+          dicatat_oleh_id: params.dicatatOlehId || null
+        };
+        const { error } = await supabaseClient.from('shift_override').upsert(row, { onConflict: 'id' });
+        return { success: !error, error: error?error.message:null };
+      }
+
+      case 'deleteShiftOverride': {
+        if (!params.id) return { success:false, error:'ID tukar shift tidak lengkap' };
+        const { error } = await supabaseClient.from('shift_override').delete().eq('id', params.id);
         return { success: !error, error: error?error.message:null };
       }
 
@@ -6658,6 +6894,9 @@ function initApp() {
 var menuCS = document.getElementById('menuChecklistCS');
   var isCSRole = (u.pekerjaan === 'Cleaning Service' || u.pekerjaan === 'Pramubakti') && !isAdmin;
   if (menuCS) menuCS.style.display = isCSRole ? 'flex' : 'none';
+
+  var menuTS = document.getElementById('menuTukarShift');
+  if (menuTS) menuTS.style.display = (!isAdmin && isKoordinatorTukarShift(u)) ? 'flex' : 'none';
   var pdChecklistBtnEl = document.getElementById('pdChecklistBtn');
   var pdChecklistReminderEl = document.getElementById('pdChecklistReminder');
   if (pdChecklistBtnEl) pdChecklistBtnEl.style.display = isCSRole ? 'flex' : 'none';
@@ -6963,7 +7202,7 @@ function switchPengaturanTab(tab) {
   document.getElementById('liburTabContent').style.display = tab==='libur' ? 'block' : 'none';
   document.getElementById('shiftTabContent').style.display = tab==='shift' ? 'block' : 'none';
   if (tab === 'libur') loadAdminLibur();
-  if (tab === 'shift') { initShiftFilter(); switchShiftTab('generator'); loadShiftData(); renderShiftTimRoster(); }
+  if (tab === 'shift') { initShiftFilter(); switchShiftTab('generator'); loadShiftData(); renderShiftTimRoster(); initTukarShiftForm(); }
 }
 
 function showPage(name) {
@@ -6975,6 +7214,10 @@ function showPage(name) {
   var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga'];
   if (!isAdmin && adminPages.indexOf(name) >= 0) {
     alert('Akses ditolak. Halaman ini hanya untuk admin.');
+    return;
+  }
+  if (name === 'tukarShiftKoordinator' && !isAdmin && !isKoordinatorTukarShift(u)) {
+    alert('Akses ditolak. Fitur Tukar Shift hanya untuk admin atau koordinator security yang ditunjuk.');
     return;
   }
   if (isAdmin && pegawaiOnlyPages.indexOf(name) >= 0) {
@@ -7003,6 +7246,7 @@ function showPage(name) {
     adminLembur: '🔥 Penugasan & SPK Lembur',
     adminPotonganGaji: '💰 Potongan Gaji PPNPN',
     adminPengaturan: '⏰ Jam Kerja, Libur & Konfig',
+    tukarShiftKoordinator: '🔁 Tukar Shift',
     
     libur: '🗓 Jadwal Hari Libur'
   };
@@ -7033,6 +7277,7 @@ function showPage(name) {
   if (name === 'adminLembur') initAdminLembur();
   if (name === 'adminPotonganGaji') initPotonganGaji();
   if (name === 'adminPengaturan') { switchPengaturanTab('pengaturan'); }
+  if (name === 'tukarShiftKoordinator') { initTukarShiftKoorForm(); renderRiwayatTukarShiftKoor(); }
   
   if (name === 'libur') loadLiburUserPage();
   if (name === 'dashboard') loadDashboard();
@@ -7143,6 +7388,10 @@ async function loadDashboard() {
   // kartu dashboard selalu sinkron dengan data real di database (bukan data
   // demo statis) tanpa harus logout-login ulang.
   await refreshPermohonan();
+  // Muat cache tukar shift (kemarin s/d besok) di awal supaya kartu piket,
+  // kartu absen pulang, dan info tim langsung mengikuti hasil tukar shift
+  // begitu dashboard dibuka, tanpa perlu refresh tambahan.
+  await ensureShiftOverrideLoaded(tambahHari(todayVerified(), -1), tambahHari(todayVerified(), 1));
 
   var adminWrap = document.getElementById('adminDashboardWrap');
   var pegawaiWrap = document.getElementById('pegawaiDashboardWrap');
@@ -7536,6 +7785,11 @@ async function initAbsensiPage() {
   // jam/tanggal perangkat yang bisa diubah manual.
   await syncServerTime();
 
+  // Muat cache tukar shift (kemarin s/d hari ini) SEBELUM menentukan status
+  // shift — supaya absensi otomatis mengikuti tukar shift yang tercatat
+  // (baik yang digantikan maupun pengganti), tanpa logika terpisah di bawah.
+  await ensureShiftOverrideLoaded(tambahHari(todayVerified(), -1), todayVerified());
+
   // Cek dulu: adakah shift jaga 24 jam KEMARIN yang belum ditutup? Kalau
   // ada, halaman absensi hari ini dipakai untuk menutup shift tersebut.
   absenTargetTanggal = null;
@@ -7791,7 +8045,8 @@ async function cariShiftJagaBelumTutup(u) {
   // memang piket kemarin, tetap laporkan supaya halaman absensi bisa
   // memberi keterangan yang jujur (bukan sekadar "Anda OFF hari ini").
   await ensureShiftRangeLoaded(tglKemarin, tglIni);
-  if (!rec && getKodeShift(u.Tim, tglKemarin) === 'J') {
+  await ensureShiftOverrideLoaded(tglKemarin, tglIni);
+  if (!rec && isShiftJagaPadaTanggal(u, tglKemarin)) {
     return { record: null, tanggal: tglKemarin, tanpaAbsenMasuk: true };
   }
   return null;
@@ -7807,6 +8062,18 @@ async function cariShiftJagaBelumTutup(u) {
 function getSecurityShiftToday(tglOverride) {
   const tim = normalisasiTim(currentUser.Tim);   // '' bila eks-TIM 4 / tanpa tim
   const tgl = tglOverride || todayVerified();
+
+  // PRIORITAS: tukar shift (override individual) pada tanggal ini MENIMPA
+  // jadwal TIM default — baik untuk yang digantikan (jadi Libur) maupun
+  // pengganti (jadi Jaga), terlepas dari jadwal normal TIM masing-masing.
+  var idU = currentUser && (currentUser.idPegawai || currentUser.id_pegawai);
+  var ov = getOverrideUntukPegawai(idU, tgl);
+  console.log('[tukar-shift] Cek override untuk absensi', {
+    idPegawai: idU, tanggal: tgl,
+    overrideDitemukan: !!ov, arah: ov ? ov.arah : null,
+    daftarOverrideTanggalIni: getShiftOverridePadaTanggal(tgl)
+  });
+  if (ov) return ov.arah === 'masuk' ? 'J' : '-';
 
   // Bukan anggota tim shift (eks-TIM 4 / tanpa TIM) — tidak punya kode shift
   // sama sekali; jam kerjanya mengikuti Pramubakti, ditangani terpisah di
@@ -7902,6 +8169,7 @@ async function buildPiketOverviewHariIni() {
   // Muat kemarin juga: sebelum 07:00, hari piket yang berlaku = kemarin.
   await ensureShiftRangeLoaded(tambahHari(todayVerified(), -1), todayVerified());
   await ensureShiftTodayLoaded();
+  await ensureShiftOverrideLoaded(tambahHari(todayVerified(), -1), todayVerified());
   if (SCRIPT_URL) await refreshAllPegawai();
   var pegawaiList = getPegawaiListForStats().filter(function(p){
     return p.pekerjaan === 'Security' && !isPengecualianJamKerjaByNama(p.namaPegawai);
@@ -7920,6 +8188,48 @@ async function buildPiketOverviewHariIni() {
   if (nonShift.length) {
     groups.P.push({ tim: 'Jam Kerja Pramubakti', anggota: nonShift });
   }
+
+  // ===== Terapkan tukar shift (override) untuk hari piket yang berjalan =====
+  // Override MENIMPA keanggotaan TIM baku hanya untuk tampilan hari ini:
+  // anggota yang digantikan dipindah ke kartu "Libur", dan penggantinya
+  // dipindah ke kartu "Jaga 24 Jam" — supaya kartu dashboard ini otomatis
+  // mengikuti hasil pencatatan tukar shift, tanpa perlu edit manual.
+  var hp = hariPiketBerjalan();
+  var overridesHariIni = getShiftOverridePadaTanggal(hp);
+  if (overridesHariIni.length) {
+    var hapusDariSemuaGrup = function(idPegawai){
+      ['J','L','P'].forEach(function(key){
+        (groups[key] || []).forEach(function(t){
+          t.anggota = t.anggota.filter(function(p){ return String(p.idPegawai) !== String(idPegawai); });
+        });
+      });
+    };
+    var penggantiMasuk = [];
+    var digantiKeluar  = [];
+    overridesHariIni.forEach(function(o){
+      var pKeluar = pegawaiList.find(function(p){ return String(p.idPegawai) === String(o.idKeluar); });
+      var pMasuk  = pegawaiList.find(function(p){ return String(p.idPegawai) === String(o.idMasuk); });
+      if (pKeluar) {
+        hapusDariSemuaGrup(pKeluar.idPegawai);
+        digantiKeluar.push(Object.assign({}, pKeluar, {
+          _ket: 'Digantikan ' + (o.namaMasuk || '-') + (o.keterangan ? ' — ' + o.keterangan : '')
+        }));
+      }
+      if (pMasuk) {
+        hapusDariSemuaGrup(pMasuk.idPegawai);
+        penggantiMasuk.push(Object.assign({}, pMasuk, {
+          _ket: 'Menggantikan ' + (o.namaKeluar || '-') + (o.timKeluar ? ' (' + o.timKeluar + ')' : '') + (o.keterangan ? ' — ' + o.keterangan : '')
+        }));
+      }
+    });
+    if (penggantiMasuk.length) {
+      groups.J.push({ tim: '🔁 Tukar Shift (Pengganti)', anggota: penggantiMasuk, isOverride: true });
+    }
+    if (digantiKeluar.length) {
+      groups.L.push({ tim: '🔁 Tukar Shift (Digantikan)', anggota: digantiKeluar, isOverride: true });
+    }
+  }
+
   return groups;
 }
 
@@ -7951,12 +8261,15 @@ function renderPiketOverviewHtml(groups) {
       html += '<div class="trc-empty">Tidak ada tim</div>';
     } else {
       teams.forEach(function(t){
-        html += '<div style="margin-bottom:10px">';
-        html += '<div style="font-weight:700;font-size:12.5px;color:var(--primary);margin-bottom:4px">' + t.tim + '</div>';
+        html += '<div style="margin-bottom:10px' + (t.isOverride ? ';padding:8px;border-radius:8px;background:rgba(201,162,75,0.12);border:1px dashed rgba(201,162,75,0.5)' : '') + '">';
+        html += '<div style="font-weight:700;font-size:12.5px;color:' + (t.isOverride ? 'var(--accent)' : 'var(--primary)') + ';margin-bottom:4px">' + t.tim + '</div>';
         if (!t.anggota.length) {
           html += '<div class="trc-empty">Belum ada anggota</div>';
         } else {
-          html += '<ul class="trc-members">' + t.anggota.map(function(p){ return '<li>' + (p.namaPegawai||'-') + '</li>'; }).join('') + '</ul>';
+          html += '<ul class="trc-members">' + t.anggota.map(function(p){
+            var ket = p._ket ? ' <span style="display:block;font-size:11px;color:var(--text-muted);font-weight:400">' + p._ket + '</span>' : '';
+            return '<li>' + (p.namaPegawai||'-') + ket + '</li>';
+          }).join('') + '</ul>';
         }
         html += '</div>';
       });
@@ -8015,6 +8328,10 @@ async function renderTimPiketHariIni(u) {
   // tim yang sedang bertugas adalah tim yang mulai jaga KEMARIN pagi.
   var tgl = hariPiketBerjalan();
 
+  // Pastikan cache tukar shift untuk hari piket ini sudah ada sebelum
+  // menentukan status — supaya kartu ini otomatis mengikuti tukar shift.
+  await ensureShiftOverrideLoaded(tgl, tgl);
+
   // Pastikan data shift hari piket ini sudah ada di cache — fetch bila perlu
   var shiftVal = getSecurityShiftPiketBerjalan();
   if (shiftVal === null && SCRIPT_URL) {
@@ -8042,6 +8359,30 @@ async function renderTimPiketHariIni(u) {
       && !isPengecualianJamKerjaByNama(p.namaPegawai);
   });
 
+  // ===== Tukar shift yang menyangkut USER SENDIRI (menggantikan / digantikan) =====
+  // Ini MENIMPA tampilan kartu — status pribadi pengguna bisa berbeda dari
+  // jadwal baku TIM-nya kalau dia sedang terlibat tukar shift hari ini.
+  var ovMe = getOverrideUntukPegawai(u.idPegawai, tgl);
+  if (ovMe && ovMe.arah === 'masuk') {
+    var oM = ovMe.data;
+    title.textContent = '👥 Anda (Pengganti) — Jaga 24 Jam: ' +
+      fmtDate(tgl) + ' 07:00 → ' + fmtDate(tambahHari(tgl, 1)) + ' 07:00';
+    body.innerHTML = '<div class="alert alert-success">🔁 Anda sedang menggantikan <strong>' +
+      (oM.namaKeluar || '-') + '</strong>' + (oM.timKeluar ? ' dari ' + oM.timKeluar : '') +
+      ' pada tanggal ini' + (oM.keterangan ? ' — ' + oM.keterangan : '') +
+      '. Tim asal Anda (' + (tim||'-') + ') tetap mengikuti jadwal normalnya.</div>';
+    return;
+  }
+  if (ovMe && ovMe.arah === 'keluar') {
+    var oK = ovMe.data;
+    title.textContent = '👥 Anda — Libur (Digantikan)';
+    body.innerHTML = '<div class="alert alert-info">😴 Anda digantikan oleh <strong>' +
+      (oK.namaMasuk || '-') + '</strong>' + (oK.timMasuk ? ' dari ' + oK.timMasuk : '') +
+      ' pada tanggal ini' + (oK.keterangan ? ' — ' + oK.keterangan : '') +
+      '. Anda tidak perlu piket pada shift ini.</div>';
+    return;
+  }
+
   if (shiftVal === 'J') {
     title.textContent = '👥 ' + (tim || 'Tim Anda') + ' — Jaga 24 Jam: ' +
       fmtDate(tgl) + ' 07:00 → ' + fmtDate(tambahHari(tgl, 1)) + ' 07:00';
@@ -8058,11 +8399,18 @@ async function renderTimPiketHariIni(u) {
     return;
   }
 
+  // Rekan setim yang sedang digantikan (izin/berhalangan) hari ini tetap
+  // ditampilkan supaya tidak membingungkan, tapi dengan catatan siapa
+  // penggantinya — bukan dihapus diam-diam dari daftar.
   body.innerHTML = anggota.map(function(p){
     var initial = (p.namaPegawai||'?').trim().charAt(0).toUpperCase();
     var isMe = p.idPegawai === u.idPegawai;
+    var ovP = getOverrideUntukPegawai(p.idPegawai, tgl);
+    var ket = (ovP && ovP.arah === 'keluar')
+      ? ' <span style="font-weight:400;color:var(--text-muted);font-size:11.5px">— digantikan ' + (ovP.data.namaMasuk||'-') + '</span>'
+      : '';
     return '<div class="pd-tim-member"><div class="avatar">' + initial + '</div>' +
-      '<div class="info"><div class="nm">' + (p.namaPegawai||'-') + (isMe ? ' <span style="font-weight:400;color:var(--text-muted)">(Anda)</span>' : '') + '</div>' +
+      '<div class="info"><div class="nm">' + (p.namaPegawai||'-') + (isMe ? ' <span style="font-weight:400;color:var(--text-muted)">(Anda)</span>' : '') + ket + '</div>' +
       '<div class="id">' + (p.idPegawai||'-') + '</div></div></div>';
   }).join('');
 }
@@ -9551,12 +9899,239 @@ function initShiftFilter() {
 // Pindah antar tab "Generator Jadwal" dan "Data Jadwal" pada halaman Jadwal Shift
 function switchShiftTab(tab) {
   document.querySelectorAll('#shiftTabContent .tab').forEach(function(t,i){
-    t.classList.toggle('active', (tab==='generator'&&i===0)||(tab==='data'&&i===1)||(tab==='rekap'&&i===2));
+    t.classList.toggle('active', (tab==='generator'&&i===0)||(tab==='data'&&i===1)||(tab==='rekap'&&i===2)||(tab==='tukar'&&i===3));
   });
   document.getElementById('shiftTabGenerator').style.display = tab==='generator' ? 'block' : 'none';
   document.getElementById('shiftTabData').style.display = tab==='data' ? 'block' : 'none';
   document.getElementById('shiftTabRekap').style.display = tab==='rekap' ? 'block' : 'none';
+  document.getElementById('shiftTabTukar').style.display = tab==='tukar' ? 'block' : 'none';
   if (tab === 'rekap' && !document.getElementById('filterRekapPiketFrom').value) loadRekapPiketSecurity();
+  if (tab === 'tukar') { initTukarShiftForm(); renderRiwayatTukarShift(); }
+}
+
+// ============================================================
+// UI TAB "TUKAR SHIFT" (override individual per tanggal)
+// ============================================================
+
+// Isi kedua dropdown (anggota digantikan & pengganti) dengan seluruh
+// anggota Security dari TIM 1-3, ditandai nama tim di belakang nama.
+async function initTukarShiftForm() {
+  var selKeluar = document.getElementById('tukarShiftKeluar');
+  var selMasuk  = document.getElementById('tukarShiftMasuk');
+  if (!selKeluar || !selMasuk) return;
+
+  if (SCRIPT_URL) await refreshAllPegawai();
+  var anggota = getPegawaiListForStats().filter(function(p){
+    return p.pekerjaan === 'Security' && normalisasiTim(p.Tim);
+  }).sort(function(a,b){ return String(a.namaPegawai).localeCompare(String(b.namaPegawai)); });
+
+  var opsi = '<option value="">-- Pilih anggota --</option>' + anggota.map(function(p){
+    return '<option value="'+p.idPegawai+'">' + (p.namaPegawai||'-') + ' (' + normalisasiTim(p.Tim) + ')</option>';
+  }).join('');
+  selKeluar.innerHTML = opsi;
+  selMasuk.innerHTML  = opsi;
+
+  var tglInput = document.getElementById('tukarShiftTanggal');
+  if (tglInput && !tglInput.value) tglInput.value = todayVerified();
+}
+
+// Simpan 1 catatan tukar shift baru: anggota "keluar" tidak piket pada
+// tanggal ybs, anggota "masuk" menggantikannya piket pada tanggal itu.
+async function simpanTukarShift() {
+  var tgl      = document.getElementById('tukarShiftTanggal').value;
+  var selKeluar = document.getElementById('tukarShiftKeluar');
+  var selMasuk  = document.getElementById('tukarShiftMasuk');
+  var idKeluar  = selKeluar.value;
+  var idMasuk   = selMasuk.value;
+  var ket       = (document.getElementById('tukarShiftKeterangan').value || '').trim();
+
+  if (!tgl) { showAlert('tukarShiftAlert','warn','⚠ Pilih tanggal terlebih dahulu.'); return; }
+  if (!idKeluar || !idMasuk) { showAlert('tukarShiftAlert','warn','⚠ Pilih anggota yang digantikan & anggota pengganti.'); return; }
+  if (idKeluar === idMasuk) { showAlert('tukarShiftAlert','warn','⚠ Anggota yang digantikan & pengganti tidak boleh sama.'); return; }
+
+  var pKeluar = getPegawaiListForStats().find(function(p){ return String(p.idPegawai) === String(idKeluar); });
+  var pMasuk  = getPegawaiListForStats().find(function(p){ return String(p.idPegawai) === String(idMasuk); });
+
+  var row = {
+    id: 'ov_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+    tanggal: tgl,
+    idKeluar: idKeluar, namaKeluar: pKeluar ? pKeluar.namaPegawai : '',
+    timKeluar: pKeluar ? normalisasiTim(pKeluar.Tim) : '',
+    idMasuk: idMasuk, namaMasuk: pMasuk ? pMasuk.namaPegawai : '',
+    timMasuk: pMasuk ? normalisasiTim(pMasuk.Tim) : '',
+    keterangan: ket,
+    // Dikirim supaya kebijakan RLS di Supabase bisa memverifikasi bahwa
+    // yang menyimpan adalah Admin atau koordinator tukar shift yang sah.
+    dicatatOlehId: currentUser ? currentUser.idPegawai : null
+  };
+
+  if (SCRIPT_URL) {
+    var res = await callAPI('saveShiftOverride', row);
+    if (!res || !res.success) {
+      showAlert('tukarShiftAlert','error','❌ Gagal menyimpan ke database: '+(res && res.error ? res.error : 'Tidak ada respons dari server.'));
+      return;
+    }
+  }
+
+  if (!shiftOverride[tgl]) shiftOverride[tgl] = [];
+  shiftOverride[tgl].push(row);
+  simpanShiftOverrideLocal();
+
+  showAlert('tukarShiftAlert','success','✅ Tukar shift tersimpan: '+row.namaKeluar+' digantikan '+row.namaMasuk+' pada '+tgl+'.');
+  document.getElementById('tukarShiftKeterangan').value = '';
+  selKeluar.value = ''; selMasuk.value = '';
+  renderRiwayatTukarShift();
+}
+
+// Tampilkan riwayat seluruh tukar shift yang tercatat, terbaru di atas.
+function renderRiwayatTukarShift() {
+  var tbody = document.getElementById('tukarShiftBody');
+  if (!tbody) return;
+  var list = getSemuaShiftOverride();
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text-muted)">Belum ada riwayat tukar shift.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(function(o){
+    return '<tr>' +
+      '<td>' + o.tanggal + '</td>' +
+      '<td>' + (o.namaKeluar||'-') + (o.timKeluar ? ' <span style="color:var(--text-muted);font-size:11.5px">('+o.timKeluar+')</span>' : '') + '</td>' +
+      '<td>' + (o.namaMasuk||'-') + (o.timMasuk ? ' <span style="color:var(--text-muted);font-size:11.5px">('+o.timMasuk+')</span>' : '') + '</td>' +
+      '<td>' + (o.keterangan ? o.keterangan : '-') + '</td>' +
+      '<td style="text-align:center"><button class="btn btn-outline" style="padding:4px 10px;font-size:12px;color:#ef4444;border-color:#ef4444" onclick="hapusTukarShift(\''+o.tanggal+'\',\''+o.id+'\')">🗑️ Hapus</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+// Hapus 1 catatan tukar shift (baik dari cache lokal maupun database).
+async function hapusTukarShift(tgl, id) {
+  if (!confirm('Hapus catatan tukar shift ini? Jadwal akan kembali ke keanggotaan TIM default.')) return;
+  if (SCRIPT_URL) {
+    var res = await callAPI('deleteShiftOverride', { id: id });
+    if (!res || !res.success) {
+      showAlert('tukarShiftAlert','error','❌ Gagal menghapus dari database: '+(res && res.error ? res.error : 'Tidak ada respons dari server.'));
+      return;
+    }
+  }
+  if (shiftOverride[tgl]) {
+    shiftOverride[tgl] = shiftOverride[tgl].filter(function(o){ return o.id !== id; });
+    if (!shiftOverride[tgl].length) delete shiftOverride[tgl];
+    simpanShiftOverrideLocal();
+  }
+  showAlert('tukarShiftAlert','success','✅ Catatan tukar shift dihapus.');
+  renderRiwayatTukarShift();
+}
+
+// ============================================================
+// Halaman "Tukar Shift" versi KOORDINATOR (non-admin, mis. koordinator
+// security yang ditunjuk). Logika & data sama persis dengan panel admin
+// di atas (shiftOverride, callAPI getShiftOverride/saveShiftOverride/
+// deleteShiftOverride) — hanya elemen HTML-nya berbeda ID karena berada
+// di halaman terpisah (page-tukarShiftKoordinator), supaya tidak
+// bentrok dengan id yang dipakai panel admin.
+// ============================================================
+async function initTukarShiftKoorForm() {
+  var selKeluar = document.getElementById('koorTukarKeluar');
+  var selMasuk  = document.getElementById('koorTukarMasuk');
+  if (!selKeluar || !selMasuk) return;
+
+  await ensureShiftOverrideLoaded(tambahHari(todayVerified(), -31), tambahHari(todayVerified(), 31));
+  if (SCRIPT_URL) await refreshAllPegawai();
+  var anggota = getPegawaiListForStats().filter(function(p){
+    return p.pekerjaan === 'Security' && normalisasiTim(p.Tim);
+  }).sort(function(a,b){ return String(a.namaPegawai).localeCompare(String(b.namaPegawai)); });
+
+  var opsi = '<option value="">-- Pilih anggota --</option>' + anggota.map(function(p){
+    return '<option value="'+p.idPegawai+'">' + (p.namaPegawai||'-') + ' (' + normalisasiTim(p.Tim) + ')</option>';
+  }).join('');
+  selKeluar.innerHTML = opsi;
+  selMasuk.innerHTML  = opsi;
+
+  var tglInput = document.getElementById('koorTukarTanggal');
+  if (tglInput && !tglInput.value) tglInput.value = todayVerified();
+}
+
+async function simpanTukarShiftKoor() {
+  var tgl       = document.getElementById('koorTukarTanggal').value;
+  var selKeluar = document.getElementById('koorTukarKeluar');
+  var selMasuk  = document.getElementById('koorTukarMasuk');
+  var idKeluar  = selKeluar.value;
+  var idMasuk   = selMasuk.value;
+  var ket       = (document.getElementById('koorTukarKeterangan').value || '').trim();
+
+  if (!tgl) { showAlert('koorTukarAlert','warn','⚠ Pilih tanggal terlebih dahulu.'); return; }
+  if (!idKeluar || !idMasuk) { showAlert('koorTukarAlert','warn','⚠ Pilih anggota yang digantikan & anggota pengganti.'); return; }
+  if (idKeluar === idMasuk) { showAlert('koorTukarAlert','warn','⚠ Anggota yang digantikan & pengganti tidak boleh sama.'); return; }
+
+  var pKeluar = getPegawaiListForStats().find(function(p){ return String(p.idPegawai) === String(idKeluar); });
+  var pMasuk  = getPegawaiListForStats().find(function(p){ return String(p.idPegawai) === String(idMasuk); });
+
+  var row = {
+    id: 'ov_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+    tanggal: tgl,
+    idKeluar: idKeluar, namaKeluar: pKeluar ? pKeluar.namaPegawai : '',
+    timKeluar: pKeluar ? normalisasiTim(pKeluar.Tim) : '',
+    idMasuk: idMasuk, namaMasuk: pMasuk ? pMasuk.namaPegawai : '',
+    timMasuk: pMasuk ? normalisasiTim(pMasuk.Tim) : '',
+    keterangan: ket,
+    // Dikirim supaya kebijakan RLS di Supabase bisa memverifikasi bahwa
+    // yang menyimpan adalah Admin atau koordinator tukar shift yang sah.
+    dicatatOlehId: currentUser ? currentUser.idPegawai : null
+  };
+
+  if (SCRIPT_URL) {
+    var res = await callAPI('saveShiftOverride', row);
+    if (!res || !res.success) {
+      showAlert('koorTukarAlert','error','❌ Gagal menyimpan ke database: '+(res && res.error ? res.error : 'Tidak ada respons dari server.'));
+      return;
+    }
+  }
+
+  if (!shiftOverride[tgl]) shiftOverride[tgl] = [];
+  shiftOverride[tgl].push(row);
+  simpanShiftOverrideLocal();
+
+  showAlert('koorTukarAlert','success','✅ Tukar shift tersimpan: '+row.namaKeluar+' digantikan '+row.namaMasuk+' pada '+tgl+'.');
+  document.getElementById('koorTukarKeterangan').value = '';
+  selKeluar.value = ''; selMasuk.value = '';
+  renderRiwayatTukarShiftKoor();
+}
+
+function renderRiwayatTukarShiftKoor() {
+  var tbody = document.getElementById('koorTukarBody');
+  if (!tbody) return;
+  var list = getSemuaShiftOverride();
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text-muted)">Belum ada riwayat tukar shift.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(function(o){
+    return '<tr>' +
+      '<td>' + o.tanggal + '</td>' +
+      '<td>' + (o.namaKeluar||'-') + (o.timKeluar ? ' <span style="color:var(--text-muted);font-size:11.5px">('+o.timKeluar+')</span>' : '') + '</td>' +
+      '<td>' + (o.namaMasuk||'-') + (o.timMasuk ? ' <span style="color:var(--text-muted);font-size:11.5px">('+o.timMasuk+')</span>' : '') + '</td>' +
+      '<td>' + (o.keterangan ? o.keterangan : '-') + '</td>' +
+      '<td style="text-align:center"><button class="btn btn-outline" style="padding:4px 10px;font-size:12px;color:#ef4444;border-color:#ef4444" onclick="hapusTukarShiftKoor(\''+o.tanggal+'\',\''+o.id+'\')">🗑️ Hapus</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function hapusTukarShiftKoor(tgl, id) {
+  if (!confirm('Hapus catatan tukar shift ini? Jadwal akan kembali ke keanggotaan TIM default.')) return;
+  if (SCRIPT_URL) {
+    var res = await callAPI('deleteShiftOverride', { id: id });
+    if (!res || !res.success) {
+      showAlert('koorTukarAlert','error','❌ Gagal menghapus dari database: '+(res && res.error ? res.error : 'Tidak ada respons dari server.'));
+      return;
+    }
+  }
+  if (shiftOverride[tgl]) {
+    shiftOverride[tgl] = shiftOverride[tgl].filter(function(o){ return o.id !== id; });
+    if (!shiftOverride[tgl].length) delete shiftOverride[tgl];
+    simpanShiftOverrideLocal();
+  }
+  showAlert('koorTukarAlert','success','✅ Catatan tukar shift dihapus.');
+  renderRiwayatTukarShiftKoor();
 }
 
 // Daftar anggota tim security, dikelompokkan per TIM (TIM 1-3), ditampilkan
@@ -13080,15 +13655,6 @@ function updateBottomNavActive(pageName) {
 window.addEventListener('resize', function(){
   var bnav = document.getElementById('bottomNav');
   if (bnav) bnav.style.display = window.innerWidth <= 768 ? 'block' : 'none';
-
-  // Jaga-jaga: kalau layar masuk ke lebar mobile, pastikan sidebar
-  // tidak nyangkut dalam mode "minimized" (ikon saja). Kalau lebar
-  // kembali ke desktop, terapkan lagi sesuai preferensi tersimpan.
-  if (window.innerWidth <= 768) {
-    document.body.classList.remove('sidebar-minimized');
-  } else if (localStorage.getItem('ppnpn_sidebar_minimized') === 'true') {
-    document.body.classList.add('sidebar-minimized');
-  }
 });
 
 // ============================================================
@@ -13183,7 +13749,6 @@ async function hapusPegawai(idPeg) {
 
 // Desktop Toggle Sidebar
 function toggleDesktopSidebar() {
-  if (window.innerWidth <= 768) return; // tombol ini memang khusus desktop
   document.body.classList.toggle('sidebar-minimized');
   localStorage.setItem('ppnpn_sidebar_minimized', document.body.classList.contains('sidebar-minimized'));
 }
@@ -13197,11 +13762,7 @@ window.onload = () => {
   initSupabaseClient();
   SCRIPT_URL = supabaseClient ? 'supabase' : '';
 
-  // Mode "minimized" (ikon saja) itu khusus desktop. Jangan pernah
-  // diterapkan di layar mobile walau localStorage-nya kebetulan
-  // "true" dari sesi sebelumnya (mis. sempat dibuka via mode
-  // "Situs Desktop"), supaya sidebar mobile selalu tampil lengkap.
-  if (window.innerWidth > 768 && localStorage.getItem('ppnpn_sidebar_minimized') === 'true') {
+  if (localStorage.getItem('ppnpn_sidebar_minimized') === 'true') {
     document.body.classList.add('sidebar-minimized');
   }
   // Isi kembali username/password jika "ingat saya" pernah dicentang
