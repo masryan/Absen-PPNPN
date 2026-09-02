@@ -84,3 +84,58 @@ self.addEventListener('fetch', function (event) {
     })
   );
 });
+
+// ============================================================
+// PUSH NOTIFICATION — pengingat absen masuk/pulang
+// Ini bagian yang membuat notifikasi tetap bisa muncul walau
+// aplikasi/tab SEDANG TERTUTUP. Payload dikirim oleh Edge Function
+// "absen-reminder" di Supabase, berbentuk JSON: { title, body, tag, url }
+// ============================================================
+self.addEventListener('push', function (event) {
+  var data = { title: 'Pengingat Absen', body: 'Jangan lupa absen ya!', tag: 'absen-reminder', url: './' };
+  try {
+    if (event.data) data = Object.assign(data, event.data.json());
+  } catch (e) {
+    // Payload bukan JSON valid — pakai default di atas.
+  }
+
+  var options = {
+    body: data.body,
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    tag: data.tag,          // notif dengan tag sama akan saling menggantikan, bukan menumpuk
+    renotify: true,
+    requireInteraction: false,
+    data: { url: data.url || './' }
+  };
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+// Klik notifikasi → fokus ke tab yang sudah terbuka, atau buka tab baru.
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+  var targetUrl = (event.notification.data && event.notification.data.url) || './';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
+        if ('focus' in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
+    })
+  );
+});
+
+// Kalau browser mencabut/memperbarui subscription secara otomatis
+// (mis. mendekati kadaluarsa), coba subscribe ulang diam-diam.
+// Backend akan otomatis membuang subscription lama saat pengiriman push
+// gagal (lihat Edge Function absen-reminder), jadi ini hanya jaga-jaga.
+self.addEventListener('pushsubscriptionchange', function (event) {
+  event.waitUntil(
+    self.registration.pushManager.subscribe(
+      event.oldSubscription ? event.oldSubscription.options : { userVisibleOnly: true }
+    ).catch(function () { /* biarkan; pegawai bisa aktifkan ulang lewat banner */ })
+  );
+});
