@@ -1094,6 +1094,27 @@
   @media (max-width: 768px) {
     .btn-desktop-toggle { display: none; }
     body.sidebar-minimized { --sidebar-w: 0px; } /* Prevents layout break on mobile */
+
+    /* Di HP, sidebar selalu dibuka sebagai drawer penuh (bukan rail sempit),
+       jadi status "minimized" (icon-only) dari desktop tidak boleh ikut
+       menyembunyikan label teks menu saat drawer dibuka lewat HP. */
+    body.sidebar-minimized .sidebar-logo { padding: 24px 20px 16px; text-align: left; }
+    body.sidebar-minimized .sidebar-logo h2,
+    body.sidebar-minimized .sidebar-logo p,
+    body.sidebar-minimized .sidebar-logo .badge { display: block; }
+    body.sidebar-minimized .sidebar-logo::before { content: none; }
+
+    body.sidebar-minimized .sidebar-user { padding: 16px; justify-content: flex-start; }
+    body.sidebar-minimized .user-info { display: block; }
+
+    body.sidebar-minimized .nav-section-label { display: block; }
+    body.sidebar-minimized .nav-item { font-size: 14px; justify-content: flex-start; padding: 12px 16px; }
+    body.sidebar-minimized .nav-item svg { margin-right: 10px; width: 18px; height: 18px; }
+
+    body.sidebar-minimized #pendingBadge { position: static; padding: 2px 8px; font-size: 11px; margin-left: auto; }
+
+    body.sidebar-minimized .btn-logout { font-size: 14px; padding: 12px 16px; }
+    body.sidebar-minimized .btn-logout svg { margin-right: 10px; width: 18px; height: 18px; }
   }
   /* =====================================================================
      REDESIGN OVERRIDES — selaras dengan mockup "admin.html" (SIMPEG Portal)
