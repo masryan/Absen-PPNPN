@@ -1020,6 +1020,20 @@
   .import-hint { font-size: 11.5px; color: var(--text-muted); background: var(--surface); border: 1px dashed var(--border); padding: 8px 12px; border-radius: 10px; margin-bottom: 14px; }
 
   /* ========= SETTINGS / PENGATURAN ========= */
+  /* ---- Toggle switch on/off (dipakai utk Notifikasi Absen di halaman Profil) ---- */
+  .switch-toggle { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+  .switch-toggle input { opacity: 0; width: 0; height: 0; }
+  .switch-toggle-slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #d1d5db; transition: 0.2s; border-radius: 26px;
+  }
+  .switch-toggle-slider:before {
+    position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+    background-color: #fff; transition: 0.2s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  }
+  .switch-toggle input:checked + .switch-toggle-slider { background-color: var(--primary, #0b3d2e); }
+  .switch-toggle input:checked + .switch-toggle-slider:before { transform: translateX(20px); }
+  .switch-toggle input:disabled + .switch-toggle-slider { opacity: 0.5; cursor: not-allowed; }
   .settings-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; align-items: start; }
   .settings-grid > * { min-width: 0; }
   .jk-table-wrap table { font-size: 13px; }
@@ -1651,6 +1665,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
         Jadwal Hari Libur
       </a>
+      <a class="nav-item" onclick="showPage('rekapGajiSaya')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><text x="12" y="15.5" text-anchor="middle" font-size="9" font-weight="800" fill="currentColor" stroke="none" font-family="Arial, Helvetica, sans-serif">Rp</text></svg>
+        Rekap Gaji
+      </a>
       <a class="nav-item" onclick="showPage('profil')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         Profil Saya
@@ -1690,7 +1708,7 @@
         Penugasan & SPK Lembur
       </a>
       <a class="nav-item" onclick="showPage('adminPotonganGaji')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><text x="12" y="15.5" text-anchor="middle" font-size="9" font-weight="800" fill="currentColor" stroke="none" font-family="Arial, Helvetica, sans-serif">Rp</text></svg>
         Potongan PPNPN
       </a>
       
@@ -1868,11 +1886,15 @@
             <div style="display:flex;align-items:center;gap:12px">
               <div style="font-size:22px">🔔</div>
               <div>
-                <div style="font-weight:700;font-size:14px;color:var(--text)">Aktifkan Notifikasi Absen</div>
-                <div style="font-size:12.5px;color:var(--text-muted)">Dapat pengingat otomatis 5 menit sebelum jam masuk & jam pulang Anda.</div>
+                <div style="font-weight:700;font-size:14px;color:var(--text)">Notifikasi Absen</div>
+                <div style="font-size:12.5px;color:var(--text-muted)" id="notifToggleStatus">Memeriksa status...</div>
+                <div id="notifToggleAlert"></div>
               </div>
             </div>
-            <button class="btn-pd-primary" id="pushNotifBtn" onclick="aktifkanNotifikasiAbsen()" style="white-space:nowrap">Aktifkan</button>
+            <label class="switch-toggle" title="Aktif/Nonaktifkan notifikasi absen">
+              <input type="checkbox" id="notifToggleInput" onchange="onNotifToggleChange(this)" disabled>
+              <span class="switch-toggle-slider"></span>
+            </label>
           </div>
 
           <div class="pd-quick-grid">
@@ -2267,6 +2289,58 @@
             <table>
               <thead><tr><th>Nama</th><th>Hubungan</th><th>Tempat Lahir</th><th>Tgl Lahir</th><th>Pendidikan</th><th>Tanggungan</th></tr></thead>
               <tbody id="keluargaBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== REKAP GAJI SAYA (pegawai) ===== -->
+      <div class="page" id="page-rekapGajiSaya">
+        <div class="card">
+          <div class="card-title">💰 Rekap Gaji Saya</div>
+          <div class="filter-bar" style="margin-bottom:4px">
+            <div class="field"><label>Periode</label><input type="month" id="rgsBulan" onchange="loadRekapGajiSaya()"></div>
+            <button class="btn btn-primary" onclick="loadRekapGajiSaya()">🔍 Tampilkan</button>
+          </div>
+          <div id="rgsAlert"></div>
+
+          <div id="rgsRingkasanWrap" style="display:none;margin-top:12px">
+            <div class="stats-grid" style="margin-bottom:16px">
+              <div class="stat-card blue"><div class="label">Jumlah Gaji</div><div class="value" id="rgs-gaji">-</div><div class="sub" id="rgs-periode-label">-</div></div>
+              <div class="stat-card amber"><div class="label">Potongan BPJS TK</div><div class="value" id="rgs-bpjs">-</div><div class="sub">Otomatis 6,24% dari gaji</div></div>
+              <div class="stat-card amber"><div class="label">Pinjaman Paguyuban</div><div class="value" id="rgs-paguyuban">-</div><div class="sub">Potongan bulan ini</div></div>
+              <div class="stat-card red"><div class="label">Pinjaman ke Pegawai</div><div class="value" id="rgs-utang">-</div><div class="sub" id="rgs-utang-sub">-</div></div>
+            </div>
+
+            <div id="rgsUtangDetailWrap" style="display:none;margin-bottom:16px">
+              <div style="font-weight:700;font-size:13.5px;color:var(--text);margin-bottom:8px">Rincian Pinjaman ke Pegawai</div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Nama Pemberi Pinjaman</th><th>Jumlah</th></tr></thead>
+                  <tbody id="rgsUtangDetailBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style="background:var(--grad-brand);color:#fff;border-radius:14px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+              <div>
+                <div style="font-size:12.5px;opacity:0.85;font-weight:600">TOTAL POTONGAN</div>
+                <div style="font-size:20px;font-weight:800" id="rgs-total-potongan">-</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:12.5px;opacity:0.85;font-weight:600">GAJI NETTO (SETELAH POTONGAN)</div>
+                <div style="font-size:26px;font-weight:900" id="rgs-netto">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📜 Riwayat Rekap Gaji</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Periode</th><th>Gaji</th><th>BPJS TK</th><th>Pinjaman Paguyuban</th><th>Pinjaman ke Pegawai</th><th>Total Potongan</th><th>Netto</th></tr></thead>
+              <tbody id="rgsRiwayatBody"></tbody>
             </table>
           </div>
         </div>
@@ -7281,73 +7355,111 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+// ---- PUSH NOTIFICATION: toggle On/Off di banner Dashboard ----
 async function initPushNotifBanner() {
+  // Alias — dipanggil saat load dashboard, tinggal delegasikan ke initNotifToggleUI
+  return initNotifToggleUI();
+}
+
+async function initNotifToggleUI() {
   var banner = document.getElementById('pushNotifBanner');
-  if (!banner) return;
+  var toggle = document.getElementById('notifToggleInput');
+  var status = document.getElementById('notifToggleStatus');
+  var alertBox = document.getElementById('notifToggleAlert');
+  if (!toggle || !status) return;
+  if (alertBox) alertBox.innerHTML = '';
+  if (banner) banner.style.display = 'flex';
 
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    banner.style.display = 'none'; // browser tidak mendukung push
+    toggle.disabled = true;
+    toggle.checked = false;
+    status.textContent = 'Browser ini tidak mendukung notifikasi push.';
     return;
   }
   if (Notification.permission === 'denied') {
-    banner.style.display = 'none'; // pegawai sudah pernah tolak dari setting browser
+    toggle.disabled = true;
+    toggle.checked = false;
+    status.textContent = 'Izin notifikasi diblokir di browser/HP Anda. Aktifkan lewat pengaturan browser terlebih dahulu.';
     return;
   }
 
   try {
     var reg = await navigator.serviceWorker.ready;
     var existingSub = await reg.pushManager.getSubscription();
-    banner.style.display = existingSub ? 'none' : 'flex';
+    toggle.disabled = false;
+    toggle.checked = !!existingSub;
+    status.textContent = existingSub
+      ? 'Aktif — Anda akan diingatkan 5 menit sebelum jam masuk & jam pulang.'
+      : 'Nonaktif — nyalakan untuk dapat pengingat otomatis absen.';
   } catch (e) {
-    banner.style.display = 'flex';
+    toggle.disabled = false;
+    toggle.checked = false;
+    status.textContent = 'Nonaktif — nyalakan untuk dapat pengingat otomatis absen.';
   }
 }
 
-async function aktifkanNotifikasiAbsen() {
-  var btn = document.getElementById('pushNotifBtn');
-  var banner = document.getElementById('pushNotifBanner');
-  if (btn) { btn.disabled = true; btn.textContent = 'Memproses...'; }
+async function onNotifToggleChange(checkbox) {
+  var status = document.getElementById('notifToggleStatus');
+  var alertBox = document.getElementById('notifToggleAlert');
+  var mauAktif = checkbox.checked;
+  checkbox.disabled = true;
+  if (status) status.textContent = 'Memproses...';
+  if (alertBox) alertBox.innerHTML = '';
 
   try {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      alert('Browser ini tidak mendukung notifikasi push. Coba pakai Chrome/Edge terbaru.');
-      return;
-    }
+    if (mauAktif) {
+      // ---- Nyalakan ----
+      var permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        checkbox.checked = false;
+        if (status) status.textContent = 'Izin notifikasi ditolak. Anda bisa mengaktifkannya lagi lewat pengaturan browser/HP.';
+        return;
+      }
 
-    var permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      alert('Izin notifikasi ditolak. Anda bisa mengaktifkannya lagi lewat pengaturan browser/HP.');
-      return;
-    }
+      var reg = await navigator.serviceWorker.ready;
+      var sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+      }
 
-    var reg = await navigator.serviceWorker.ready;
-    var sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-    }
+      var subJson = sub.toJSON();
+      if (supabaseClient && currentUser) {
+        var { error } = await supabaseClient.from('push_subscriptions').upsert({
+          id_pegawai: currentUser.idPegawai,
+          endpoint: subJson.endpoint,
+          p256dh: subJson.keys.p256dh,
+          auth: subJson.keys.auth,
+          user_agent: navigator.userAgent
+        }, { onConflict: 'endpoint' });
+        if (error) throw error;
+      }
 
-    var subJson = sub.toJSON();
-    if (supabaseClient && currentUser) {
-      var { error } = await supabaseClient.from('push_subscriptions').upsert({
-        id_pegawai: currentUser.idPegawai,
-        endpoint: subJson.endpoint,
-        p256dh: subJson.keys.p256dh,
-        auth: subJson.keys.auth,
-        user_agent: navigator.userAgent
-      }, { onConflict: 'endpoint' });
-      if (error) throw error;
+      if (status) status.textContent = 'Aktif — Anda akan diingatkan 5 menit sebelum jam masuk & jam pulang.';
+    } else {
+      // ---- Matikan ----
+      var regOff = await navigator.serviceWorker.ready;
+      var subOff = await regOff.pushManager.getSubscription();
+      if (subOff) {
+        var endpointOff = subOff.endpoint;
+        await subOff.unsubscribe();
+        if (supabaseClient) {
+          await supabaseClient.from('push_subscriptions').delete().eq('endpoint', endpointOff);
+        }
+      }
+      if (status) status.textContent = 'Nonaktif — nyalakan untuk dapat pengingat otomatis absen.';
     }
-
-    if (banner) banner.style.display = 'none';
-    alert('✅ Notifikasi absen berhasil diaktifkan! Anda akan diingatkan 5 menit sebelum jam masuk & jam pulang.');
   } catch (err) {
-    console.error('Gagal mengaktifkan notifikasi:', err);
-    alert('Gagal mengaktifkan notifikasi. Coba lagi, atau hubungi admin bila terus gagal.');
+    console.error('Gagal mengubah status notifikasi:', err);
+    checkbox.checked = !mauAktif; // kembalikan ke posisi semula
+    if (alertBox) alertBox.innerHTML = '<div class="alert alert-error">Gagal mengubah status notifikasi. Coba lagi.</div>';
+    if (status) status.textContent = checkbox.checked
+      ? 'Aktif — Anda akan diingatkan 5 menit sebelum jam masuk & jam pulang.'
+      : 'Nonaktif — nyalakan untuk dapat pengingat otomatis absen.';
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Aktifkan'; }
+    checkbox.disabled = false;
   }
 }
 
@@ -7505,7 +7617,7 @@ function showPage(name) {
 
   // Access guard — pegawai tidak bisa akses halaman admin
   var adminPages = ['adminAbsensi','adminCuti','adminPegawai','adminPengaturan', 'adminChecklistCS', 'adminLembur', 'adminPotonganGaji']; 
-  var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga'];
+  var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga','rekapGajiSaya'];
   if (!isAdmin && adminPages.indexOf(name) >= 0) {
     alert('Akses ditolak. Halaman ini hanya untuk admin.');
     return;
@@ -7534,6 +7646,7 @@ function showPage(name) {
     ijinKeluar: '🚪 Ijin Keluar',
     profil: '👤 Profil Saya',
     keluarga: '👨‍👩‍👧 Data Keluarga',
+    rekapGajiSaya: '💰 Rekap Gaji Saya',
     adminAbsensi: '📋 Rekap Absensi & Potongan',
     adminCuti: '✅ Persetujuan Cuti & Ijin Keluar',
     adminPegawai: '👥 Data Pegawai & Hak Cuti',
@@ -7565,6 +7678,7 @@ function showPage(name) {
   if (name === 'adminCuti') { switchApprovalMainTab('cuti'); switchAdminCutiTab('pending'); switchAdminIjinTab('pending'); }
   if (name === 'profil') loadProfil();
   if (name === 'keluarga') loadKeluarga();
+  if (name === 'rekapGajiSaya') loadRekapGajiSaya();
   if (name === 'adminAbsensi') { switchRekapMainTab('absensi'); initAdminAbsensiFilter(); loadAdminAbsensi(); initAdminPotongan(); }
   if (name === 'adminPegawai') { switchPegawaiMainTab('pegawai'); }
   
@@ -7574,7 +7688,7 @@ function showPage(name) {
   if (name === 'tukarShiftKoordinator') { initTukarShiftKoorForm(); renderRiwayatTukarShiftKoor(); initUbahTimSection('koor'); }
   
   if (name === 'libur') loadLiburUserPage();
-  if (name === 'dashboard') loadDashboard();
+  if (name === 'dashboard') { loadDashboard(); if (!isAdmin) initPushNotifBanner(); }
   if (name === 'checklist') loadChecklist();
 
   // Aktifkan pengecekan berkala untuk efek berkedip card "Absen Pulang"
@@ -13290,6 +13404,94 @@ function hitungBpjsTk(gaji) {
 }
 function hitungUtangTotal(items) {
   return (items || []).reduce(function (s, it) { return s + (Number(it.jumlah) || 0); }, 0);
+}
+
+// ============================================================
+// PEGAWAI: REKAP GAJI SAYA (gaji, potongan BPJS/paguyuban/pinjaman, netto)
+// Data diambil dari tabel yang sama dengan menu admin "Potongan PPNPN"
+// (potongan_gaji_ppnpn + potongan_utang_pegawai), difilter hanya milik
+// pegawai yang sedang login.
+// ============================================================
+function loadRekapGajiSaya() {
+  var bulanInput = document.getElementById('rgsBulan');
+  if (!bulanInput.value) {
+    var now = new Date();
+    bulanInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  }
+  renderRekapGajiSayaRingkasan();
+  renderRekapGajiSayaRiwayat();
+}
+
+async function renderRekapGajiSayaRingkasan() {
+  var alertBox = document.getElementById('rgsAlert');
+  var wrap = document.getElementById('rgsRingkasanWrap');
+  alertBox.innerHTML = '';
+  wrap.style.display = 'none';
+  if (!currentUser) return;
+
+  var bulanVal = document.getElementById('rgsBulan').value;
+  if (!bulanVal) return;
+  var tahun = parseInt(bulanVal.split('-')[0], 10);
+  var bulan = parseInt(bulanVal.split('-')[1], 10);
+
+  var res = await callAPI('getRiwayatPotonganGaji', { idPegawai: currentUser.idPegawai, bulan: bulan, tahun: tahun });
+  if (!res || !res.success || !res.data || !res.data.length) {
+    alertBox.innerHTML = '<div class="alert alert-info">Belum ada data rekap gaji untuk periode ' + fmtBulanTahun(bulanVal) + '. Silakan hubungi admin bila periode ini seharusnya sudah diproses.</div>';
+    return;
+  }
+  var r = res.data[0];
+
+  var utangRes = await callAPI('getUtangPegawaiPeriode', { idPegawai: currentUser.idPegawai, bulan: bulan, tahun: tahun });
+  var utangItems = (utangRes && utangRes.success) ? utangRes.data : [];
+
+  document.getElementById('rgs-periode-label').textContent = fmtBulanTahun(bulanVal);
+  document.getElementById('rgs-gaji').textContent = fmtRp(r.gaji);
+  document.getElementById('rgs-bpjs').textContent = fmtRp(r.bpjsTk);
+  document.getElementById('rgs-paguyuban').textContent = fmtRp(r.paguyuban);
+  document.getElementById('rgs-utang').textContent = fmtRp(r.utangPegawai);
+  document.getElementById('rgs-utang-sub').textContent = utangItems.length
+    ? utangItems.length + ' rincian pinjaman'
+    : 'Tidak ada pinjaman bulan ini';
+  document.getElementById('rgs-total-potongan').textContent = fmtRp(r.totalPotongan);
+  document.getElementById('rgs-netto').textContent = fmtRp(r.netGaji);
+
+  var utangWrap = document.getElementById('rgsUtangDetailWrap');
+  var utangBody = document.getElementById('rgsUtangDetailBody');
+  if (utangItems.length) {
+    utangBody.innerHTML = utangItems.map(function (it) {
+      return '<tr><td>' + (it.namaPemberi || '-') + '</td><td>' + fmtRp(it.jumlah) + '</td></tr>';
+    }).join('');
+    utangWrap.style.display = 'block';
+  } else {
+    utangWrap.style.display = 'none';
+  }
+
+  wrap.style.display = 'block';
+}
+
+async function renderRekapGajiSayaRiwayat() {
+  var tbody = document.getElementById('rgsRiwayatBody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:18px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  if (!currentUser) return;
+
+  var res = await callAPI('getRiwayatPotonganGaji', { idPegawai: currentUser.idPegawai });
+  if (!res || !res.success || !res.data || !res.data.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:18px;color:var(--text-muted)">Belum ada riwayat rekap gaji.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = res.data.map(function (r) {
+    var periode = fmtBulanTahun(r.tahun + '-' + String(r.bulan).padStart(2, '0'));
+    return '<tr>' +
+      '<td>' + periode + '</td>' +
+      '<td>' + fmtRp(r.gaji) + '</td>' +
+      '<td>' + fmtRp(r.bpjsTk) + '</td>' +
+      '<td>' + fmtRp(r.paguyuban) + '</td>' +
+      '<td>' + fmtRp(r.utangPegawai) + '</td>' +
+      '<td style="font-weight:700;color:#dc2626">' + fmtRp(r.totalPotongan) + '</td>' +
+      '<td style="font-weight:800;color:#16a34a">' + fmtRp(r.netGaji) + '</td>' +
+    '</tr>';
+  }).join('');
 }
 
 var potonganGajiState = {}; // idPegawai -> {nama, jabatan, gaji, bpjsTk, utangItems:[{nama,jumlah}], paguyuban}
