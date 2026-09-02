@@ -1034,6 +1034,20 @@
   .switch-toggle input:checked + .switch-toggle-slider { background-color: var(--primary, #0b3d2e); }
   .switch-toggle input:checked + .switch-toggle-slider:before { transform: translateX(20px); }
   .switch-toggle input:disabled + .switch-toggle-slider { opacity: 0.5; cursor: not-allowed; }
+  /* ---- Card Notifikasi Absen di Dashboard: gradasi kontras (ungu -> emas), beda dari kartu putih lain ---- */
+  .notif-absen-card {
+    background: linear-gradient(120deg, #1c0b5e 0%, #3a1f8a 45%, #8a4fc9 85%, #c9a24b 130%);
+    border: none; box-shadow: 0 10px 26px rgba(28,11,94,0.28);
+  }
+  .notif-absen-card .nac-title { color: #fff; }
+  .notif-absen-card .nac-status { color: rgba(255,255,255,0.8); }
+  .notif-absen-card .nac-icon {
+    width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.16); font-size: 19px; flex-shrink: 0;
+  }
+  .notif-absen-card .switch-toggle-slider { background-color: rgba(255,255,255,0.28); }
+  .notif-absen-card .switch-toggle input:checked + .switch-toggle-slider { background-color: #f4cd6b; }
+  .notif-absen-card .switch-toggle input:checked + .switch-toggle-slider:before { background-color: #2b1560; }
   /* ---- Grid periode Rekap Gaji Saya (pegawai) ---- */
   .rgs-periode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
   .rgs-periode-card {
@@ -1044,6 +1058,26 @@
   .rgs-periode-card .rgs-periode-bulan { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 6px; }
   .rgs-periode-card .rgs-periode-netto { font-size: 12px; color: var(--text-muted); }
   .rgs-periode-card .rgs-periode-netto strong { color: #16a34a; font-family: 'Space Mono', monospace; display: block; font-size: 14px; margin-top: 2px; }
+  /* ---- Gradasi tipis berbeda tiap bulan (Jan-Des) utk kartu periode Rekap Gaji Saya ---- */
+  .rgs-periode-card.rgs-m1  { background: linear-gradient(135deg, #eef4ff 0%, #dfe9ff 100%); border-color: #c6d7ff; }
+  .rgs-periode-card.rgs-m2  { background: linear-gradient(135deg, #fdeef8 0%, #fbdff1 100%); border-color: #f3c2e2; }
+  .rgs-periode-card.rgs-m3  { background: linear-gradient(135deg, #eafbf3 0%, #d9f5e6 100%); border-color: #a9e8c7; }
+  .rgs-periode-card.rgs-m4  { background: linear-gradient(135deg, #fffbea 0%, #fff3c4 100%); border-color: #f3e19a; }
+  .rgs-periode-card.rgs-m5  { background: linear-gradient(135deg, #f5eeff 0%, #ebdcff 100%); border-color: #d6bdf7; }
+  .rgs-periode-card.rgs-m6  { background: linear-gradient(135deg, #e8fbfa 0%, #cff4f1 100%); border-color: #a6e6e0; }
+  .rgs-periode-card.rgs-m7  { background: linear-gradient(135deg, #fff2e8 0%, #ffe1c8 100%); border-color: #f3c294; }
+  .rgs-periode-card.rgs-m8  { background: linear-gradient(135deg, #eef0ff 0%, #dee2ff 100%); border-color: #c0c7f5; }
+  .rgs-periode-card.rgs-m9  { background: linear-gradient(135deg, #fff0f0 0%, #ffe0e0 100%); border-color: #f3b8b8; }
+  .rgs-periode-card.rgs-m10 { background: linear-gradient(135deg, #fff7e6 0%, #ffedc2 100%); border-color: #f0d38f; }
+  .rgs-periode-card.rgs-m11 { background: linear-gradient(135deg, #e6f9ff 0%, #cbf0ff 100%); border-color: #9adcf2; }
+  .rgs-periode-card.rgs-m12 { background: linear-gradient(135deg, #eefdf3 0%, #d7f7e2 100%); border-color: #f4cd6b; }
+  .rgs-filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .rgs-filter-bar label { font-size: 12.5px; font-weight: 600; color: var(--text-muted); }
+  .rgs-filter-bar select {
+    padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: inherit; font-size: 13px; background: #fff; color: var(--text); cursor: pointer;
+  }
+  .rgs-filter-bar select:focus { outline: none; border-color: var(--primary-light); }
   .settings-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; align-items: start; }
   .settings-grid > * { min-width: 0; }
   .jk-table-wrap table { font-size: 13px; }
@@ -1892,12 +1926,12 @@
             </div>
           </div>
 
-          <div id="pushNotifBanner" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:18px;box-shadow:var(--shadow-soft)">
+          <div id="pushNotifBanner" class="notif-absen-card" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;border-radius:14px;padding:14px 18px;margin-bottom:18px">
             <div style="display:flex;align-items:center;gap:12px">
-              <div style="font-size:22px">🔔</div>
+              <div class="nac-icon">🔔</div>
               <div>
-                <div style="font-weight:700;font-size:14px;color:var(--text)">Notifikasi Absen</div>
-                <div style="font-size:12.5px;color:var(--text-muted)" id="notifToggleStatus">Memeriksa status...</div>
+                <div class="nac-title" style="font-weight:700;font-size:14px">Notifikasi Absen</div>
+                <div class="nac-status" style="font-size:12.5px" id="notifToggleStatus">Memeriksa status...</div>
                 <div id="notifToggleAlert"></div>
               </div>
             </div>
@@ -2309,6 +2343,12 @@
         <div class="card">
           <div class="card-title">💰 Rekap Gaji Saya</div>
           <div id="rgsAlert"></div>
+          <div class="rgs-filter-bar">
+            <label for="rgsTahunFilter">Filter Tahun</label>
+            <select id="rgsTahunFilter" onchange="renderRekapGajiSayaPeriodeGrid()">
+              <option value="">Semua Tahun</option>
+            </select>
+          </div>
           <div id="rgsPeriodeInfo" style="font-size:13px;color:var(--text-muted);margin-bottom:16px"></div>
           <div id="rgsPeriodeGrid" class="rgs-periode-grid"></div>
         </div>
@@ -13422,10 +13462,10 @@ function hitungUtangTotal(items) {
 var rgsPeriodeList = []; // cache riwayat periode milik pegawai yang sedang login
 
 function loadRekapGajiSaya() {
-  renderRekapGajiSayaPeriodeGrid();
+  fetchRekapGajiSaya();
 }
 
-async function renderRekapGajiSayaPeriodeGrid() {
+async function fetchRekapGajiSaya() {
   var alertBox = document.getElementById('rgsAlert');
   var infoEl = document.getElementById('rgsPeriodeInfo');
   var grid = document.getElementById('rgsPeriodeGrid');
@@ -13437,17 +13477,58 @@ async function renderRekapGajiSayaPeriodeGrid() {
   var res = await callAPI('getRiwayatPotonganGaji', { idPegawai: currentUser.idPegawai });
   rgsPeriodeList = (res && res.success && res.data) ? res.data : [];
 
+  rgsPopulateTahunFilter();
+
   if (!rgsPeriodeList.length) {
     grid.innerHTML = '';
     alertBox.innerHTML = '<div class="alert alert-info">Belum ada rekap gaji yang tersedia. Rekap akan muncul di sini setelah admin memproses potongan gaji bulanan Anda.</div>';
     return;
   }
 
-  infoEl.innerHTML = 'Tersedia <strong>' + rgsPeriodeList.length + '</strong> periode rekap gaji. Klik salah satu bulan di bawah untuk melihat rinciannya.';
+  renderRekapGajiSayaPeriodeGrid();
+}
 
-  grid.innerHTML = rgsPeriodeList.map(function (r) {
+// Isi dropdown filter tahun berdasarkan tahun-tahun yang ada di riwayat rekap gaji pegawai,
+// terbaru di atas, tanpa mengubah tahun yang sedang dipilih user (kalau masih tersedia).
+function rgsPopulateTahunFilter() {
+  var sel = document.getElementById('rgsTahunFilter');
+  if (!sel) return;
+  var current = sel.value;
+  var tahunList = [];
+  rgsPeriodeList.forEach(function (r) {
+    if (tahunList.indexOf(r.tahun) === -1) tahunList.push(r.tahun);
+  });
+  tahunList.sort(function (a, b) { return b - a; });
+  sel.innerHTML = '<option value="">Semua Tahun</option>' +
+    tahunList.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join('');
+  sel.value = (current && tahunList.indexOf(+current) !== -1) ? current : '';
+}
+
+function renderRekapGajiSayaPeriodeGrid() {
+  var alertBox = document.getElementById('rgsAlert');
+  var infoEl = document.getElementById('rgsPeriodeInfo');
+  var grid = document.getElementById('rgsPeriodeGrid');
+  var sel = document.getElementById('rgsTahunFilter');
+  var tahunFilter = sel ? sel.value : '';
+
+  var list = tahunFilter ? rgsPeriodeList.filter(function (r) { return String(r.tahun) === String(tahunFilter); }) : rgsPeriodeList;
+
+  alertBox.innerHTML = '';
+
+  if (!list.length) {
+    grid.innerHTML = '';
+    infoEl.textContent = '';
+    alertBox.innerHTML = '<div class="alert alert-info">' +
+      (tahunFilter ? 'Tidak ada rekap gaji untuk tahun ' + tahunFilter + '.' : 'Belum ada rekap gaji yang tersedia. Rekap akan muncul di sini setelah admin memproses potongan gaji bulanan Anda.') +
+    '</div>';
+    return;
+  }
+
+  infoEl.innerHTML = 'Tersedia <strong>' + list.length + '</strong> periode rekap gaji' + (tahunFilter ? ' untuk tahun ' + tahunFilter : '') + '. Klik salah satu bulan di bawah untuk melihat rinciannya.';
+
+  grid.innerHTML = list.map(function (r) {
     var periode = fmtBulanTahun(r.tahun + '-' + String(r.bulan).padStart(2, '0'));
-    return '<div class="rgs-periode-card" onclick="openRekapGajiDetail(' + r.bulan + ',' + r.tahun + ')">' +
+    return '<div class="rgs-periode-card rgs-m' + r.bulan + '" onclick="openRekapGajiDetail(' + r.bulan + ',' + r.tahun + ')">' +
       '<div class="rgs-periode-bulan">' + periode + '</div>' +
       '<div class="rgs-periode-netto">Netto<strong>' + fmtRp(r.netGaji) + '</strong></div>' +
     '</div>';
