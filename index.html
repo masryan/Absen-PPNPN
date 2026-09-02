@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -648,12 +649,17 @@
      saat hover, dibarengi lapisan warna yang slide masuk dari kiri.
      Tab aktif: adaptasi "little-frog-95" (mi-series) — pill warna brand
      dengan animasi ripple/pulse menerus menandakan tab yang sedang aktif. */
-  .tabs { display: flex; gap: 4px; background: var(--surface); padding: 4px; border-radius: 12px; margin-bottom: 20px; width: fit-content; }
+  .tabs {
+    display: flex; gap: 4px; background: var(--surface); padding: 4px; border-radius: 12px; margin-bottom: 20px;
+    max-width: 100%; width: fit-content;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
   .tab {
-    position: relative; overflow: hidden; isolation: isolate;
+    position: relative; overflow: hidden; isolation: isolate; flex-shrink: 0;
     padding: 8px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;
     letter-spacing: 0.2px; cursor: pointer; color: var(--text-muted);
-    background: rgba(11,61,46,0.05);
+    background: rgba(11,61,46,0.05); white-space: nowrap;
     transition: color 0.3s ease;
   }
   .tab::before,
@@ -1088,24 +1094,6 @@
   @media (max-width: 768px) {
     .btn-desktop-toggle { display: none; }
     body.sidebar-minimized { --sidebar-w: 0px; } /* Prevents layout break on mobile */
-
-    /* FIX: mode "sidebar-minimized" (ikon saja, tanpa teks) hanya untuk
-       DESKTOP. Di HP, sidebar selalu tampil sebagai drawer penuh, jadi label
-       teks menu WAJIB tetap terlihat meskipun status "minimized" tersimpan
-       dari sesi desktop sebelumnya (localStorage ppnpn_sidebar_minimized). */
-    body.sidebar-minimized .sidebar-logo { padding: inherit; text-align: inherit; }
-    body.sidebar-minimized .sidebar-logo h2,
-    body.sidebar-minimized .sidebar-logo p,
-    body.sidebar-minimized .sidebar-logo .badge { display: initial; }
-    body.sidebar-minimized .sidebar-logo::before { content: none; }
-    body.sidebar-minimized .sidebar-user { padding: 14px 16px; justify-content: flex-start; }
-    body.sidebar-minimized .user-info { display: block; }
-    body.sidebar-minimized .nav-section-label { display: block; }
-    body.sidebar-minimized .nav-item { font-size: 13.5px; justify-content: flex-start; padding: 12px 16px; }
-    body.sidebar-minimized .nav-item svg { margin: 0 10px 0 0; width: 18px; height: 18px; }
-    body.sidebar-minimized #pendingBadge { position: static; padding: 2px 7px; font-size: 11px; }
-    body.sidebar-minimized .btn-logout { font-size: 13.5px; padding: 10px 16px; }
-    body.sidebar-minimized .btn-logout svg { margin: 0 10px 0 0; width: 18px; height: 18px; }
   }
   /* =====================================================================
      REDESIGN OVERRIDES — selaras dengan mockup "admin.html" (SIMPEG Portal)
@@ -1618,11 +1606,6 @@
     <a class="nav-item" id="menuTukarShift" onclick="showPage('tukarShiftKoordinator')" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
         Tukar Shift
-      </a>
-
-    <a class="nav-item" id="menuJadwalTimKoordinator" onclick="showPage('adminPengaturan')" style="display:none">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Jadwal & TIM Security
       </a>
 
     <div class="nav-section" id="pegawaiMenu">
@@ -3101,7 +3084,6 @@
           <div class="tab" onclick="switchShiftTab('data')">📋 Data Jadwal</div>
           <div class="tab" onclick="switchShiftTab('rekap')">📊 Rekap Piket</div>
           <div class="tab" onclick="switchShiftTab('tukar')">🔁 Tukar Shift</div>
-          <div class="tab" onclick="switchShiftTab('tukarTim')">🔃 Tukar Jadwal TIM</div>
         </div>
 
         <!-- ===== TAB 1: GENERATOR JADWAL ===== -->
@@ -3268,49 +3250,6 @@
                 <tbody id="tukarShiftBody"></tbody>
               </table>
             </div>
-          </div>
-        </div>
-
-        <!-- ===== TAB 5: TUKAR JADWAL TIM (SWAP GILIRAN ANTAR TIM) ===== -->
-        <div id="shiftTabTukarTim" style="display:none">
-          <div class="card">
-            <div class="card-title">🔃 Tukar Jadwal Piket Antar TIM</div>
-            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
-              Berbeda dari "Tukar Shift" di atas (yang menukar 1 orang saja), fitur ini menukar
-              <strong>jadwal jaga/libur SATU TIM PENUH</strong> dengan TIM lain, untuk rentang tanggal yang
-              dipilih — misalnya seluruh giliran piket TIM 1 & TIM 2 saling ditukar selama sebulan.
-              Setelah ditukar, status kehadiran (siapa yang piket hari ini, terlambat/tepat waktu, dsb)
-              akan otomatis mengikuti jadwal barunya — tidak perlu diatur ulang secara manual.
-            </p>
-            <div id="tukarTimAlert"></div>
-            <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
-              <div class="field"><label>Dari Tanggal</label><input type="date" id="tukarTimDari"></div>
-              <div class="field"><label>Sampai Tanggal</label><input type="date" id="tukarTimSampai"></div>
-              <div class="field">
-                <label>TIM Pertama</label>
-                <select id="tukarTimA">
-                  <option value="">-- Pilih TIM --</option>
-                  <option value="TIM 1">TIM 1</option>
-                  <option value="TIM 2">TIM 2</option>
-                  <option value="TIM 3">TIM 3</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>TIM Kedua</label>
-                <select id="tukarTimB">
-                  <option value="">-- Pilih TIM --</option>
-                  <option value="TIM 1">TIM 1</option>
-                  <option value="TIM 2">TIM 2</option>
-                  <option value="TIM 3">TIM 3</option>
-                </select>
-              </div>
-              <button class="btn btn-primary" onclick="tukarJadwalTim()">🔃 Tukar Jadwal</button>
-            </div>
-            <p style="font-size:11.5px;color:var(--text-muted);margin-top:10px">
-              💡 TIM ketiga yang tidak dipilih tidak akan berubah jadwalnya. Perubahan langsung
-              tersimpan ke database begitu tombol "Tukar Jadwal" ditekan — cek dulu rentang tanggalnya
-              sebelum menekan tombol.
-            </p>
           </div>
         </div>
         </div>
@@ -3574,15 +3513,7 @@
           <option>Admin</option>
         </select>
       </div>
-      <div class="field">
-        <label>Tim</label>
-        <select id="adm-peg-tim">
-          <option value="">(Tanpa Tim / ikut jam Pramubakti)</option>
-          <option value="TIM 1">TIM 1</option>
-          <option value="TIM 2">TIM 2</option>
-          <option value="TIM 3">TIM 3</option>
-        </select>
-      </div>
+      <div class="field"><label>Tim</label><input type="text" id="adm-peg-tim"></div>
     </div>
     <div class="form-row">
       <div class="field"><label>Gaji sesuai SPK (Rp)</label><input type="number" id="adm-peg-gaji" placeholder="cth: 3900000"></div>
@@ -7057,9 +6988,6 @@ var menuCS = document.getElementById('menuChecklistCS');
 
   var menuTS = document.getElementById('menuTukarShift');
   if (menuTS) menuTS.style.display = (!isAdmin && isKoordinatorTukarShift(u)) ? 'flex' : 'none';
-
-  var menuJT = document.getElementById('menuJadwalTimKoordinator');
-  if (menuJT) menuJT.style.display = (!isAdmin && isKoordinatorTukarShift(u)) ? 'flex' : 'none';
   var pdChecklistBtnEl = document.getElementById('pdChecklistBtn');
   var pdChecklistReminderEl = document.getElementById('pdChecklistReminder');
   if (pdChecklistBtnEl) pdChecklistBtnEl.style.display = isCSRole ? 'flex' : 'none';
@@ -7137,10 +7065,7 @@ var menuCS = document.getElementById('menuChecklistCS');
   buildBottomNav();
   showPage('dashboard');
 
-  if (!isAdmin) {
-    initPushNotifBanner();
-    startAttendanceReminderWatcher();
-  }
+  if (!isAdmin) initPushNotifBanner();
 }
 
 // ---- PUSH NOTIFICATION: cek status & tampilkan/sembunyikan banner ----
@@ -7221,112 +7146,6 @@ async function aktifkanNotifikasiAbsen() {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Aktifkan'; }
   }
-
-  // Setelah izin notifikasi aktif, langsung nyalakan juga pengingat lokal
-  // (tidak menunggu server) supaya pengingat tetap jalan walau saat itu
-  // aplikasi sedang dibuka di HP.
-  startAttendanceReminderWatcher();
-}
-
-// ============================================================
-// PENGINGAT ABSENSI LOKAL (client-side, tanpa perlu server tambahan)
-// ------------------------------------------------------------
-// Selain push notification dari server (Edge Function "absen-reminder"),
-// aplikasi juga mengecek sendiri setiap 30 detik SELAMA APLIKASI TERBUKA:
-// jika sebentar lagi (5 menit sebelum) jam masuk / jam pulang pegawai dan
-// pegawai belum absen, tampilkan notifikasi lokal langsung dari browser/HP.
-// Ini jaring pengaman supaya fitur "ingatkan absensi" tetap berfungsi
-// meskipun push notification dari server belum/tidak dikonfigurasi.
-// ============================================================
-var attendanceReminderInterval = null;
-var attendanceReminderState = { tanggal: null, masuk: false, pulang: false };
-
-// Sama seperti getJamPulangHariIni(), tapi untuk jam MASUK hari ini.
-function getJamMasukHariIni(u) {
-  var pengecualianJK = getPengecualianJamKerja(u);
-  if (pengecualianJK) {
-    if (pengecualianJK.liburMingguan && isHariLibur(todayVerified())) return null;
-    return pengecualianJK.jamMasuk;
-  }
-  if (u.pekerjaan === 'Security') {
-    var shiftVal = getSecurityShiftToday();
-    if (shiftVal === 'PRAMUBAKTI') {
-      if (isHariLibur(todayVerified())) return null;
-      return getJamKerjaPramubakti().jamMasuk;
-    }
-    if (!shiftVal || shiftVal === '-') return null;
-    var jkSec = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN==='Security' && j.SHIFT==='Jaga'; });
-    return jkSec ? jkSec.JAM_MASUK : '07:00';
-  }
-  if (isHariLibur(todayVerified())) return null;
-  var jk = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN===u.pekerjaan; });
-  return jk ? jk.JAM_MASUK : null;
-}
-
-// Menampilkan notifikasi lokal (lewat Service Worker bila tersedia, supaya
-// tetap muncul meski tab di-background; fallback ke Notification biasa).
-async function kirimNotifikasiAbsenLokal(judul, isi) {
-  try {
-    if ('serviceWorker' in navigator) {
-      var reg = await navigator.serviceWorker.ready;
-      reg.showNotification(judul, { body: isi, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'absen-reminder-lokal' });
-      return;
-    }
-  } catch (e) { /* lanjut ke fallback di bawah */ }
-  try {
-    if (Notification.permission === 'granted') new Notification(judul, { body: isi, icon: 'icon-192.png' });
-  } catch (e) { console.error('Gagal menampilkan notifikasi lokal:', e); }
-}
-
-function checkAttendanceReminder() {
-  if (!currentUser || currentUser.status === 'Admin') return;
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-
-  var u = currentUser;
-  var tglIni = todayVerified();
-
-  // Reset penanda "sudah diingatkan" setiap kali tanggal berganti.
-  if (attendanceReminderState.tanggal !== tglIni) {
-    attendanceReminderState = { tanggal: tglIni, masuk: false, pulang: false };
-  }
-
-  var now = serverAdjustedNow();
-  var nowHM = jamServerWIB(now);
-  var todayAbsen = localAbsensi.find(function(a){ return a.idPegawai===u.idPegawai && a.tanggal===tglIni; });
-
-  // --- Pengingat 5 menit sebelum jam MASUK (bila belum absen masuk) ---
-  if (!attendanceReminderState.masuk && (!todayAbsen || !todayAbsen.absenMasuk)) {
-    var jamMasuk = getJamMasukHariIni(u);
-    if (jamMasuk) {
-      var selisihMasuk = selisihMenit(tglIni, nowHM, tglIni, jamMasuk); // negatif = masih X menit sebelum jam masuk
-      if (selisihMasuk >= -5 && selisihMasuk <= 0) {
-        kirimNotifikasiAbsenLokal('⏰ Jangan lupa Absen Masuk', 'Jam masuk Anda hari ini pukul ' + jamMasuk + ' WIB. Segera lakukan absensi.');
-        attendanceReminderState.masuk = true;
-      }
-    }
-  }
-
-  // --- Pengingat 5 menit sebelum jam PULANG (bila sudah masuk, belum pulang) ---
-  if (!attendanceReminderState.pulang && todayAbsen && todayAbsen.absenMasuk && !todayAbsen.absenPulang) {
-    var jamPulang = getJamPulangHariIni(u);
-    if (jamPulang) {
-      var target = hitungTargetPulang(u, todayAbsen.tanggal, jamPulang);
-      var selisihPulang = selisihMenit(tglIni, nowHM, target.tanggal, target.jam); // negatif = masih X menit sebelum jam pulang
-      if (selisihPulang >= -5 && selisihPulang <= 0) {
-        kirimNotifikasiAbsenLokal('⏰ Jangan lupa Absen Pulang', 'Jam pulang Anda hari ini pukul ' + target.jam + ' WIB. Jangan lupa absen sebelum pulang.');
-        attendanceReminderState.pulang = true;
-      }
-    }
-  }
-}
-
-function startAttendanceReminderWatcher() {
-  if (attendanceReminderInterval) clearInterval(attendanceReminderInterval);
-  checkAttendanceReminder();
-  attendanceReminderInterval = setInterval(checkAttendanceReminder, 30000);
-}
-function stopAttendanceReminderWatcher() {
-  if (attendanceReminderInterval) { clearInterval(attendanceReminderInterval); attendanceReminderInterval = null; }
 }
 
 // Sinkronisasi data dari Google Sheets ke localCache
@@ -7481,17 +7300,10 @@ function showPage(name) {
   var u = currentUser;
   var isAdmin = u && u.status === 'Admin';
 
-  // Access guard — pegawai tidak bisa akses halaman admin, KECUALI
-  // koordinator security yang ditunjuk (KOORDINATOR_TUKAR_SHIFT) boleh
-  // membuka "adminPengaturan" khusus untuk tab Jadwal Shift (lihat
-  // pembatasan tab di bawah) — dipakai untuk kelola anggota TIM & tukar
-  // jadwal piket.
+  // Access guard — pegawai tidak bisa akses halaman admin
   var adminPages = ['adminAbsensi','adminCuti','adminPegawai','adminPengaturan', 'adminChecklistCS', 'adminLembur', 'adminPotonganGaji']; 
   var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga'];
-  var isKoorTS = isKoordinatorTukarShift(u);
-  if (!isAdmin && name === 'adminPengaturan' && isKoorTS) {
-    // Diizinkan lanjut — akses terbatas diatur di bawah (tab & judul).
-  } else if (!isAdmin && adminPages.indexOf(name) >= 0) {
+  if (!isAdmin && adminPages.indexOf(name) >= 0) {
     alert('Akses ditolak. Halaman ini hanya untuk admin.');
     return;
   }
@@ -7524,7 +7336,7 @@ function showPage(name) {
     adminPegawai: '👥 Data Pegawai & Hak Cuti',
     adminLembur: '🔥 Penugasan & SPK Lembur',
     adminPotonganGaji: '💰 Potongan Gaji PPNPN',
-    adminPengaturan: isAdmin ? '⏰ Jam Kerja, Libur & Konfig' : '🔄 Jadwal Shift Security',
+    adminPengaturan: '⏰ Jam Kerja, Libur & Konfig',
     tukarShiftKoordinator: '🔁 Tukar Shift',
     
     libur: '🗓 Jadwal Hari Libur'
@@ -7555,20 +7367,7 @@ function showPage(name) {
   
   if (name === 'adminLembur') initAdminLembur();
   if (name === 'adminPotonganGaji') initPotonganGaji();
-  if (name === 'adminPengaturan') {
-    var pengaturanTabsWrap = document.getElementById('pengaturanMainTabs');
-    if (pengaturanTabsWrap) {
-      // Koordinator security (non-admin) hanya boleh melihat tab "Jadwal
-      // Shift" — tab Konfigurasi Sistem & Jadwal Hari Libur tetap
-      // khusus Admin karena berisi pengaturan sensitif (Supabase, radius
-      // absen, dsb).
-      var tabEls = pengaturanTabsWrap.querySelectorAll('.tab');
-      if (tabEls[0]) tabEls[0].style.display = isAdmin ? '' : 'none'; // Konfigurasi Sistem
-      if (tabEls[1]) tabEls[1].style.display = isAdmin ? '' : 'none'; // Jadwal Hari Libur
-      if (tabEls[2]) tabEls[2].style.display = '';                    // Jadwal Shift
-    }
-    switchPengaturanTab(isAdmin ? 'pengaturan' : 'shift');
-  }
+  if (name === 'adminPengaturan') { switchPengaturanTab('pengaturan'); }
   if (name === 'tukarShiftKoordinator') { initTukarShiftKoorForm(); renderRiwayatTukarShiftKoor(); }
   
   if (name === 'libur') loadLiburUserPage();
@@ -10388,94 +10187,14 @@ function initShiftFilter() {
 // Pindah antar tab "Generator Jadwal" dan "Data Jadwal" pada halaman Jadwal Shift
 function switchShiftTab(tab) {
   document.querySelectorAll('#shiftTabContent .tab').forEach(function(t,i){
-    t.classList.toggle('active', (tab==='generator'&&i===0)||(tab==='data'&&i===1)||(tab==='rekap'&&i===2)||(tab==='tukar'&&i===3)||(tab==='tukarTim'&&i===4));
+    t.classList.toggle('active', (tab==='generator'&&i===0)||(tab==='data'&&i===1)||(tab==='rekap'&&i===2)||(tab==='tukar'&&i===3));
   });
   document.getElementById('shiftTabGenerator').style.display = tab==='generator' ? 'block' : 'none';
   document.getElementById('shiftTabData').style.display = tab==='data' ? 'block' : 'none';
   document.getElementById('shiftTabRekap').style.display = tab==='rekap' ? 'block' : 'none';
   document.getElementById('shiftTabTukar').style.display = tab==='tukar' ? 'block' : 'none';
-  document.getElementById('shiftTabTukarTim').style.display = tab==='tukarTim' ? 'block' : 'none';
   if (tab === 'rekap' && !document.getElementById('filterRekapPiketFrom').value) loadRekapPiketSecurity();
   if (tab === 'tukar') { initTukarShiftForm(); renderRiwayatTukarShift(); }
-}
-
-// ============================================================
-// UI TAB "TUKAR JADWAL TIM" (swap giliran piket 1 TIM PENUH dengan TIM
-// lain, untuk rentang tanggal tertentu) — berbeda dari "Tukar Shift" yang
-// hanya menukar 1 orang. Menulis langsung ke tabel shift_jadwal (via
-// shiftData), sumber data yang sama dipakai seluruh aplikasi untuk
-// menentukan siapa piket hari ini & status kehadiran — jadi absensi
-// otomatis mengikuti tanpa perlu penyesuaian terpisah.
-// ============================================================
-async function tukarJadwalTim() {
-  var alertId = 'tukarTimAlert';
-  var dari = (document.getElementById('tukarTimDari').value || '').trim();
-  var sampai = (document.getElementById('tukarTimSampai').value || '').trim();
-  var timA = document.getElementById('tukarTimA').value;
-  var timB = document.getElementById('tukarTimB').value;
-
-  if (!dari || !sampai) { showAlert(alertId,'warn','⚠ Pilih rentang tanggal terlebih dahulu.'); return; }
-  if (dari > sampai) { showAlert(alertId,'warn','⚠ Tanggal "Sampai" tidak boleh sebelum tanggal "Dari".'); return; }
-  if (!timA || !timB) { showAlert(alertId,'warn','⚠ Pilih kedua TIM yang akan ditukar jadwalnya.'); return; }
-  if (timA === timB) { showAlert(alertId,'warn','⚠ Pilih dua TIM yang berbeda.'); return; }
-
-  // Pastikan cache shiftData sudah berisi data asli (bukan hasil rotasi
-  // otomatis) untuk seluruh rentang tanggal ini, supaya TIM ketiga yang
-  // tidak ikut ditukar tetap dituliskan apa adanya (tidak ikut berubah).
-  if (SCRIPT_URL) {
-    var getRes = await callAPI('getShift', { from: dari, to: sampai });
-    if (getRes && getRes.success) {
-      getRes.data.forEach(function(r){
-        var tgl = r['Tanggal']; if (!tgl) return;
-        if (!shiftData[tgl]) shiftData[tgl] = {};
-        SHIFT_TIMS.forEach(function(t){ if (r[t]) shiftData[tgl][t] = r[t]; });
-      });
-    }
-  }
-
-  var rows = [];
-  var tglLoop = dari;
-  var jumlahHari = 0;
-  while (tglLoop <= sampai) {
-    var row = { Tanggal: tglLoop };
-    SHIFT_TIMS.forEach(function(t, idx){
-      var kodeAsli = (shiftData[tglLoop] && shiftData[tglLoop][t]) ? shiftData[tglLoop][t] : hitungShiftOtomatis(tglLoop, idx);
-      row[t] = kodeAsli;
-    });
-    // Tukar kode J/L milik timA & timB (TIM ketiga dibiarkan apa adanya).
-    var kodeA = row[timA], kodeB = row[timB];
-    row[timA] = kodeB;
-    row[timB] = kodeA;
-    rows.push(row);
-
-    if (!shiftData[tglLoop]) shiftData[tglLoop] = {};
-    SHIFT_TIMS.forEach(function(t){ shiftData[tglLoop][t] = row[t]; });
-
-    jumlahHari++;
-    tglLoop = tambahHari(tglLoop, 1);
-  }
-
-  if (!rows.length) { showAlert(alertId,'warn','⚠ Tidak ada tanggal pada rentang yang dipilih.'); return; }
-
-  if (SCRIPT_URL) {
-    var simpanRes = await callAPI('saveShift', { rows: rows });
-    if (!simpanRes || !simpanRes.success) {
-      showAlert(alertId,'error','❌ Gagal menyimpan pertukaran jadwal: ' + (simpanRes && simpanRes.error ? simpanRes.error : 'Tidak ada respons dari server.'));
-      return;
-    }
-  } else {
-    showAlert(alertId,'warn','⚠ Supabase belum dikonfigurasi — perubahan hanya tersimpan sementara di perangkat ini.');
-  }
-
-  localStorage.setItem('ppnpn_shift', JSON.stringify(shiftData));
-  showAlert(alertId,'success','✅ Jadwal ' + timA + ' & ' + timB + ' berhasil ditukar untuk ' + jumlahHari + ' hari (' + fmtDate(dari) + ' – ' + fmtDate(sampai) + ').');
-
-  // Refresh tampilan lain yang mungkin sedang terbuka supaya langsung
-  // terlihat tanpa perlu pindah tab / reload halaman.
-  var monthValData = document.getElementById('filterShiftMonth') ? document.getElementById('filterShiftMonth').value : '';
-  if (monthValData) loadShiftData();
-  renderShiftTimRoster();
-  renderAdminPiketHariIni();
 }
 
 // ============================================================
@@ -10724,10 +10443,7 @@ async function renderShiftTimRoster() {
       html += '<div class="trc-empty">Belum ada anggota</div>';
     } else {
       html += '<ul class="trc-members">' + anggota.map(function(p){
-        return '<li style="display:flex;align-items:center;justify-content:space-between;gap:8px">' +
-          '<span>' + (p.namaPegawai || '-') + '</span>' +
-          renderUbahTimSelect(p.idPegawai, tim) +
-        '</li>';
+        return '<li>' + (p.namaPegawai || '-') + '</li>';
       }).join('') + '</ul>';
     }
     html += '</div>';
@@ -10742,78 +10458,13 @@ async function renderShiftTimRoster() {
     html += '<div class="trc-head"><span class="trc-name" style="color:#8b5cf6">🧹 Ikut Jam Pramubakti</span><span style="font-size:11.5px;color:var(--text-muted)">' + nonShift.length + ' orang</span></div>';
     html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">' + jkPB.jamMasuk + '–' + jkPB.jamPulang + ' • tidak ikut piket 24 jam</div>';
     html += '<ul class="trc-members">' + nonShift.map(function(p){
-      return '<li style="display:flex;align-items:center;justify-content:space-between;gap:8px">' +
-        '<span>' + (p.namaPegawai || '-') + '</span>' +
-        renderUbahTimSelect(p.idPegawai, '') +
-      '</li>';
+      return '<li>' + (p.namaPegawai || '-') + '</li>';
     }).join('') + '</ul>';
     html += '</div>';
   }
 
   html += '</div>';
   wrap.innerHTML = html;
-}
-
-// Dropdown kecil "pindah TIM" di setiap baris anggota pada kartu roster —
-// supaya admin bisa langsung memindahkan anggota antar TIM 1/2/3 (atau
-// keluar dari rotasi piket) tanpa perlu buka modal Edit Pegawai.
-function renderUbahTimSelect(idPegawai, timSaatIni) {
-  var opsi = [
-    { val: '', label: '(Tanpa Tim)' },
-    { val: 'TIM 1', label: 'TIM 1' },
-    { val: 'TIM 2', label: 'TIM 2' },
-    { val: 'TIM 3', label: 'TIM 3' }
-  ];
-  return '<select style="font-size:11px;padding:3px 4px;border-radius:6px;border:1.5px solid var(--border);max-width:118px" ' +
-    'onchange="ubahTimCepatDariRoster(\'' + idPegawai + '\', this.value, this)">' +
-    opsi.map(function(o){
-      return '<option value="' + o.val + '"' + (o.val === timSaatIni ? ' selected' : '') + '>' + o.label + '</option>';
-    }).join('') +
-  '</select>';
-}
-
-// Memindahkan seorang pegawai Security ke TIM lain (atau keluar dari
-// rotasi piket) langsung dari kartu roster. Data pegawai lain (nama,
-// username, password, gaji, dst) TIDAK ikut berubah — hanya kolom Tim.
-async function ubahTimCepatDariRoster(idPegawai, timBaru, selectEl) {
-  if (selectEl) selectEl.disabled = true;
-
-  if (!localAllPegawai || !localAllPegawai.length) await refreshAllPegawai();
-  var p = localAllPegawai && localAllPegawai.find(function(r){ return r['ID PEGAWAI'] === idPegawai; });
-  if (!p) {
-    alert('❌ Data pegawai tidak ditemukan. Coba muat ulang halaman.');
-    if (selectEl) selectEl.disabled = false;
-    return;
-  }
-
-  var payload = {
-    idPegawai: idPegawai,
-    NAMA: p['NAMA'] || '',
-    USERNAME: p['USERNAME'] || '',
-    PASSWORD: p['PASSWORD'] || '',
-    NIK: p['NIK'] || '',
-    NO_HP: p['NO HP'] || '',
-    PEKERJAAN: p['PEKERJAAN'] || 'Security',
-    TIM: timBaru,
-    GAJI: p['GAJI'] || 0,
-    REKENING: p['REKENING'] || '',
-    IKUT_BPJS: p['IKUT BPJS'] !== 'Tidak',
-    STATUS: p['STATUS'] || 'Pegawai'
-  };
-
-  try {
-    var res = SCRIPT_URL ? await callAPI('savePegawaiAdmin', payload) : { success:false, error:'Supabase belum dikonfigurasi.' };
-    if (res && res.success) {
-      p['Tim'] = timBaru; // sinkronkan cache lokal biar tidak perlu reload
-      await renderShiftTimRoster();
-    } else {
-      alert('❌ Gagal mengubah TIM: ' + (res && res.error ? res.error : 'Unknown error'));
-      await renderShiftTimRoster();
-    }
-  } catch (e) {
-    alert('❌ Gagal mengubah TIM: ' + e.message);
-    await renderShiftTimRoster();
-  }
 }
 
 // Hitung rekap jumlah hari piket (J) & libur (L) per TIM Security dalam
@@ -14350,7 +14001,7 @@ function editPegawai(dataStr) {
   document.getElementById('adm-peg-nik').value = p['NIK'] || '';
   document.getElementById('adm-peg-hp').value = p['NO HP'] || '';
   document.getElementById('adm-peg-job').value = p['PEKERJAAN'] || 'Cleaning Service';
-  document.getElementById('adm-peg-tim').value = normalisasiTim(p['Tim'] || '');
+  document.getElementById('adm-peg-tim').value = p['Tim'] || '';
   document.getElementById('adm-peg-gaji').value = p['GAJI'] || '';
   document.getElementById('adm-peg-rekening').value = p['REKENING'] || '';
   document.getElementById('adm-peg-bpjs').value = (p['IKUT BPJS'] === 'Tidak') ? 'Tidak' : 'Ya';
@@ -14423,13 +14074,7 @@ window.onload = () => {
   initSupabaseClient();
   SCRIPT_URL = supabaseClient ? 'supabase' : '';
 
-  // Mode sidebar "minimized" (ikon saja) hanya berlaku untuk tampilan DESKTOP.
-  // Sebelumnya status ini dipulihkan dari localStorage tanpa mengecek lebar
-  // layar, sehingga di HP (mode drawer) label teks menu ikut hilang karena
-  // CSS `.nav-item{font-size:0}` pada class ini. Sekarang hanya diterapkan
-  // bila layar cukup lebar (desktop), supaya menu di HP selalu tampil dengan
-  // teksnya.
-  if (window.innerWidth > 768 && localStorage.getItem('ppnpn_sidebar_minimized') === 'true') {
+  if (localStorage.getItem('ppnpn_sidebar_minimized') === 'true') {
     document.body.classList.add('sidebar-minimized');
   }
   // Isi kembali username/password jika "ingat saya" pernah dicentang
