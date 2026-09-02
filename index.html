@@ -3272,6 +3272,97 @@
               </table>
             </div>
           </div>
+
+          <!-- ===== TUKAR JADWAL TIM (SEMENTARA, per tanggal) ===== -->
+          <div class="card" style="margin-top:16px;margin-bottom:16px">
+            <div class="card-title">🔀 Tukar Jadwal TIM (Sementara)</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+              Tukar jadwal piket <strong>seluruh anggota</strong> 2 TIM untuk <strong>2 tanggal tertentu saja</strong> — mis. TIM 2 yang harusnya piket 2 Sept tukar dengan TIM 3 yang harusnya piket 3 Sept. Di luar 2 tanggal ini jadwal otomatis kembali normal; keanggotaan TIM permanen &amp; rotasi di tab "Data Jadwal" <strong>tidak berubah</strong>. (Tersimpan sebagai beberapa catatan "Tukar Shift" sekaligus — muncul juga di Riwayat Tukar Shift di atas, dan bisa dihapus satu per satu dari sana bila perlu dibatalkan.)
+            </p>
+            <div id="adm-tukartimsmt-alert"></div>
+            <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+              <div class="field">
+                <label>TIM A</label>
+                <select id="adm-tukartimsmt-a">
+                  <option value="">-- Pilih TIM --</option>
+                  <option value="TIM 1">TIM 1</option>
+                  <option value="TIM 2">TIM 2</option>
+                  <option value="TIM 3">TIM 3</option>
+                </select>
+              </div>
+              <div class="field"><label>Tanggal piket asal TIM A</label><input type="date" id="adm-tukartimsmt-tgla"></div>
+              <div class="field">
+                <label>TIM B</label>
+                <select id="adm-tukartimsmt-b">
+                  <option value="">-- Pilih TIM --</option>
+                  <option value="TIM 1">TIM 1</option>
+                  <option value="TIM 2">TIM 2</option>
+                  <option value="TIM 3">TIM 3</option>
+                </select>
+              </div>
+              <div class="field"><label>Tanggal piket asal TIM B</label><input type="date" id="adm-tukartimsmt-tglb"></div>
+              <div class="field" style="min-width:200px">
+                <label>Keterangan (opsional)</label>
+                <input type="text" id="adm-tukartimsmt-keterangan" placeholder="mis. keperluan TIM 2">
+              </div>
+              <button class="btn btn-primary" onclick="simpanTukarJadwalTimSementara('adm')">🔀 Tukar Jadwal Sementara</button>
+            </div>
+          </div>
+
+          <!-- ===== UBAH ANGGOTA TIM (permanen) ===== -->
+          <div class="card" style="margin-top:16px;margin-bottom:16px">
+            <div class="card-title">👥 Ubah Anggota Tim</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+              Pindahkan 1 anggota Security ke TIM lain secara <strong>permanen</strong>. Ini mengubah keanggotaan TIM &amp; rotasi piket 24 jam mulai sekarang — berbeda dengan "Tukar Shift" di atas yang hanya berlaku untuk 1 tanggal saja.
+            </p>
+            <div id="adm-ubahtim-alert"></div>
+            <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+              <div class="field" style="min-width:220px">
+                <label>Anggota Security</label>
+                <select id="adm-ubahtim-pegawai"><option value="">-- Pilih anggota --</option></select>
+              </div>
+              <div class="field">
+                <label>Tim Baru</label>
+                <select id="adm-ubahtim-baru">
+                  <option value="TIM 1">TIM 1</option>
+                  <option value="TIM 2">TIM 2</option>
+                  <option value="TIM 3">TIM 3</option>
+                  <option value="">Tanpa Tim (lepas dari rotasi piket)</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="simpanUbahTim('adm')">💾 Simpan Perubahan Tim</button>
+            </div>
+          </div>
+
+          <!-- ===== TUKAR JADWAL ANTAR TIM (swap seluruh anggota 2 TIM) ===== -->
+          <div class="card">
+            <div class="card-title">🔄 Tukar Jadwal Antar TIM</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+              Menukar <strong>seluruh anggota</strong> 2 TIM sekaligus — cocok kalau 2 tim ingin bertukar urutan rotasi piket secara permanen (mis. TIM 2 ⇄ TIM 3). Semua anggota TIM A pindah ke TIM B dan sebaliknya.
+            </p>
+            <div id="adm-tukartim-alert"></div>
+            <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+              <div class="field">
+                <label>TIM A</label>
+                <select id="adm-tukartim-a">
+                  <option value="">-- Pilih TIM --</option>
+                  <option value="TIM 1">TIM 1</option>
+                  <option value="TIM 2">TIM 2</option>
+                  <option value="TIM 3">TIM 3</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>TIM B</label>
+                <select id="adm-tukartim-b">
+                  <option value="">-- Pilih TIM --</option>
+                  <option value="TIM 1">TIM 1</option>
+                  <option value="TIM 2">TIM 2</option>
+                  <option value="TIM 3">TIM 3</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="simpanTukarJadwalTim('adm')">🔄 Tukar Jadwal TIM</button>
+            </div>
+          </div>
         </div>
         </div>
       </div>
@@ -3361,6 +3452,97 @@
               </thead>
               <tbody id="koorTukarBody"></tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- ===== TUKAR JADWAL TIM (SEMENTARA, per tanggal) ===== -->
+        <div class="card" style="margin-top:16px;margin-bottom:16px">
+          <div class="card-title">🔀 Tukar Jadwal TIM (Sementara)</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+            Tukar jadwal piket <strong>seluruh anggota</strong> 2 TIM untuk <strong>2 tanggal tertentu saja</strong> — mis. TIM 2 yang harusnya piket 2 Sept tukar dengan TIM 3 yang harusnya piket 3 Sept. Di luar 2 tanggal ini jadwal otomatis kembali normal; keanggotaan TIM permanen &amp; rotasi di tab "Data Jadwal" <strong>tidak berubah</strong>. (Tersimpan sebagai beberapa catatan "Tukar Shift" sekaligus — muncul juga di Riwayat Tukar Shift di atas, dan bisa dihapus satu per satu dari sana bila perlu dibatalkan.)
+          </p>
+          <div id="koor-tukartimsmt-alert"></div>
+          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+            <div class="field">
+              <label>TIM A</label>
+              <select id="koor-tukartimsmt-a">
+                <option value="">-- Pilih TIM --</option>
+                <option value="TIM 1">TIM 1</option>
+                <option value="TIM 2">TIM 2</option>
+                <option value="TIM 3">TIM 3</option>
+              </select>
+            </div>
+            <div class="field"><label>Tanggal piket asal TIM A</label><input type="date" id="koor-tukartimsmt-tgla"></div>
+            <div class="field">
+              <label>TIM B</label>
+              <select id="koor-tukartimsmt-b">
+                <option value="">-- Pilih TIM --</option>
+                <option value="TIM 1">TIM 1</option>
+                <option value="TIM 2">TIM 2</option>
+                <option value="TIM 3">TIM 3</option>
+              </select>
+            </div>
+            <div class="field"><label>Tanggal piket asal TIM B</label><input type="date" id="koor-tukartimsmt-tglb"></div>
+            <div class="field" style="min-width:200px">
+              <label>Keterangan (opsional)</label>
+              <input type="text" id="koor-tukartimsmt-keterangan" placeholder="mis. keperluan TIM 2">
+            </div>
+            <button class="btn btn-primary" onclick="simpanTukarJadwalTimSementara('koor')">🔀 Tukar Jadwal Sementara</button>
+          </div>
+        </div>
+
+        <!-- ===== UBAH ANGGOTA TIM (permanen) ===== -->
+        <div class="card" style="margin-top:16px;margin-bottom:16px">
+          <div class="card-title">👥 Ubah Anggota Tim</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+            Pindahkan 1 anggota Security ke TIM lain secara <strong>permanen</strong>. Ini mengubah keanggotaan TIM &amp; rotasi piket 24 jam mulai sekarang — berbeda dengan "Tukar Shift" di atas yang hanya berlaku untuk 1 tanggal saja.
+          </p>
+          <div id="koor-ubahtim-alert"></div>
+          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+            <div class="field" style="min-width:220px">
+              <label>Anggota Security</label>
+              <select id="koor-ubahtim-pegawai"><option value="">-- Pilih anggota --</option></select>
+            </div>
+            <div class="field">
+              <label>Tim Baru</label>
+              <select id="koor-ubahtim-baru">
+                <option value="TIM 1">TIM 1</option>
+                <option value="TIM 2">TIM 2</option>
+                <option value="TIM 3">TIM 3</option>
+                <option value="">Tanpa Tim (lepas dari rotasi piket)</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="simpanUbahTim('koor')">💾 Simpan Perubahan Tim</button>
+          </div>
+        </div>
+
+        <!-- ===== TUKAR JADWAL ANTAR TIM (swap seluruh anggota 2 TIM) ===== -->
+        <div class="card">
+          <div class="card-title">🔄 Tukar Jadwal Antar TIM</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+            Menukar <strong>seluruh anggota</strong> 2 TIM sekaligus — cocok kalau 2 tim ingin bertukar urutan rotasi piket secara permanen (mis. TIM 2 ⇄ TIM 3). Semua anggota TIM A pindah ke TIM B dan sebaliknya.
+          </p>
+          <div id="koor-tukartim-alert"></div>
+          <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+            <div class="field">
+              <label>TIM A</label>
+              <select id="koor-tukartim-a">
+                <option value="">-- Pilih TIM --</option>
+                <option value="TIM 1">TIM 1</option>
+                <option value="TIM 2">TIM 2</option>
+                <option value="TIM 3">TIM 3</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>TIM B</label>
+              <select id="koor-tukartim-b">
+                <option value="">-- Pilih TIM --</option>
+                <option value="TIM 1">TIM 1</option>
+                <option value="TIM 2">TIM 2</option>
+                <option value="TIM 3">TIM 3</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="simpanTukarJadwalTim('koor')">🔄 Tukar Jadwal TIM</button>
           </div>
         </div>
       </div>
@@ -7389,7 +7571,7 @@ function showPage(name) {
   if (name === 'adminLembur') initAdminLembur();
   if (name === 'adminPotonganGaji') initPotonganGaji();
   if (name === 'adminPengaturan') { switchPengaturanTab('pengaturan'); }
-  if (name === 'tukarShiftKoordinator') { initTukarShiftKoorForm(); renderRiwayatTukarShiftKoor(); }
+  if (name === 'tukarShiftKoordinator') { initTukarShiftKoorForm(); renderRiwayatTukarShiftKoor(); initUbahTimSection('koor'); }
   
   if (name === 'libur') loadLiburUserPage();
   if (name === 'dashboard') loadDashboard();
@@ -10215,7 +10397,7 @@ function switchShiftTab(tab) {
   document.getElementById('shiftTabRekap').style.display = tab==='rekap' ? 'block' : 'none';
   document.getElementById('shiftTabTukar').style.display = tab==='tukar' ? 'block' : 'none';
   if (tab === 'rekap' && !document.getElementById('filterRekapPiketFrom').value) loadRekapPiketSecurity();
-  if (tab === 'tukar') { initTukarShiftForm(); renderRiwayatTukarShift(); }
+  if (tab === 'tukar') { initTukarShiftForm(); renderRiwayatTukarShift(); initUbahTimSection('adm'); }
 }
 
 // ============================================================
@@ -10441,6 +10623,276 @@ async function hapusTukarShiftKoor(tgl, id) {
   }
   showAlert('koorTukarAlert','success','✅ Catatan tukar shift dihapus.');
   renderRiwayatTukarShiftKoor();
+}
+
+// ============================================================
+// UBAH ANGGOTA TIM (permanen) & TUKAR JADWAL ANTAR TIM
+// Dipakai bersama oleh Admin (tab "Tukar Shift") dan Koordinator Security
+// yang terdaftar di KOORDINATOR_TUKAR_SHIFT (mis. SC5). Berbeda dari
+// "Tukar Shift" (override 1 tanggal saja): fitur ini mengubah field Tim
+// pegawai Security secara PERMANEN di data pegawai, sehingga rotasi
+// piket 24 jam-nya ikut berubah mulai sekarang.
+// Parameter `prefix` membedakan elemen HTML milik Admin ('adm') vs
+// Koordinator ('koor') supaya id tidak bentrok, tapi logikanya sama.
+// ============================================================
+
+// Isi dropdown pemilihan anggota Security untuk form "Ubah Anggota Tim".
+function initUbahTimSection(prefix) {
+  var selPeg = document.getElementById(prefix + '-ubahtim-pegawai');
+  if (!selPeg) return;
+  var anggota = getPegawaiListForStats().filter(function(p){
+    return p.pekerjaan === 'Security';
+  }).sort(function(a,b){ return String(a.namaPegawai).localeCompare(String(b.namaPegawai)); });
+
+  var currentVal = selPeg.value;
+  selPeg.innerHTML = '<option value="">-- Pilih anggota --</option>' + anggota.map(function(p){
+    return '<option value="'+p.idPegawai+'">' + (p.namaPegawai||'-') + ' (' + (normalisasiTim(p.Tim) || 'Tanpa Tim') + ')</option>';
+  }).join('');
+  if (currentVal) selPeg.value = currentVal;
+}
+
+// Cari data mentah 1 pegawai (semua kolom) dari cache localAllPegawai,
+// dipakai supaya saat menyimpan perubahan Tim, kolom lain (nama, gaji,
+// password, dst.) tidak ikut kosong/hilang.
+function ambilPegawaiRawById(id) {
+  if (!localAllPegawai) return null;
+  return localAllPegawai.find(function(p){ return String(p['ID PEGAWAI']) === String(id); }) || null;
+}
+
+// Bangun payload lengkap untuk API "savePegawaiAdmin" dari 1 record
+// mentah pegawai, dengan field TIM di-override ke nilai baru.
+function buildPayloadPegawaiDenganTimBaru(raw, timBaru) {
+  return {
+    idPegawai: raw['ID PEGAWAI'],
+    NAMA: raw['NAMA'] || '',
+    USERNAME: raw['USERNAME'] || '',
+    PASSWORD: raw['PASSWORD'] || '',
+    NIK: raw['NIK'] || '',
+    NO_HP: raw['NO HP'] || '',
+    PEKERJAAN: raw['PEKERJAAN'] || '',
+    TIM: timBaru,
+    GAJI: raw['GAJI'] || 0,
+    REKENING: raw['REKENING'] || '',
+    IKUT_BPJS: raw['IKUT BPJS'] !== 'Tidak',
+    STATUS: raw['STATUS'] || 'Pegawai',
+    // Dikirim supaya kebijakan RLS di Supabase bisa memverifikasi bahwa
+    // yang mengubah adalah Admin atau koordinator tukar shift yang sah
+    // (pola sama seperti dipakai pada fitur "Tukar Shift" di atas).
+    dicatatOlehId: currentUser ? currentUser.idPegawai : null
+  };
+}
+
+// Simpan perubahan Tim untuk 1 anggota Security (permanen).
+async function simpanUbahTim(prefix) {
+  var alertId = prefix + '-ubahtim-alert';
+  if (!SCRIPT_URL) { showAlert(alertId,'warn','⚠ Supabase belum dikonfigurasi.'); return; }
+
+  var selPeg = document.getElementById(prefix + '-ubahtim-pegawai');
+  var selTim = document.getElementById(prefix + '-ubahtim-baru');
+  var idPeg  = selPeg ? selPeg.value : '';
+  var timBaru = selTim ? selTim.value : '';
+  if (!idPeg) { showAlert(alertId,'warn','⚠ Pilih anggota terlebih dahulu.'); return; }
+
+  var raw = ambilPegawaiRawById(idPeg);
+  if (!raw) { showAlert(alertId,'error','❌ Data pegawai tidak ditemukan. Coba muat ulang halaman.'); return; }
+
+  var timLama = normalisasiTim(raw['Tim'] || raw['TIM']) || 'Tanpa Tim';
+  var namaPeg = raw['NAMA'] || '-';
+  var timBaruLabel = timBaru || 'Tanpa Tim';
+  if (timLama === timBaruLabel) { showAlert(alertId,'warn','⚠ '+namaPeg+' memang sudah berada di '+timLama+'.'); return; }
+  if (!confirm('Ubah tim '+namaPeg+' dari '+timLama+' menjadi '+timBaruLabel+'?\n\nRotasi piket 24 jam-nya akan mengikuti tim yang baru mulai sekarang.')) return;
+
+  var res = await callAPI('savePegawaiAdmin', buildPayloadPegawaiDenganTimBaru(raw, timBaru));
+  if (!res || !res.success) {
+    showAlert(alertId,'error','❌ Gagal menyimpan: '+(res && res.error ? res.error : 'Tidak ada respons dari server.'));
+    return;
+  }
+
+  await refreshAllPegawai();
+  showAlert(alertId,'success','✅ Tim '+namaPeg+' berhasil diubah menjadi '+timBaruLabel+'.');
+  initUbahTimSection(prefix);
+  if (typeof renderShiftTimRoster === 'function') renderShiftTimRoster();
+}
+
+// Tukar seluruh anggota 2 TIM sekaligus (semua anggota TIM A pindah ke
+// TIM B, dan sebaliknya) — dipakai kalau 2 tim ingin bertukar urutan
+// rotasi piket secara permanen.
+async function simpanTukarJadwalTim(prefix) {
+  var alertId = prefix + '-tukartim-alert';
+  if (!SCRIPT_URL) { showAlert(alertId,'warn','⚠ Supabase belum dikonfigurasi.'); return; }
+
+  var selA = document.getElementById(prefix + '-tukartim-a');
+  var selB = document.getElementById(prefix + '-tukartim-b');
+  var timA = selA ? selA.value : '';
+  var timB = selB ? selB.value : '';
+
+  if (!timA || !timB) { showAlert(alertId,'warn','⚠ Pilih kedua TIM yang akan ditukar.'); return; }
+  if (timA === timB) { showAlert(alertId,'warn','⚠ Pilih 2 TIM yang berbeda.'); return; }
+
+  await refreshAllPegawai();
+  var anggotaA = (localAllPegawai||[]).filter(function(p){
+    return p['PEKERJAAN'] === 'Security' && (p['STATUS']||'Pegawai') === 'Pegawai' && normalisasiTim(p['Tim']||p['TIM']) === timA;
+  });
+  var anggotaB = (localAllPegawai||[]).filter(function(p){
+    return p['PEKERJAAN'] === 'Security' && (p['STATUS']||'Pegawai') === 'Pegawai' && normalisasiTim(p['Tim']||p['TIM']) === timB;
+  });
+
+  if (!anggotaA.length && !anggotaB.length) { showAlert(alertId,'warn','⚠ Kedua TIM tersebut belum punya anggota.'); return; }
+
+  var namaA = anggotaA.map(function(p){ return p['NAMA']; }).join(', ') || '(kosong)';
+  var namaB = anggotaB.map(function(p){ return p['NAMA']; }).join(', ') || '(kosong)';
+  var konfirmasi = 'Tukar seluruh jadwal '+timA+' ⇄ '+timB+'?\n\n'+
+    timA+': '+namaA+'\n'+timB+': '+namaB+'\n\n'+
+    'Semua anggota '+timA+' akan pindah ke '+timB+' dan sebaliknya. Rotasi piket kedua tim akan bertukar mulai sekarang.';
+  if (!confirm(konfirmasi)) return;
+
+  showAlert(alertId,'info','⏳ Menukar jadwal, mohon tunggu...');
+
+  try {
+    for (var i=0; i<anggotaA.length; i++) {
+      var res1 = await callAPI('savePegawaiAdmin', buildPayloadPegawaiDenganTimBaru(anggotaA[i], timB));
+      if (!res1 || !res1.success) throw new Error(res1 && res1.error ? res1.error : ('Gagal memperbarui ' + anggotaA[i]['NAMA']));
+    }
+    for (var j=0; j<anggotaB.length; j++) {
+      var res2 = await callAPI('savePegawaiAdmin', buildPayloadPegawaiDenganTimBaru(anggotaB[j], timA));
+      if (!res2 || !res2.success) throw new Error(res2 && res2.error ? res2.error : ('Gagal memperbarui ' + anggotaB[j]['NAMA']));
+    }
+  } catch (err) {
+    await refreshAllPegawai();
+    showAlert(alertId,'error','❌ '+err.message+'. Sebagian data mungkin sudah berubah — mohon cek ulang tab Data Pegawai.');
+    return;
+  }
+
+  await refreshAllPegawai();
+  showAlert(alertId,'success','✅ Jadwal '+timA+' & '+timB+' berhasil ditukar.');
+  if (selA) selA.value = '';
+  if (selB) selB.value = '';
+  initUbahTimSection(prefix);
+  if (typeof renderShiftTimRoster === 'function') renderShiftTimRoster();
+}
+
+// ============================================================
+// TUKAR JADWAL TIM (SEMENTARA) — menukar jadwal piket SELURUH anggota
+// 2 TIM, tapi HANYA untuk 2 tanggal tertentu (tanggal piket asal
+// masing-masing TIM), bukan permanen. Berbeda dari:
+// - "Tukar Shift" (individual): cuma 1 orang, harus diulang manual
+//   satu-per-satu untuk seluruh anggota kedua TIM kalau mau menukar
+//   1 tim penuh.
+// - "Tukar Jadwal Antar TIM" (simpanTukarJadwalTim di atas): permanen,
+//   mengubah field Tim pegawai & rotasi piket seterusnya.
+// Fitur ini tidak mengubah field Tim pegawai maupun shiftData sama
+// sekali — hanya mencatat banyak baris "shift_override" sekaligus
+// (1 baris per pasangan anggota per tanggal), persis seperti hasil
+// klik tombol "Tukar Shift" berkali-kali secara manual. Karena itu,
+// jadwal akan otomatis kembali ke rotasi TIM normal di luar 2 tanggal
+// ini, dan setiap barisnya tetap muncul & bisa dihapus satu-per-satu
+// di tabel "Riwayat Tukar Shift".
+// Parameter `prefix`: 'adm' (Admin) atau 'koor' (Koordinator Security).
+// ============================================================
+async function simpanTukarJadwalTimSementara(prefix) {
+  var alertId = prefix + '-tukartimsmt-alert';
+  var selA = document.getElementById(prefix + '-tukartimsmt-a');
+  var selB = document.getElementById(prefix + '-tukartimsmt-b');
+  var tglAInput = document.getElementById(prefix + '-tukartimsmt-tgla');
+  var tglBInput = document.getElementById(prefix + '-tukartimsmt-tglb');
+  var ketInput = document.getElementById(prefix + '-tukartimsmt-keterangan');
+
+  var timA = selA ? selA.value : '';
+  var timB = selB ? selB.value : '';
+  var tglA = tglAInput ? tglAInput.value : '';
+  var tglB = tglBInput ? tglBInput.value : '';
+  var ket  = ketInput ? (ketInput.value || '').trim() : '';
+
+  if (!timA || !timB) { showAlert(alertId,'warn','⚠ Pilih kedua TIM yang akan menukar jadwal.'); return; }
+  if (timA === timB) { showAlert(alertId,'warn','⚠ Pilih 2 TIM yang berbeda.'); return; }
+  if (!tglA || !tglB) { showAlert(alertId,'warn','⚠ Isi kedua tanggal piket asal yang akan ditukar.'); return; }
+  if (tglA === tglB) { showAlert(alertId,'warn','⚠ Tanggal piket asal '+timA+' & '+timB+' harus berbeda.'); return; }
+
+  if (SCRIPT_URL) await refreshAllPegawai();
+  var anggotaA = getPegawaiListForStats().filter(function(p){
+    return p.pekerjaan === 'Security' && normalisasiTim(p.Tim) === timA;
+  });
+  var anggotaB = getPegawaiListForStats().filter(function(p){
+    return p.pekerjaan === 'Security' && normalisasiTim(p.Tim) === timB;
+  });
+
+  if (!anggotaA.length || !anggotaB.length) { showAlert(alertId,'warn','⚠ Salah satu TIM belum punya anggota, tidak bisa ditukar.'); return; }
+
+  var namaA = anggotaA.map(function(p){ return p.namaPegawai; }).join(', ');
+  var namaB = anggotaB.map(function(p){ return p.namaPegawai; }).join(', ');
+  var ketFinal = ket || ('Tukar jadwal sementara ' + timA + ' \u21c4 ' + timB);
+  var konfirmasi = 'Tukar jadwal piket SEMENTARA:\n\n' +
+    timA + ' (' + namaA + ')\n  → piket pada ' + tglB + ' (tanggal aslinya ' + timB + ')\n\n' +
+    timB + ' (' + namaB + ')\n  → piket pada ' + tglA + ' (tanggal aslinya ' + timA + ')\n\n' +
+    'Di luar 2 tanggal ini, jadwal kedua TIM otomatis kembali normal seperti biasa. Lanjutkan?';
+  if (!confirm(konfirmasi)) return;
+
+  showAlert(alertId,'info','⏳ Menyimpan tukar jadwal, mohon tunggu...');
+
+  var maxLen = Math.max(anggotaA.length, anggotaB.length);
+  var rowsBaru = [];
+  var simpanLokal = function(){
+    rowsBaru.forEach(function(r){
+      if (!shiftOverride[r.tanggal]) shiftOverride[r.tanggal] = [];
+      shiftOverride[r.tanggal].push(r);
+    });
+    simpanShiftOverrideLocal();
+  };
+  var refreshRiwayat = function(){
+    if (prefix === 'adm') renderRiwayatTukarShift(); else renderRiwayatTukarShiftKoor();
+  };
+
+  try {
+    for (var i = 0; i < maxLen; i++) {
+      var a = anggotaA[i % anggotaA.length];
+      var b = anggotaB[i % anggotaB.length];
+
+      // Tanggal piket asal TIM A: anggota TIM A libur, digantikan anggota TIM B
+      var rowA = {
+        id: 'ov_' + Date.now() + '_' + Math.floor(Math.random()*100000) + '_' + i + 'a',
+        tanggal: tglA,
+        idKeluar: a.idPegawai, namaKeluar: a.namaPegawai, timKeluar: timA,
+        idMasuk: b.idPegawai, namaMasuk: b.namaPegawai, timMasuk: timB,
+        keterangan: ketFinal,
+        dicatatOlehId: currentUser ? currentUser.idPegawai : null
+      };
+      if (SCRIPT_URL) {
+        var res1 = await callAPI('saveShiftOverride', rowA);
+        if (!res1 || !res1.success) throw new Error(res1 && res1.error ? res1.error : ('Gagal menyimpan untuk ' + a.namaPegawai));
+      }
+      rowsBaru.push(rowA);
+
+      // Tanggal piket asal TIM B: anggota TIM B libur, digantikan anggota TIM A
+      var rowB = {
+        id: 'ov_' + Date.now() + '_' + Math.floor(Math.random()*100000) + '_' + i + 'b',
+        tanggal: tglB,
+        idKeluar: b.idPegawai, namaKeluar: b.namaPegawai, timKeluar: timB,
+        idMasuk: a.idPegawai, namaMasuk: a.namaPegawai, timMasuk: timA,
+        keterangan: ketFinal,
+        dicatatOlehId: currentUser ? currentUser.idPegawai : null
+      };
+      if (SCRIPT_URL) {
+        var res2 = await callAPI('saveShiftOverride', rowB);
+        if (!res2 || !res2.success) throw new Error(res2 && res2.error ? res2.error : ('Gagal menyimpan untuk ' + b.namaPegawai));
+      }
+      rowsBaru.push(rowB);
+    }
+  } catch (err) {
+    simpanLokal();
+    refreshRiwayat();
+    showAlert(alertId,'error','❌ '+err.message+'. Sebagian catatan mungkin sudah tersimpan — cek Riwayat Tukar Shift di atas, hapus manual bila perlu lalu ulangi.');
+    return;
+  }
+
+  simpanLokal();
+
+  showAlert(alertId,'success','✅ Jadwal piket '+timA+' ('+tglA+') \u21c4 '+timB+' ('+tglB+') berhasil ditukar sementara.');
+  if (selA) selA.value = '';
+  if (selB) selB.value = '';
+  if (tglAInput) tglAInput.value = '';
+  if (tglBInput) tglBInput.value = '';
+  if (ketInput) ketInput.value = '';
+  refreshRiwayat();
 }
 
 // Daftar anggota tim security, dikelompokkan per TIM (TIM 1-3), ditampilkan
