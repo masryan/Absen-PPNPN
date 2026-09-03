@@ -553,6 +553,7 @@
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   .form-row.single { grid-template-columns: 1fr; }
   .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .form-row.quad { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
   .field input, .field select, .field textarea {
     width: 100%; padding: 10px 14px;
@@ -867,7 +868,7 @@
     .stat-card .sub { font-size: 10px; }
 
     /* Forms */
-    .form-row, .form-row.triple { grid-template-columns: 1fr; gap: 10px; }
+    .form-row, .form-row.triple, .form-row.quad { grid-template-columns: 1fr; gap: 10px; }
     .absen-info { grid-template-columns: 1fr 1fr; gap: 8px; }
     .absen-info .info-item:last-child { grid-column: 1 / -1; }
 
@@ -2691,8 +2692,10 @@
 
         <div class="card">
           <div class="card-title">2️⃣ Data Lembur &amp; Surat Perintah Kerja</div>
-          <div class="form-row triple">
-            <div class="field"><label>Tanggal Pelaksanaan Lembur</label><input type="date" id="lb-tanggal"></div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin-top:-10px;margin-bottom:14px">Isi <strong>Tanggal Selesai</strong> jika lembur berlangsung lebih dari satu hari (periode). Untuk lembur satu hari, biarkan kosong.</p>
+          <div class="form-row quad">
+            <div class="field"><label>Tanggal Mulai Lembur</label><input type="date" id="lb-tanggal"></div>
+            <div class="field"><label>Tanggal Selesai <span style="font-weight:400;color:var(--text-muted);font-size:11px">(opsional)</span></label><input type="date" id="lb-tanggal-selesai"></div>
             <div class="field"><label>Jam Mulai</label><input type="time" id="lb-jam-mulai" value="17:00"></div>
             <div class="field"><label>Jam Selesai</label><input type="time" id="lb-jam-selesai" value="20:00"></div>
           </div>
@@ -2725,7 +2728,7 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Tanggal Surat</th><th>Nomor Surat</th><th>Tanggal Lembur</th><th>Pegawai</th><th>Keperluan</th><th>Penandatangan</th><th>Aksi</th></tr>
+                <tr><th>Tanggal Surat</th><th>Nomor Surat</th><th>Periode Lembur</th><th>Pegawai</th><th>Keperluan</th><th>Penandatangan</th><th>Aksi</th></tr>
               </thead>
               <tbody id="riwayatSpkLemburBody"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr></tbody>
             </table>
@@ -3832,9 +3835,10 @@
     <div class="form-row triple">
       <div class="field"><label>Nomor Surat</label><input type="text" id="esl-nomor" placeholder="-"></div>
       <div class="field"><label>Tanggal Surat</label><input type="date" id="esl-tanggal-surat"></div>
-      <div class="field"><label>Tanggal Pelaksanaan Lembur</label><input type="date" id="esl-tanggal-lembur"></div>
+      <div class="field"><label>Tanggal Mulai Lembur</label><input type="date" id="esl-tanggal-lembur"></div>
     </div>
-    <div class="form-row">
+    <div class="form-row triple">
+      <div class="field"><label>Tanggal Selesai Lembur <span style="font-weight:400;color:var(--text-muted);font-size:11px">(opsional)</span></label><input type="date" id="esl-tanggal-lembur-selesai"></div>
       <div class="field"><label>Jam Mulai</label><input type="time" id="esl-jam-mulai"></div>
       <div class="field"><label>Jam Selesai</label><input type="time" id="esl-jam-selesai"></div>
     </div>
@@ -6939,6 +6943,11 @@ async function hapusTugasBulk() {
   loadDaftarTugasAdminTable();
 }
 
+// Cache pegawai (CS/Pramubakti) terakhir yang dimuat untuk modal Edit/Tambah
+// Tugas, dipakai lagi saat simpanTugasAdmin() untuk mengambil nama bersih
+// dari idPegawai terpilih tanpa perlu fetch ulang.
+var lastTugasCsUsers = [];
+
 async function openTugasModal(idTugas) {
   var t = idTugas ? (localDaftarTugas||[]).find(function(x){ return x.idTugas===idTugas; }) : null;
   document.getElementById('modalTugasTitle').textContent = t ? 'Edit Tugas' : 'Tambah Tugas';
@@ -6953,27 +6962,60 @@ async function openTugasModal(idTugas) {
   document.getElementById('tugasAdminModal').classList.add('open');
 
   var csUsers = await ensureCSPegawaiList(true); // selalu ambil data pegawai terbaru
+  lastTugasCsUsers = csUsers;
+
+  // Tentukan pegawai yang sedang tertaut ke tugas ini (mode Edit): utamakan
+  // idPegawai (identitas stabil, tidak berubah walau namanya diedit/diganti
+  // di Data Pegawai). Untuk data lama yang cuma punya namaPegawai (belum
+  // tertaut idPegawai), coba cocokkan lewat nama (trim + tanpa peduli huruf
+  // besar/kecil) — begitu tugas ini disimpan lagi, tautannya otomatis
+  // "dimigrasi" ke idPegawai supaya tidak rapuh lagi ke depannya.
+  var idTersimpan = t ? (t.idPegawai || '') : '';
   var namaTersimpan = t ? (t.namaPegawai || '') : '';
+  var matchedUser = null;
+  if (idTersimpan) {
+    matchedUser = csUsers.find(function(u){ return u.idPegawai === idTersimpan; });
+  }
+  if (!matchedUser && namaTersimpan) {
+    var namaLower = namaTersimpan.trim().toLowerCase();
+    matchedUser = csUsers.find(function(u){ return String(u.namaPegawai||'').trim().toLowerCase() === namaLower; });
+  }
+
   var opsiLain = '';
-  // Jika tugas edit menyimpan nama yang sudah tidak ada di data pegawai saat ini,
-  // tetap tampilkan sebagai opsi agar data tidak hilang tanpa sengaja.
-  if (namaTersimpan && !csUsers.some(function(u){ return u.namaPegawai === namaTersimpan; })) {
-    opsiLain = '<option value="'+namaTersimpan.replace(/"/g,'&quot;')+'">'+namaTersimpan+' (tidak ditemukan di data pegawai)</option>';
+  // Jika tugas tertaut ke pegawai yang sudah tidak ditemukan/cocok lagi di
+  // data pegawai saat ini, tampilkan sebagai opsi terpisah yang TIDAK BISA
+  // langsung disimpan ulang (lihat simpanTugasAdmin) — supaya admin sadar
+  // datanya rusak dan memilih ulang pegawai yang benar, bukan diam-diam
+  // menyimpan tautan yang sudah tidak valid (ini penyebab tugas/checklist
+  // "hilang" lagi di menu pegawai setiap kali tugas ini diedit & disimpan).
+  if (!matchedUser && namaTersimpan) {
+    opsiLain = '<option value="__STALE__">⚠ ' + namaTersimpan.replace(/</g,'&lt;') + ' (tidak ditemukan di data pegawai — pilih ulang!)</option>';
   }
   selNama.innerHTML = '<option value="">-- Semua CS/Pramubakti --</option>' +
     csUsers.map(function(u){
-      return '<option value="'+String(u.namaPegawai).replace(/"/g,'&quot;')+'">'+u.namaPegawai+' ('+u.idPegawai+')</option>';
+      return '<option value="'+String(u.idPegawai).replace(/"/g,'&quot;')+'">'+u.namaPegawai+' ('+u.idPegawai+')</option>';
     }).join('') + opsiLain;
-  selNama.value = namaTersimpan;
+  selNama.value = matchedUser ? matchedUser.idPegawai : (opsiLain ? '__STALE__' : '');
 }
 
 async function simpanTugasAdmin() {
+  var selNama = document.getElementById('adm-tugas-nama');
+  if (selNama.value === '__STALE__') {
+    alert('⚠ Pegawai yang tertaut pada tugas ini sudah tidak ditemukan di Data Pegawai (mungkin namanya berubah/dihapus).\n\nSilakan pilih pegawai yang benar dari daftar, atau kosongkan pilihan untuk "Semua CS/Pramubakti", sebelum menyimpan — jika tidak, tugas ini tidak akan muncul di menu checklist pegawai manapun.');
+    return;
+  }
+  var idPegawai = selNama.value.trim() || null;
+  var namaPegawai = null;
+  if (idPegawai) {
+    var u = (lastTugasCsUsers||[]).find(function(x){ return x.idPegawai === idPegawai; });
+    namaPegawai = u ? u.namaPegawai : null;
+  }
   var row = {
     idTugas: document.getElementById('adm-tugas-id').value.trim(),
-    namaPegawai: document.getElementById('adm-tugas-nama').value.trim() || null,
+    idPegawai: idPegawai,
+    namaPegawai: namaPegawai,
     uraian: document.getElementById('adm-tugas-uraian').value.trim(),
-    periode: document.getElementById('adm-tugas-periode').value,
-    idPegawai: null
+    periode: document.getElementById('adm-tugas-periode').value
   };
   if (!row.idTugas || !row.uraian) { alert('ID Tugas dan Uraian Pekerjaan wajib diisi.'); return; }
   if (SCRIPT_URL) await callAPI('saveDaftarTugas', row);
@@ -12015,6 +12057,90 @@ function fmtHariTanggalIndo(isoDateStr) {
   return days[dt.getDay()] + ', ' + dt.getDate() + ' ' + months[dt.getMonth()] + ' ' + dt.getFullYear();
 }
 
+// Format "Hari/Tanggal" untuk SPK Lembur satu hari MAUPUN periode (>1 hari).
+// Contoh periode: "Sabtu-Minggu, 5 September 2026 s.d. 6 September 2026".
+// Jika endIso kosong/tidak valid/sama dengan startIso, kembali ke format satu hari biasa.
+function fmtHariTanggalIndoRange(startIso, endIso) {
+  if (!startIso) return '-';
+  if (!endIso || endIso <= startIso) return fmtHariTanggalIndo(startIso);
+  var days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  var months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  var sp = startIso.split('-'), ep = endIso.split('-');
+  var sDt = new Date(parseInt(sp[0],10), parseInt(sp[1],10)-1, parseInt(sp[2],10));
+  var eDt = new Date(parseInt(ep[0],10), parseInt(ep[1],10)-1, parseInt(ep[2],10));
+  if (isNaN(sDt) || isNaN(eDt)) return fmtHariTanggalIndo(startIso);
+  var fullTgl = function(dt){ return dt.getDate() + ' ' + months[dt.getMonth()] + ' ' + dt.getFullYear(); };
+  return days[sDt.getDay()] + '-' + days[eDt.getDay()] + ', ' + fullTgl(sDt) + ' s.d. ' + fullTgl(eDt);
+}
+
+// Mengembalikan array tanggal ISO (YYYY-MM-DD) dari startIso s.d. endIso
+// (inklusif). Jika endIso kosong/tidak valid/lebih awal dari startIso,
+// dianggap SPK satu hari saja (array berisi startIso saja).
+function getSpkLemburDateRange(startIso, endIso) {
+  if (!startIso) return [];
+  if (!endIso || endIso < startIso) return [startIso];
+  var out = [];
+  var sp = startIso.split('-'), ep = endIso.split('-');
+  var cur = new Date(parseInt(sp[0],10), parseInt(sp[1],10)-1, parseInt(sp[2],10));
+  var end = new Date(parseInt(ep[0],10), parseInt(ep[1],10)-1, parseInt(ep[2],10));
+  var guard = 0;
+  while (cur <= end && guard < 366) { // guard: batas wajar 1 tahun supaya tak infinite loop
+    var y = cur.getFullYear(), m = ('0'+(cur.getMonth()+1)).slice(-2), d = ('0'+cur.getDate()).slice(-2);
+    out.push(y+'-'+m+'-'+d);
+    cur.setDate(cur.getDate()+1);
+    guard++;
+  }
+  return out.length ? out : [startIso];
+}
+
+// Bangun blob .docx SPK Lembur dari template + data yang diberikan.
+// Dipakai baik saat generate baru (simpanDanGenerateSpkLembur) maupun saat
+// mengunduh ulang versi Word dari Riwayat (unduhWordRiwayatSpkLembur), supaya
+// hasil dokumen selalu konsisten & tetap bisa diedit bebas di Word.
+// data: { nomor, tglSurat(iso), tglLemburMulai(iso), tglLemburSelesai(iso|falsy),
+//         jMulai, jSelesai, keperluan, namaTtd, jabatanTtd, kota, pegawaiTerpilih:[{namaPegawai}] }
+async function buatSpkLemburDocxBlob(data) {
+  var waktu = (data.jMulai||data.jSelesai) ? ((data.jMulai||'-')+'-'+(data.jSelesai||'-')+' WIB') : '-';
+  // Satu baris tabel untuk seluruh pegawai terpilih; jika periode >1 hari,
+  // kolom Hari/Tanggal ditampilkan sebagai rentang (mis. "Sabtu-Minggu, 5
+  // September 2026 s.d. 6 September 2026"), bukan baris terpisah per tanggal.
+  var pegawaiRows = [{
+    no: data.pegawaiTerpilih.map(function(_,i){ return i+1; }).join('\n'),
+    nama: data.pegawaiTerpilih.map(function(p){ return p.namaPegawai; }).join('\n'),
+    hari_tanggal: fmtHariTanggalIndoRange(data.tglLemburMulai, data.tglLemburSelesai),
+    waktu: waktu,
+    uraian_tugas: data.keperluan
+  }];
+  var tglSuratFormatted = fmtHariTanggalIndo(data.tglSurat).split(', ')[1] || data.tglSurat;
+  var tahun = (data.tglSurat||'').split('-')[0];
+
+  var arrBuf = await fetchSpkTemplateArrayBuffer();
+  var zip = new PizZip(arrBuf);
+  var doc = new window.docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+  doc.render({
+    nomor_surat: data.nomor,
+    tahun_anggaran: tahun,
+    kota: data.kota,
+    tanggal_surat: tglSuratFormatted,
+    jabatan_penandatangan: data.jabatanTtd,
+    nama_penandatangan: data.namaTtd,
+    pegawai: pegawaiRows
+  });
+  var blob = doc.getZip().generate({
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  });
+  var fileName = 'SPK Lembur - ' + (data.nomor||'-').replace(/[\\/:*?"<>|]/g,'-') + ' - ' + tglSuratFormatted.replace(/[\\/:*?"<>|]/g,'-') + '.docx';
+  return { blob: blob, fileName: fileName };
+}
+
+function unduhBlobSebagaiFile(blob, fileName) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
 async function fetchSpkTemplateArrayBuffer() {
   if (!supabaseClient) throw new Error('Supabase belum terhubung.');
   var dl = await supabaseClient.storage.from('templates-surat').download('spk-lembur.docx');
@@ -12035,6 +12161,7 @@ async function fetchSpkTemplateArrayBuffer() {
 async function simpanDanGenerateSpkLembur() {
   const checks = Array.from(document.querySelectorAll('.lb-peg-checkbox:checked'));
   const tglLembur = document.getElementById('lb-tanggal').value;
+  const tglLemburSelesaiRaw = document.getElementById('lb-tanggal-selesai').value;
   const jMulai = document.getElementById('lb-jam-mulai').value;
   const jSelesai = document.getElementById('lb-jam-selesai').value;
   const keperluan = document.getElementById('lb-keterangan').value.trim();
@@ -12045,12 +12172,17 @@ async function simpanDanGenerateSpkLembur() {
   var kota = spkSetting.kota || 'Subang';
 
   if (checks.length === 0) { alert('⚠ Pilih minimal satu pegawai terlebih dahulu.'); return; }
-  if (!tglLembur) { alert('⚠ Tanggal Pelaksanaan Lembur wajib diisi.'); return; }
+  if (!tglLembur) { alert('⚠ Tanggal Mulai Lembur wajib diisi.'); return; }
+  if (tglLemburSelesaiRaw && tglLemburSelesaiRaw < tglLembur) { alert('⚠ Tanggal Selesai tidak boleh sebelum Tanggal Mulai Lembur.'); return; }
   if (!keperluan) { alert('⚠ Keperluan wajib diisi.'); return; }
   if (!tglSurat)  { alert('⚠ Tanggal Surat wajib diisi.'); return; }
   if (!namaTtd || !jabatanTtd) { alert('⚠ Nama & Jabatan Penandatangan wajib diisi.'); return; }
 
   document.getElementById('spk-nomor').value = nomor; // pastikan default "-" tampil jika dikosongkan
+
+  // Tanggal Selesai kosong / sama dengan Tanggal Mulai = SPK satu hari saja.
+  var tglLemburSelesai = (tglLemburSelesaiRaw && tglLemburSelesaiRaw > tglLembur) ? tglLemburSelesaiRaw : '';
+  var tanggalRange = getSpkLemburDateRange(tglLembur, tglLemburSelesai);
 
   var pegawaiTerpilih = checks.map(function(cb){
     return { idPegawai: cb.getAttribute('data-id'), namaPegawai: decodeURIComponent(cb.getAttribute('data-nama')) };
@@ -12063,10 +12195,14 @@ async function simpanDanGenerateSpkLembur() {
   try {
     if (!SCRIPT_URL) throw new Error('Supabase belum dikonfigurasi!');
 
-    // 1) Simpan penugasan lembur per pegawai (tetap dibutuhkan supaya absen
-    // di hari libur untuk pegawai ini tidak dianggap "absen liar").
-    var rows = pegawaiTerpilih.map(function(p){
-      return { tanggal: tglLembur, idPegawai: p.idPegawai, namaPegawai: p.namaPegawai, jamMulai: jMulai, jamSelesai: jSelesai, keterangan: keperluan };
+    // 1) Simpan penugasan lembur per pegawai PER TANGGAL dalam periode (tetap
+    // dibutuhkan supaya absen di hari libur untuk pegawai ini, di setiap
+    // tanggal dalam periode lembur, tidak dianggap "absen liar").
+    var rows = [];
+    tanggalRange.forEach(function(tgl){
+      pegawaiTerpilih.forEach(function(p){
+        rows.push({ tanggal: tgl, idPegawai: p.idPegawai, namaPegawai: p.namaPegawai, jamMulai: jMulai, jamSelesai: jSelesai, keterangan: keperluan });
+      });
     });
     var resSave = await callAPI('saveLembur', { rows: rows });
     if (!resSave || !resSave.success) throw new Error('Gagal menyimpan penugasan lembur: ' + (resSave ? resSave.error : 'Unknown error'));
@@ -12076,53 +12212,27 @@ async function simpanDanGenerateSpkLembur() {
     });
     localStorage.setItem('ppnpn_lembur', JSON.stringify(localLembur));
 
-    // 2) Generate dokumen SPK Lembur (.docx) — satu baris tabel berisi semua
-    // pegawai terpilih, karena tanggal/jam/keperluan yang dipakai sama untuk semua.
-    var hariTgl = fmtHariTanggalIndo(tglLembur);
-    var waktu = (jMulai||jSelesai) ? ((jMulai||'-')+'-'+(jSelesai||'-')+' WIB') : '-';
-    var pegawaiRows = [{
-      no: pegawaiTerpilih.map(function(_,i){ return i+1; }).join('\n'),
-      nama: pegawaiTerpilih.map(function(p){ return p.namaPegawai; }).join('\n'),
-      hari_tanggal: hariTgl,
-      waktu: waktu,
-      uraian_tugas: keperluan
-    }];
-    var tglSuratFormatted = fmtHariTanggalIndo(tglSurat).split(', ')[1] || tglSurat;
-    var tahun = tglSurat.split('-')[0];
-
-    var arrBuf = await fetchSpkTemplateArrayBuffer();
-    var zip = new PizZip(arrBuf);
-    var doc = new window.docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
-    doc.render({
-      nomor_surat: nomor,
-      tahun_anggaran: tahun,
-      kota: kota,
-      tanggal_surat: tglSuratFormatted,
-      jabatan_penandatangan: jabatanTtd,
-      nama_penandatangan: namaTtd,
-      pegawai: pegawaiRows
+    // 2) Generate dokumen SPK Lembur (.docx) — satu baris tabel per tanggal
+    // dalam periode, masing-masing berisi semua pegawai terpilih.
+    var built = await buatSpkLemburDocxBlob({
+      nomor: nomor, tglSurat: tglSurat, tglLemburMulai: tglLembur, tglLemburSelesai: tglLemburSelesai,
+      jMulai: jMulai, jSelesai: jSelesai, keperluan: keperluan,
+      namaTtd: namaTtd, jabatanTtd: jabatanTtd, kota: kota, pegawaiTerpilih: pegawaiTerpilih
     });
-    var out = doc.getZip().generate({
-      type: 'blob',
-      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    });
-    var fileName = 'SPK Lembur - ' + nomor.replace(/[\\/:*?"<>|]/g,'-') + ' - ' + tglSuratFormatted.replace(/[\\/:*?"<>|]/g,'-') + '.docx';
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(out);
-    a.download = fileName;
-    document.body.appendChild(a); a.click(); a.remove();
+    unduhBlobSebagaiFile(built.blob, built.fileName);
 
     // 3) Catat ke Riwayat SPK Lembur
     await callAPI('saveSpkLemburRiwayat', {
-      nomorSurat: nomor, tanggalSurat: tglSurat, tanggalLembur: tglLembur,
+      nomorSurat: nomor, tanggalSurat: tglSurat, tanggalLembur: tglLembur, tanggalLemburSelesai: tglLemburSelesai || tglLembur,
       jamMulai: jMulai, jamSelesai: jSelesai, keperluan: keperluan,
       namaTtd: namaTtd, jabatanTtd: jabatanTtd, kota: kota, pegawai: pegawaiTerpilih
     });
 
-    showAlert('lbLemburAlert','success','✅ SPK Lembur berhasil dibuat untuk '+pegawaiTerpilih.length+' pegawai & tersimpan di Riwayat: '+fileName);
+    showAlert('lbLemburAlert','success','✅ SPK Lembur berhasil dibuat untuk '+pegawaiTerpilih.length+' pegawai ('+tanggalRange.length+' hari) & tersimpan di Riwayat: '+built.fileName);
 
     // Bersihkan form (kecuali default nomor & tanggal surat) & pilihan pegawai
     document.getElementById('lb-keterangan').value = '';
+    document.getElementById('lb-tanggal-selesai').value = '';
     checks.forEach(function(cb){ cb.checked = false; });
     lbUpdateSelectedCount();
     document.getElementById('spk-nomor').value = '-';
@@ -12160,14 +12270,19 @@ async function loadRiwayatSpkLembur() {
 
   renderPaged('riwayatSpkLembur', localRiwayatSpkLembur, 'riwayatSpkLemburBody', 'pgRiwayatSpkLembur', function(r){
     var namaPegawai = (r.pegawai||[]).map(function(p){ return p.namaPegawai; }).join(', ') || '-';
+    var tglSelesai = r.tanggalLemburSelesai || r.tanggalLembur;
+    var periodeLembur = (tglSelesai && tglSelesai !== r.tanggalLembur)
+      ? (fmtDate(r.tanggalLembur) + ' s.d. ' + fmtDate(tglSelesai))
+      : fmtDate(r.tanggalLembur);
     return `<tr>
   <td>${fmtDate(r.tanggalSurat)}</td>
   <td>${r.nomorSurat||'-'}</td>
-  <td>${fmtDate(r.tanggalLembur)}</td>
+  <td>${periodeLembur}</td>
   <td>${namaPegawai}</td>
   <td>${r.keperluan||'-'}</td>
   <td>${r.namaTtd||'-'}<br><span style="font-size:11px;color:var(--text-muted)">${r.jabatanTtd||''}</span></td>
   <td style="white-space:nowrap">
+    <button class="btn btn-outline btn-sm" onclick="unduhWordRiwayatSpkLembur(${r.id})" title="Unduh sebagai file Word (.docx) — bisa diedit bebas">⬇️ Word</button>
     <button class="btn btn-outline btn-sm" onclick="cetakRiwayatSpkLembur(${r.id})" title="Cetak / simpan sebagai PDF — pakai ini kalau unduhan .docx gagal">🖨️ Cetak</button>
     <button class="btn btn-outline btn-sm" onclick="bukaEditRiwayatSpkLembur(${r.id})">✏️ Edit</button>
     <button class="btn btn-outline btn-sm" onclick="hapusRiwayatSpkLembur(${r.id})">🗑 Hapus</button>
@@ -12191,6 +12306,23 @@ var SPK_LOGO_B64 = "iVBORw0KGgoAAAANSUhEUgAAAzIAAALjCAYAAADJIDATAAAACXBIWXMAAC4j
 // secara elektronik" — supaya cetakan PDF-nya sama persis dengan dokumen
 // yang nantinya ditandatangani secara elektronik (BSrE). JANGAN mengubah
 // redaksi/struktur di bawah tanpa menyesuaikan juga template .docx-nya.
+async function unduhWordRiwayatSpkLembur(id) {
+  var r = (localRiwayatSpkLembur||[]).find(function(x){ return String(x.id) === String(id); });
+  if (!r) { alert('⚠ Data riwayat tidak ditemukan. Coba muat ulang (Filter) terlebih dahulu.'); return; }
+  try {
+    var built = await buatSpkLemburDocxBlob({
+      nomor: r.nomorSurat, tglSurat: r.tanggalSurat, tglLemburMulai: r.tanggalLembur,
+      tglLemburSelesai: r.tanggalLemburSelesai && r.tanggalLemburSelesai !== r.tanggalLembur ? r.tanggalLemburSelesai : '',
+      jMulai: r.jamMulai, jSelesai: r.jamSelesai, keperluan: r.keperluan,
+      namaTtd: r.namaTtd, jabatanTtd: r.jabatanTtd, kota: r.kota || spkSetting.kota || 'Subang',
+      pegawaiTerpilih: r.pegawai || []
+    });
+    unduhBlobSebagaiFile(built.blob, built.fileName);
+  } catch (err) {
+    alert('❌ Gagal mengunduh file Word: ' + err.message + '\n\nCoba gunakan tombol 🖨️ Cetak sebagai alternatif.');
+  }
+}
+
 function cetakRiwayatSpkLembur(id) {
   var r = (localRiwayatSpkLembur||[]).find(function(x){ return String(x.id) === String(id); });
   if (!r) { alert('⚠ Data riwayat tidak ditemukan. Coba muat ulang (Filter) terlebih dahulu.'); return; }
@@ -12198,7 +12330,8 @@ function cetakRiwayatSpkLembur(id) {
   var nomor = r.nomorSurat || '-';
   var tglSuratFormatted = fmtHariTanggalIndo(r.tanggalSurat).split(', ')[1] || r.tanggalSurat;
   var tahunAnggaran = (r.tanggalSurat||'').split('-')[0] || new Date().getFullYear();
-  var hariTgl = fmtHariTanggalIndo(r.tanggalLembur);
+  var tglLemburSelesai = (r.tanggalLemburSelesai && r.tanggalLemburSelesai !== r.tanggalLembur) ? r.tanggalLemburSelesai : '';
+  var hariTgl = fmtHariTanggalIndoRange(r.tanggalLembur, tglLemburSelesai);
   var waktu = (r.jamMulai||r.jamSelesai) ? ((r.jamMulai||'-')+'-'+(r.jamSelesai||'-')+' WIB') : '-';
   var kota = r.kota || spkSetting.kota || 'Subang';
   var jabatanTtd = r.jabatanTtd || '-';
@@ -12207,14 +12340,22 @@ function cetakRiwayatSpkLembur(id) {
   function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   // Sesuai template: kolom No & Nama berisi satu baris per pegawai (dipisah
-  // <br>), sedangkan Hari/Tanggal, Waktu & Uraian Tugas tampil satu kali
-  // karena datanya sama untuk seluruh pegawai yang dipilih dalam satu SPK.
+  // <br>), sedangkan Hari/Tanggal, Waktu & Uraian Tugas tampil satu kali dalam
+  // SATU baris tabel — untuk periode >1 hari, kolom Hari/Tanggal berupa
+  // rentang (mis. "Sabtu-Minggu, 5 September 2026 s.d. 6 September 2026").
   var noLines = pegawaiList.length
     ? pegawaiList.map(function(_,i){ return i+1; }).join('<br>')
     : '-';
   var namaLines = pegawaiList.length
     ? pegawaiList.map(function(p){ return escHtml(p.namaPegawai||'-'); }).join('<br>')
     : '-';
+  var tabelBarisHtml = '<tr>'
+    + '<td class="center">' + noLines + '</td>'
+    + '<td>' + namaLines + '</td>'
+    + '<td class="center">' + escHtml(hariTgl) + '</td>'
+    + '<td class="center">' + escHtml(waktu) + '</td>'
+    + '<td>' + escHtml(r.keperluan||'-') + '</td>'
+    + '</tr>';
 
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SPK Lembur - ' + escHtml(nomor) + '</title>'
     + '<style>'
@@ -12270,13 +12411,7 @@ function cetakRiwayatSpkLembur(id) {
 
     + '<table class="data"><thead><tr>'
     + '<th style="width:7%">No.</th><th style="width:25%">Nama</th><th style="width:22%">Hari/Tanggal</th><th style="width:18%">Waktu</th><th style="width:28%">Uraian Tugas</th>'
-    + '</tr></thead><tbody><tr>'
-    + '<td class="center">' + noLines + '</td>'
-    + '<td>' + namaLines + '</td>'
-    + '<td class="center">' + escHtml(hariTgl) + '</td>'
-    + '<td class="center">' + escHtml(waktu) + '</td>'
-    + '<td>' + escHtml(r.keperluan||'-') + '</td>'
-    + '</tr></tbody></table>'
+    + '</tr></thead><tbody>' + tabelBarisHtml + '</tbody></table>'
 
     + '<p class="isi">Segala biaya yang ditimbulkan berkenaan dengan pelaksanaan kerja lembur tersebut di atas dibebankan pada DIPA BA 015 KPP Pratama Subang Tahun ' + escHtml(tahunAnggaran) + '.</p>'
     + '<p class="isi">Demikian untuk dilaksanakan dengan penuh tanggung jawab dengan tetap menjaga integritas dan Kode Etik serta Kode Perilaku Pegawai.</p>'
@@ -12307,6 +12442,7 @@ function bukaEditRiwayatSpkLembur(id) {
   document.getElementById('esl-nomor').value = r.nomorSurat || '';
   document.getElementById('esl-tanggal-surat').value = r.tanggalSurat || '';
   document.getElementById('esl-tanggal-lembur').value = r.tanggalLembur || '';
+  document.getElementById('esl-tanggal-lembur-selesai').value = (r.tanggalLemburSelesai && r.tanggalLemburSelesai !== r.tanggalLembur) ? r.tanggalLemburSelesai : '';
   document.getElementById('esl-jam-mulai').value = r.jamMulai || '';
   document.getElementById('esl-jam-selesai').value = r.jamSelesai || '';
   document.getElementById('esl-keperluan').value = r.keperluan || '';
@@ -12324,6 +12460,7 @@ async function simpanEditRiwayatSpkLembur() {
   var nomor = document.getElementById('esl-nomor').value.trim() || '-';
   var tglSurat = document.getElementById('esl-tanggal-surat').value;
   var tglLembur = document.getElementById('esl-tanggal-lembur').value;
+  var tglLemburSelesaiRaw = document.getElementById('esl-tanggal-lembur-selesai').value;
   var jMulai = document.getElementById('esl-jam-mulai').value;
   var jSelesai = document.getElementById('esl-jam-selesai').value;
   var keperluan = document.getElementById('esl-keperluan').value.trim();
@@ -12332,8 +12469,10 @@ async function simpanEditRiwayatSpkLembur() {
   var namaLines = document.getElementById('esl-pegawai').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
 
   if (!tglSurat)  { alert('⚠ Tanggal Surat wajib diisi.'); return; }
-  if (!tglLembur) { alert('⚠ Tanggal Pelaksanaan Lembur wajib diisi.'); return; }
+  if (!tglLembur) { alert('⚠ Tanggal Mulai Lembur wajib diisi.'); return; }
+  if (tglLemburSelesaiRaw && tglLemburSelesaiRaw < tglLembur) { alert('⚠ Tanggal Selesai tidak boleh sebelum Tanggal Mulai Lembur.'); return; }
   if (!keperluan) { alert('⚠ Keperluan wajib diisi.'); return; }
+  var tglLemburSelesai = (tglLemburSelesaiRaw && tglLemburSelesaiRaw > tglLembur) ? tglLemburSelesaiRaw : tglLembur;
   if (!namaTtd || !jabatanTtd) { alert('⚠ Nama & Jabatan Penandatangan wajib diisi.'); return; }
   if (!namaLines.length) { alert('⚠ Minimal harus ada satu nama pegawai.'); return; }
 
@@ -12347,7 +12486,7 @@ async function simpanEditRiwayatSpkLembur() {
   if (!SCRIPT_URL) { alert('⚠ Supabase belum dikonfigurasi!'); return; }
 
   var res = await callAPI('updateSpkLemburRiwayat', {
-    id: id, nomorSurat: nomor, tanggalSurat: tglSurat, tanggalLembur: tglLembur,
+    id: id, nomorSurat: nomor, tanggalSurat: tglSurat, tanggalLembur: tglLembur, tanggalLemburSelesai: tglLemburSelesai,
     jamMulai: jMulai, jamSelesai: jSelesai, keperluan: keperluan,
     namaTtd: namaTtd, jabatanTtd: jabatanTtd, kota: (r && r.kota) || spkSetting.kota, pegawai: pegawaiBaru
   });
