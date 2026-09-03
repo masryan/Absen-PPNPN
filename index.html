@@ -6248,31 +6248,24 @@ function periodKeyFor(periode, d) {
   return todayVerified(); // Harian -> reset tiap hari
 }
 
-// Ambil (dan cache) seluruh daftar_tugas dari database. Jika tabel masih
-// kosong (baru pertama kali dipakai), otomatis diisi dari data default.
-async function ensureDaftarTugasLoaded() {
-  if (Array.isArray(localDaftarTugas) && localDaftarTugas.length) return localDaftarTugas;
+// Ambil (dan cache) seluruh daftar_tugas dari database. Database selalu
+// menjadi sumber data utama — cache lokal hanya dipakai jika database gagal.
+async function ensureDaftarTugasLoaded(forceRefresh) {
   if (SCRIPT_URL) {
-    var res = await callAPI('getDaftarTugas', {});
-    if (res && res.success && res.data && res.data.length) {
-      localDaftarTugas = res.data;
-      localStorage.setItem('ppnpn_daftar_tugas', JSON.stringify(localDaftarTugas));
-      return localDaftarTugas;
-    }
-    // Tabel kosong -> import otomatis data default ke database
-    if (res && res.success) {
-      var seed = DEFAULT_DAFTAR_TUGAS.map(function(t){
-        return { idTugas: t.id_tugas, listKode: t.list_kode, idPegawai: null, namaPegawai: t.nama_pegawai, uraian: t.uraian, periode: t.periode };
-      });
-      await callAPI('saveDaftarTugas', { rows: seed });
-      localDaftarTugas = seed;
-      localStorage.setItem('ppnpn_daftar_tugas', JSON.stringify(localDaftarTugas));
-      return localDaftarTugas;
-    }
+    try {
+      var res = await callAPI('getDaftarTugas', {});
+      if (res && res.success) {
+        localDaftarTugas = Array.isArray(res.data) ? res.data : [];
+        localStorage.setItem('ppnpn_daftar_tugas', JSON.stringify(localDaftarTugas));
+        return localDaftarTugas;
+      }
+    } catch(err) { console.warn('Gagal ambil daftar tugas:', err); }
+    if (Array.isArray(localDaftarTugas)) return localDaftarTugas;
   }
-  // Fallback offline
-  localDaftarTugas = DEFAULT_DAFTAR_TUGAS.map(function(t){
-    return { idTugas: t.id_tugas, listKode: t.list_kode, idPegawai: null, namaPegawai: t.nama_pegawai, uraian: t.uraian, periode: t.periode };
+  if (Array.isArray(localDaftarTugas) && localDaftarTugas.length) return localDaftarTugas;
+  localDaftarTugas = (DEFAULT_DAFTAR_TUGAS||[]).map(function(t){
+    return { idTugas:t.id_tugas, listKode:t.list_kode, idPegawai:t.id_pegawai||null,
+      namaPegawai:t.nama_pegawai||null, uraian:t.uraian, periode:t.periode||'Harian' };
   });
   return localDaftarTugas;
 }
@@ -6281,18 +6274,20 @@ async function ensureDaftarTugasLoaded() {
 // idPegawai (jika admin sudah menautkan), lewat nama, atau tugas "untuk semua"
 // (list_kode L13 / namaPegawai kosong & pekerjaan CS-Pramubakti).
 function getTugasUntukPegawai(u, semuaTugas) {
-  var namaLower = String(u.namaPegawai||'').trim().toLowerCase();
-  return semuaTugas.filter(function(t){
-    if (t.idPegawai && t.idPegawai === u.idPegawai) return true;
-    if (t.namaPegawai && String(t.namaPegawai).trim().toLowerCase() === namaLower) return true;
-    if (!t.idPegawai && (!t.namaPegawai || /semua/i.test(t.namaPegawai))) return true;
+  var idPegawai = String(u&&u.idPegawai||'').trim().toUpperCase();
+  var namaLower = String(u&&u.namaPegawai||'').trim().toLowerCase();
+  return (semuaTugas||[]).filter(function(t){
+    var tid = String(t.idPegawai||'').trim().toUpperCase();
+    var tnama = String(t.namaPegawai||'').trim().toLowerCase();
+    if (tid && tid === idPegawai) return true;
+    if (!tid && tnama && tnama === namaLower) return true;
+    if (!tid && (!tnama || /semua/i.test(tnama))) return true;
     return false;
   });
 }
-
 async function loadChecklist() {
   var u = currentUser;
-  var semuaTugas = await ensureDaftarTugasLoaded();
+  var semuaTugas = await ensureDaftarTugasLoaded(true);
   var myTugas = getTugasUntukPegawai(u, semuaTugas);
 
   var byPeriode = { Harian: [], Mingguan: [], Bulanan: [], Insidentil: [] };
@@ -6664,7 +6659,7 @@ async function loadAdminChecklistCS() {
   var tbody = document.getElementById('adminChecklistCSBody');
   tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat data...</td></tr>';
 
-  var semuaTugas = await ensureDaftarTugasLoaded();
+  var semuaTugas = await ensureDaftarTugasLoaded(true);
 
   // Ambil daftar pegawai Cleaning Service & Pramubakti
   var csUsers = await ensureCSPegawaiList();
@@ -6788,7 +6783,7 @@ async function openChecklistDetailAdmin(idPegawai, namaPegawai, tgl) {
   document.getElementById('checklistDetailFotoUmumBody').innerHTML = '';
   document.getElementById('checklistDetailModal').classList.add('open');
 
-  var semuaTugas = await ensureDaftarTugasLoaded();
+  var semuaTugas = await ensureDaftarTugasLoaded(true);
   var csUsers = await ensureCSPegawaiList();
   var fullUser = csUsers.find(function(x){ return x.idPegawai === idPegawai; }) || { idPegawai: idPegawai, namaPegawai: namaPegawai };
   var myTugas = getTugasUntukPegawai(fullUser, semuaTugas);
@@ -6884,7 +6879,7 @@ async function simpanChecklistDetailAdmin() {
 // ADMIN: KELOLA DAFTAR TUGAS (tambah / edit / hapus)
 // ============================================================
 async function loadDaftarTugasAdminTable() {
-  var semuaTugas = await ensureDaftarTugasLoaded();
+  var semuaTugas = await ensureDaftarTugasLoaded(true);
   var tbody = document.getElementById('daftarTugasAdminBody');
   if (!tbody) return;
 
@@ -7018,7 +7013,13 @@ async function simpanTugasAdmin() {
     periode: document.getElementById('adm-tugas-periode').value
   };
   if (!row.idTugas || !row.uraian) { alert('ID Tugas dan Uraian Pekerjaan wajib diisi.'); return; }
-  if (SCRIPT_URL) await callAPI('saveDaftarTugas', row);
+  if (SCRIPT_URL) {
+  var saveRes = await callAPI('saveDaftarTugas', row);
+  if (!saveRes || !saveRes.success) {
+    alert('❌ Gagal menyimpan tugas ke database: ' + (saveRes && saveRes.error ? saveRes.error : 'Tidak ada respons dari server.'));
+    return;
+  }
+}
   localDaftarTugas = (localDaftarTugas||[]).filter(function(t){ return t.idTugas !== row.idTugas; });
   localDaftarTugas.push(row);
   localStorage.setItem('ppnpn_daftar_tugas', JSON.stringify(localDaftarTugas));
