@@ -6227,6 +6227,32 @@ function isPenugasanLembur(idPegawai, tanggalStr) {
   return (localLembur||[]).some(function(l){ return l.idPegawai === idPegawai && l.tanggal === tanggalStr; });
 }
 
+// Ambil detail penugasan lembur (jam mulai/selesai/keterangan) pegawai pada
+// tanggal tsb, atau null jika tidak ditugaskan lembur. Dipakai supaya
+// halaman absensi bisa MEMBUKA form (bukan hanya menandai) saat pegawai
+// ditunjuk lembur di hari libur/OFF jadwalnya.
+function getPenugasanLembur(idPegawai, tanggalStr) {
+  return (localLembur||[]).find(function(l){ return l.idPegawai === idPegawai && l.tanggal === tanggalStr; }) || null;
+}
+
+// Pastikan data penugasan lembur untuk rentang tanggal tsb sudah ada di
+// cache localLembur SEBELUM halaman absensi memutuskan menyembunyikan
+// form karena hari libur/OFF — supaya pegawai yang ditugaskan lembur tetap
+// bisa absen alih-alih terkunci oleh notifikasi "Tidak perlu absensi".
+async function ensureLemburLoaded(from, to) {
+  if (!SCRIPT_URL) return;
+  try {
+    var res = await callAPI('getLembur', { from: from, to: to });
+    if (res && res.success) {
+      (res.data || []).forEach(function(r){
+        localLembur = (localLembur||[]).filter(function(l){ return !(l.idPegawai===r.idPegawai && l.tanggal===r.tanggal); });
+        localLembur.push(r);
+      });
+      localStorage.setItem('ppnpn_lembur', JSON.stringify(localLembur));
+    }
+  } catch (err) { console.log('Gagal memuat data penugasan lembur:', err); }
+}
+
 // ============================================================
 // CEK LIST TUGAS (Cleaning Service & Pramubakti) — tersimpan ke database
 // ============================================================
@@ -8287,6 +8313,12 @@ async function initAbsensiPage() {
   // (baik yang digantikan maupun pengganti), tanpa logika terpisah di bawah.
   await ensureShiftOverrideLoaded(tambahHari(todayVerified(), -1), todayVerified());
 
+  // Muat juga data penugasan LEMBUR hari ini SEBELUM menentukan status
+  // libur/OFF — supaya pegawai yang ditunjuk lembur tetap bisa absen
+  // meskipun hari ini hari libur/jadwalnya OFF (lihat cabang-cabang di
+  // bawah yang memanggil getPenugasanLembur()).
+  await ensureLemburLoaded(todayVerified(), todayVerified());
+
   // Cek dulu: adakah shift jaga 24 jam KEMARIN yang belum ditutup? Kalau
   // ada, halaman absensi hari ini dipakai untuk menutup shift tersebut.
   absenTargetTanggal = null;
@@ -8305,16 +8337,23 @@ async function initAbsensiPage() {
     // Pegawai Security dengan jam kerja tetap (bukan shift 24 jam) —
     // ikuti pola hari libur Sabtu/Minggu seperti Pramubakti jika diminta.
     await ensureLiburLoaded();
-    if (pengecualianJK.liburMingguan && isHariLibur(todayVerified())) {
+    var lemburPengecualian = getPenugasanLembur(u.idPegawai, todayVerified());
+    if (pengecualianJK.liburMingguan && isHariLibur(todayVerified()) && !lemburPengecualian) {
       document.getElementById('holidayNotice').style.display = 'block';
       document.getElementById('holidayNotice').textContent =
         '🗓 Hari ini adalah hari libur' + (getKeteranganLibur(todayVerified()) ? ' (' + getKeteranganLibur(todayVerified()) + ')' : '') + '. Tidak perlu melakukan absensi.';
       document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display='none'; });
     } else {
-      document.getElementById('holidayNotice').style.display = 'none';
+      if (lemburPengecualian && isHariLibur(todayVerified())) {
+        document.getElementById('holidayNotice').style.display = 'block';
+        document.getElementById('holidayNotice').textContent =
+          '🔥 Hari ini hari libur, tapi Anda ditugaskan LEMBUR' + (lemburPengecualian.keterangan ? ' (' + lemburPengecualian.keterangan + ')' : '') + '. Silakan tetap melakukan absensi.';
+      } else {
+        document.getElementById('holidayNotice').style.display = 'none';
+      }
       document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display=''; });
-      jamMasuk  = pengecualianJK.jamMasuk;
-      jamPulang = pengecualianJK.jamPulang;
+      jamMasuk  = (lemburPengecualian && lemburPengecualian.jamMulai)   ? lemburPengecualian.jamMulai   : pengecualianJK.jamMasuk;
+      jamPulang = (lemburPengecualian && lemburPengecualian.jamSelesai) ? lemburPengecualian.jamSelesai : pengecualianJK.jamPulang;
     }
   } else if (u.pekerjaan === 'Security' && shiftJagaBelumTutup) {
     // PRIORITAS: shift jaga 24 jam KEMARIN masih menggantung.
@@ -8373,20 +8412,28 @@ async function initAbsensiPage() {
       // liburnya mengikuti hari libur kantor.
       await ensureLiburLoaded();
       document.getElementById('offDayNotice').style.display = 'none';
-      if (isHariLibur(todayVerified())) {
+      var lemburSecPB = getPenugasanLembur(u.idPegawai, todayVerified());
+      if (isHariLibur(todayVerified()) && !lemburSecPB) {
         document.getElementById('holidayNotice').style.display = 'block';
         document.getElementById('holidayNotice').textContent =
           '🗓 Hari ini adalah hari libur' + (getKeteranganLibur(todayVerified()) ? ' (' + getKeteranganLibur(todayVerified()) + ')' : '') + '. Tidak perlu melakukan absensi.';
         document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display='none'; });
       } else {
-        document.getElementById('holidayNotice').style.display = 'none';
-        document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display=''; });
         var jkPB = getJamKerjaPramubakti();
-        jamMasuk  = jkPB.jamMasuk;
-        jamPulang = jkPB.jamPulang;
+        if (lemburSecPB && isHariLibur(todayVerified())) {
+          document.getElementById('holidayNotice').style.display = 'block';
+          document.getElementById('holidayNotice').textContent =
+            '🔥 Hari ini hari libur, tapi Anda ditugaskan LEMBUR' + (lemburSecPB.keterangan ? ' (' + lemburSecPB.keterangan + ')' : '') + '. Silakan tetap melakukan absensi.';
+        } else {
+          document.getElementById('holidayNotice').style.display = 'none';
+        }
+        document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display=''; });
+        jamMasuk  = (lemburSecPB && lemburSecPB.jamMulai)   ? lemburSecPB.jamMulai   : jkPB.jamMasuk;
+        jamPulang = (lemburSecPB && lemburSecPB.jamSelesai) ? lemburSecPB.jamSelesai : jkPB.jamPulang;
         document.getElementById('absenShiftInfo').style.display = 'block';
-        document.getElementById('absenShiftLabel').textContent =
-          'Ikut Jam Kerja Pramubakti (' + jkPB.jamMasuk + ' - ' + jkPB.jamPulang + ')';
+        document.getElementById('absenShiftLabel').textContent = lemburSecPB
+          ? '🔥 Lembur (' + jamMasuk + ' - ' + jamPulang + ')'
+          : 'Ikut Jam Kerja Pramubakti (' + jkPB.jamMasuk + ' - ' + jkPB.jamPulang + ')';
       }
     } else if (shiftVal === null || shiftVal === undefined) {
       // Data shift tidak tersedia
@@ -8394,9 +8441,22 @@ async function initAbsensiPage() {
       document.getElementById('offDayNotice').textContent='⚠ Data jadwal shift hari ini belum tersedia. Hubungi admin.';
       document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display='none'; });
     } else if (shiftVal === '-') {
-      document.getElementById('offDayNotice').style.display='block';
-      document.getElementById('offDayNotice').textContent='😴 Anda sedang OFF hari ini sesuai jadwal shift. Tidak perlu absensi.';
-      document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display='none'; });
+      var lemburSecOff = getPenugasanLembur(u.idPegawai, todayVerified());
+      if (lemburSecOff) {
+        document.getElementById('offDayNotice').style.display = 'block';
+        document.getElementById('offDayNotice').textContent =
+          '🔥 Anda OFF sesuai jadwal shift, tapi ditugaskan LEMBUR hari ini' + (lemburSecOff.keterangan ? ' (' + lemburSecOff.keterangan + ')' : '') + '. Silakan tetap melakukan absensi.';
+        document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display=''; });
+        var jkSecOff = DEMO_JAM_KERJA.find(function(j){ return j.PEKERJAAN==='Security' && j.SHIFT==='Jaga'; });
+        jamMasuk  = lemburSecOff.jamMulai   || (jkSecOff ? jkSecOff.JAM_MASUK  : '07:00');
+        jamPulang = lemburSecOff.jamSelesai || (jkSecOff ? jkSecOff.JAM_PULANG : '07:00');
+        document.getElementById('absenShiftInfo').style.display = 'block';
+        document.getElementById('absenShiftLabel').textContent = '🔥 Lembur (' + jamMasuk + ' - ' + jamPulang + ')';
+      } else {
+        document.getElementById('offDayNotice').style.display='block';
+        document.getElementById('offDayNotice').textContent='😴 Anda sedang OFF hari ini sesuai jadwal shift. Tidak perlu absensi.';
+        document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display='none'; });
+      }
     } else {
       document.getElementById('offDayNotice').style.display='none';
       document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display=''; });
@@ -8408,16 +8468,26 @@ async function initAbsensiPage() {
     }
   } else {
     await ensureLiburLoaded();
-    if (isHariLibur(todayVerified())) {
+    var lemburUmum = getPenugasanLembur(u.idPegawai, todayVerified());
+    if (isHariLibur(todayVerified()) && !lemburUmum) {
       document.getElementById('holidayNotice').style.display = 'block';
       document.getElementById('holidayNotice').textContent =
         '🗓 Hari ini adalah hari libur' + (getKeteranganLibur(todayVerified()) ? ' (' + getKeteranganLibur(todayVerified()) + ')' : '') + '. Tidak perlu melakukan absensi.';
       document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display='none'; });
     } else {
-      document.getElementById('holidayNotice').style.display = 'none';
-      document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display=''; });
       const jk = DEMO_JAM_KERJA.find(j => j.PEKERJAAN===u.pekerjaan);
-      if (jk) { jamMasuk=jk.JAM_MASUK; jamPulang=jk.JAM_PULANG; }
+      if (lemburUmum && isHariLibur(todayVerified())) {
+        document.getElementById('holidayNotice').style.display = 'block';
+        document.getElementById('holidayNotice').textContent =
+          '🔥 Hari ini hari libur, tapi Anda ditugaskan LEMBUR' + (lemburUmum.keterangan ? ' (' + lemburUmum.keterangan + ')' : '') + '. Silakan tetap melakukan absensi.';
+        document.getElementById('absenShiftInfo').style.display = 'block';
+        document.getElementById('absenShiftLabel').textContent = '🔥 Lembur';
+      } else {
+        document.getElementById('holidayNotice').style.display = 'none';
+      }
+      document.querySelectorAll('.absensi-form-el').forEach(function(el){ el.style.display=''; });
+      jamMasuk  = (lemburUmum && lemburUmum.jamMulai)   ? lemburUmum.jamMulai   : (jk ? jk.JAM_MASUK : jamMasuk);
+      jamPulang = (lemburUmum && lemburUmum.jamSelesai) ? lemburUmum.jamSelesai : (jk ? jk.JAM_PULANG : jamPulang);
     }
   }
   document.getElementById('absenJamMasuk').textContent = jamMasuk;
