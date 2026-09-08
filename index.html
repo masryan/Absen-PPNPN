@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -1503,29 +1504,71 @@
   .cam-container { border-radius: 18px; }
   .location-status { border-radius: 9999px; font-weight: 700; }
 
-  /* ---- Layout 2 kolom: utama + panel samping ---- */
-  .absensi-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; }
+  /* ---- Layout: kolom utama (kamera + riwayat) ---- */
+  /* Kartu profil pegawai sudah digabung ke dalam .absen-hero-card (lihat
+     di bawah), jadi .absensi-layout sekarang cuma berisi 1 kolom utama. */
+  .absensi-layout { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
   .absensi-layout > * { min-width: 0; }
   .absensi-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  .absensi-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  @media (max-width: 900px) {
-    .absensi-layout { grid-template-columns: 1fr; }
-    /* Urutan tampil (mobile & desktop) mengikuti urutan markup: Waktu
-       Server & tombol absen -> Validasi Lokasi & Wajah -> Riwayat
-       Kehadiran -> Profil Pegawai. */
-  }
 
-  /* ---- Hero: Waktu Server + tombol absen ---- */
+  /* ---- Hero gabungan: Profil pegawai + Waktu Server + tombol absen ----
+     Sebelumnya kartu profil (nama, jabatan, jam kerja) ada di panel
+     samping terpisah, dan di layar mobile malah nongol paling BAWAH
+     (setelah Riwayat Kehadiran) karena mengikuti urutan markup saat
+     kolom di-stack jadi 1. Sekarang semua digabung jadi 1 kotak yang
+     sama, selalu tampil PALING ATAS di halaman Absensi (mobile maupun
+     desktop), pakai CSS Grid supaya urutan bagian-bagiannya bisa diatur
+     ulang per breakpoint tanpa duplikasi elemen (id tetap sama, JS tidak
+     perlu diubah). */
   .absen-hero-card {
     background: linear-gradient(135deg, rgba(16,185,129,0.14), rgba(0,108,70,0.08));
     border: 1px solid rgba(0,108,70,0.14);
     border-radius: 22px; padding: 22px 26px; margin-bottom: 16px;
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px;
+    display: grid; gap: 18px 24px;
+    grid-template-columns: 1fr;
+    grid-template-areas: "profile" "clock" "shift" "grid" "actions";
   }
+  @media (min-width: 701px) {
+    .absen-hero-card {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "profile clock"
+        "shift   clock"
+        "grid    actions";
+      align-items: start;
+    }
+  }
+  /* -- Bagian profil (avatar + nama + jabatan) -- */
+  .ahc-profile { grid-area: profile; display: flex; align-items: center; gap: 14px; }
+  .ahc-profile .apc-avatar { width: 56px; height: 56px; font-size: 20px; margin: 0; flex-shrink: 0; }
+  .ahc-profile-text { text-align: left; }
+  .ahc-profile-text .apc-role { margin-bottom: 0; }
+  .apc-avatar {
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--accent), #a9832f);
+    color: #fff; font-weight: 800;
+    border: 3px solid rgba(16,185,129,0.25);
+  }
+  .apc-name { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+  .apc-role { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+  /* -- Bagian jam server -- */
+  .ahc-clockwrap { grid-area: clock; }
   .ahc-label { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #0d7d5c; margin-bottom: 6px; }
   .ahc-clock { font-family: 'Space Mono', monospace; font-size: 42px; font-weight: 700; color: var(--text); line-height: 1; }
   .ahc-sub { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
-  .ahc-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  /* -- Bagian info shift & jam kerja -- */
+  .apc-shift-box {
+    grid-area: shift; margin: 0;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 10px 14px; text-align: left;
+  }
+  .apc-shift-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); }
+  .apc-shift-val { font-size: 13.5px; font-weight: 700; color: var(--primary); margin-top: 2px; }
+  .apc-mini-grid { grid-area: grid; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+  .apc-mini-grid .lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); }
+  .apc-mini-grid .val { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; color: var(--text); margin-top: 2px; }
+  /* -- Tombol absen masuk/pulang -- */
+  .ahc-actions { grid-area: actions; display: flex; gap: 12px; flex-wrap: wrap; align-self: end; }
   .btn-absen-masuk, .btn-absen-pulang {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 13px 22px; border-radius: 9999px; border: none; cursor: pointer;
@@ -1542,31 +1585,7 @@
   .card-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
   .card-title-row .card-title { margin-bottom: 0; }
 
-  /* ---- Kartu profil pegawai (panel samping) ---- */
-  .absen-profile-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
-    padding: 22px; text-align: center; box-shadow: var(--shadow-soft);
-  }
-  .apc-avatar {
-    width: 76px; height: 76px; border-radius: 50%; margin: 0 auto 10px;
-    display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, var(--accent), #a9832f);
-    color: #fff; font-weight: 800; font-size: 26px;
-    border: 3px solid rgba(16,185,129,0.25);
-  }
-  .apc-name { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
-  .apc-role { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; margin-bottom: 16px; }
-  .apc-shift-box {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    padding: 10px 14px; text-align: left; margin-bottom: 14px;
-  }
-  .apc-shift-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); }
-  .apc-shift-val { font-size: 13.5px; font-weight: 700; color: var(--primary); margin-top: 2px; }
-  .apc-mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .apc-mini-grid .lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); }
-  .apc-mini-grid .val { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; color: var(--text); margin-top: 2px; }
-
-  /* ---- Kartu Validasi Lokasi & Wajah (panel samping) ---- */
+  /* ---- Kartu Validasi Lokasi & Wajah ---- */
   .absen-loc-card { padding: 20px; }
   .apc-hint { font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 10px; line-height: 1.5; }
 
@@ -2059,12 +2078,27 @@
       <div class="page" id="page-absensi">
         <div id="absenAlert"></div>
 
-        <!-- Hero: Waktu server + tombol absen (paling atas) -->
+        <!-- Hero gabungan: Profil pegawai + Waktu server + tombol absen (paling atas) -->
         <div class="absen-hero-card">
-          <div>
+          <div class="ahc-profile">
+            <div class="apc-avatar" id="absenAvatarBig">A</div>
+            <div class="ahc-profile-text">
+              <div class="apc-name" id="absenNama">-</div>
+              <div class="apc-role" id="absenJabatan">-</div>
+            </div>
+          </div>
+          <div class="ahc-clockwrap">
             <div class="ahc-label">⏱ Waktu Server Saat Ini</div>
             <div class="ahc-clock" id="absenClock">00:00:00</div>
             <div class="ahc-sub"><span id="absenDateDisplay"></span> · Zona Waktu WIB (UTC+7)</div>
+          </div>
+          <div id="absenShiftInfo" class="apc-shift-box" style="display:none">
+            <div class="apc-shift-lbl">Jadwal Shift Hari Ini</div>
+            <div class="apc-shift-val" id="absenShiftLabel">-</div>
+          </div>
+          <div class="apc-mini-grid">
+            <div><div class="lbl">Jam Kerja Masuk</div><div class="val" id="absenJamMasuk">-</div></div>
+            <div><div class="lbl">Jam Kerja Pulang</div><div class="val" id="absenJamPulang">-</div></div>
           </div>
           <div class="ahc-actions absensi-form-el">
             <button class="btn-absen-masuk" id="btnAbsenMasuk" onclick="doAbsen('masuk')" disabled>→ Absen Masuk</button>
@@ -2128,24 +2162,6 @@
                 </table>
               </div>
               <div class="pagination" id="pgAbsenHistory"></div>
-            </div>
-          </div>
-
-          <!-- ===== KOLOM SAMPING ===== -->
-          <div class="absensi-side">
-            <!-- Profil pegawai -->
-            <div class="absen-profile-card absensi-form-el">
-              <div class="apc-avatar" id="absenAvatarBig">A</div>
-              <div class="apc-name" id="absenNama">-</div>
-              <div class="apc-role" id="absenJabatan">-</div>
-              <div id="absenShiftInfo" class="apc-shift-box" style="display:none">
-                <div class="apc-shift-lbl">Jadwal Shift Hari Ini</div>
-                <div class="apc-shift-val" id="absenShiftLabel">-</div>
-              </div>
-              <div class="apc-mini-grid">
-                <div><div class="lbl">Jam Masuk</div><div class="val" id="absenJamMasuk">-</div></div>
-                <div><div class="lbl">Jam Pulang</div><div class="val" id="absenJamPulang">-</div></div>
-              </div>
             </div>
           </div>
         </div>
@@ -5091,7 +5107,19 @@ function fmtTime(d) {
   return isNaN(dt) ? d : dt.toTimeString().substring(0,5);
 }
 function today() {
-  return new Date().toISOString().split('T')[0];
+  // PERBAIKAN: sebelumnya pakai toISOString() yang mengambil tanggal dalam
+  // zona UTC. Karena WIB = UTC+7, antara jam 00:00-06:59 WIB tanggal UTC
+  // masih "kemarin" — akibatnya tanggal hari ini bisa mundur 1 hari
+  // (mis. jam 06:32 WIB tanggal 8 Sept malah kebaca 7 Sept). Sekarang
+  // selalu dihitung dari zona Asia/Jakarta (WIB), bukan UTC atau zona
+  // device, supaya konsisten di mana pun fungsi ini dipakai (termasuk
+  // sebagai fallback todayVerified() saat dashboard admin dibuka sebelum
+  // syncServerTime() sempat jalan).
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(new Date());
+  const get = t => parts.find(p => p.type === t).value;
+  return get('year') + '-' + get('month') + '-' + get('day');
 }
 function todayStr(d) {
   d = d || new Date();
@@ -7906,6 +7934,15 @@ function stopPulangCardWatcher() {
 async function loadDashboard() {
   var u = currentUser;
   var isAdmin = u.status === 'Admin';
+
+  // PERBAIKAN: sinkronkan waktu server di sini juga. Sebelumnya
+  // syncServerTime() hanya dipanggil di initAbsensiPage() (halaman
+  // Absensi pegawai) — kalau admin login lalu langsung membuka
+  // Dashboard tanpa pernah membuka halaman Absensi, serverDateVerified
+  // masih null dan todayVerified() jatuh ke fallback today() versi jam
+  // device. Dengan dipanggil di sini, "Rekap Kehadiran Hari Ini" dan
+  // semua filter tanggal admin selalu memakai tanggal WIB yang benar.
+  await syncServerTime();
 
   // Tarik status permohonan cuti & daftar pegawai terbaru dulu, supaya semua
   // kartu dashboard selalu sinkron dengan data real di database (bukan data
