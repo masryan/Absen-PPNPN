@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -12441,6 +12442,7 @@ function cetakRiwayatSpkLembur(id) {
   var waktu = (r.jamMulai||r.jamSelesai) ? ((r.jamMulai||'-')+'-'+(r.jamSelesai||'-')+' WIB') : '-';
   var kota = r.kota || spkSetting.kota || 'Subang';
   var jabatanTtd = r.jabatanTtd || '-';
+  var namaTtd = r.namaTtd || '-';
   var pegawaiList = r.pegawai || [];
 
   function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -12526,7 +12528,7 @@ function cetakRiwayatSpkLembur(id) {
     + '<tr><td class="ttd-col-left">&nbsp;</td><td class="ttd-col-right">' + escHtml(kota) + ', ' + escHtml(tglSuratFormatted) + '</td></tr>'
     + '<tr><td class="ttd-col-left">&nbsp;</td><td class="ttd-col-right">Kepala Kantor Pelayanan Pajak Pratama Subang</td></tr>'
     + '<tr><td class="ttd-col-left">&nbsp;</td><td class="ttd-col-right"><div class="ttd-space">&nbsp;</div><span class="ttd-placeholder">Ditandatangani secara elektronik</span></td></tr>'
-    + '<tr><td class="ttd-col-left">&nbsp;</td><td class="ttd-col-right">' + escHtml(jabatanTtd) + '</td></tr>'
+    + '<tr><td class="ttd-col-left">&nbsp;</td><td class="ttd-col-right">' + escHtml(namaTtd) + '</td></tr>'
     + '</table>'
 
     + '<div class="tembusan">Tembusan:</div>'
