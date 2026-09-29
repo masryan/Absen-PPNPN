@@ -629,6 +629,8 @@
   .alert-error { background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; }
   .alert-info { background: #dbeafe; border: 1px solid #bfdbfe; color: #1d4ed8; }
   .alert-warn { background: #fef3c7; border: 1px solid #fde68a; color: #92400e; }
+  /* Kotak keterangan di menu Potongan Gaji: tampil sebagai satu paragraf (bukan kolom-kolom flex) */
+  #page-adminPotonganGaji .alert { display: block; line-height: 1.65; }
 
   /* ========= MODAL ========= */
   .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; display: none; }
@@ -2782,6 +2784,9 @@
             <button class="btn btn-primary" onclick="generatePotonganGaji()">🔄 Generate</button>
             <button class="btn btn-success" id="btnSimpanPotGaji" style="display:none" onclick="simpanSemuaPotonganGaji()">💾 Simpan Semua</button>
             <button class="btn btn-outline" id="btnExportPotGaji" style="display:none" onclick="exportPotonganGajiExcel()">⬇ Export Excel</button>
+          </div>
+          <div class="alert alert-info" style="margin-bottom:14px;font-size:12.5px">
+            🗓️ <b>Waktu pembuatan potongan:</b> potongan dibuat di <b>akhir bulan</b> untuk diajukan melalui surat ke <b>BRI</b>. Pilih bulan gaji yang akan dipotong — mis. dibuat pada <b>29 September 2026</b> berarti potongan atas <b>gaji September 2026</b>, yang diterima pegawai pada <b>1 Oktober 2026</b>.
           </div>
           <div class="alert alert-info" style="margin-bottom:14px;font-size:12.5px">
             Rumus BPJS TK otomatis: <b>(3,7% + 2% + 0,24% + 0,3%) × Gaji sesuai SPK = 6,24% × Gaji</b>. Nilai ini otomatis menyesuaikan jika gaji pegawai berubah, namun tetap bisa ditimpa manual per baris bila diperlukan. Klik ✏️ pada kolom "Utang ke Pegawai" untuk mencatat rincian nama pemberi pinjaman. Klik 🗑 pada kolom "Aksi" untuk membatalkan/menghapus data seorang pegawai jika terjadi kesalahan saat input atau simpan.
@@ -12406,10 +12411,10 @@ async function loadRiwayatSpkLembur() {
   <td>${r.keperluan||'-'}</td>
   <td>${r.namaTtd||'-'}<br><span style="font-size:11px;color:var(--text-muted)">${r.jabatanTtd||''}</span></td>
   <td style="white-space:nowrap">
-    <button class="btn btn-outline btn-sm" onclick="unduhWordRiwayatSpkLembur(${r.id})" title="Unduh sebagai file Word (.docx) — bisa diedit bebas">⬇️ Word</button>
-    <button class="btn btn-outline btn-sm" onclick="cetakRiwayatSpkLembur(${r.id})" title="Cetak / simpan sebagai PDF — pakai ini kalau unduhan .docx gagal">🖨️ Cetak</button>
-    <button class="btn btn-outline btn-sm" onclick="bukaEditRiwayatSpkLembur(${r.id})">✏️ Edit</button>
-    <button class="btn btn-outline btn-sm" onclick="hapusRiwayatSpkLembur(${r.id})">🗑 Hapus</button>
+    <button class="btn btn-outline btn-sm" onclick="unduhWordRiwayatSpkLembur(${r.id})" title="Unduh Word (.docx) — bisa diedit bebas" aria-label="Unduh Word">⬇️</button>
+    <button class="btn btn-outline btn-sm" onclick="cetakRiwayatSpkLembur(${r.id})" title="Cetak / simpan sebagai PDF — pakai ini kalau unduhan .docx gagal" aria-label="Cetak">🖨️</button>
+    <button class="btn btn-outline btn-sm" onclick="bukaEditRiwayatSpkLembur(${r.id})" title="Edit" aria-label="Edit">✏️</button>
+    <button class="btn btn-outline btn-sm" onclick="hapusRiwayatSpkLembur(${r.id})" title="Hapus" aria-label="Hapus">🗑</button>
   </td>
 </tr>`;
   }, 7, 'Belum ada riwayat pembuatan SPK Lembur');
