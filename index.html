@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -1223,6 +1224,17 @@
   .stat-card.red    { background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); box-shadow: 0 10px 24px rgba(239,68,68,0.32); }
   .stat-card.cyan   { background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%); box-shadow: 0 10px 24px rgba(6,182,212,0.32); }
 
+  /* ---- Mobile: angka pada kartu statistik tidak boleh terpotong ---- */
+  .stat-card { min-width: 0; container-type: inline-size; }
+  .stat-card .value { white-space: nowrap; }
+  @media (max-width: 768px) {
+    .stat-card { padding: 14px 14px 16px; }
+    .stat-card .value { font-size: 20px; }
+    @supports (font-size: 1cqw) {
+      .stat-card .value { font-size: clamp(12px, 9.5cqw, 26px); }
+    }
+  }
+
   /* ---- Tombol: bentuk pill selaras mockup ---- */
   .btn, .btn-import, .btn-sm { border-radius: 9999px; }
 
@@ -1599,6 +1611,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.44.0/docxtemplater.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js" defer></script>
 </head>
 <body>
 
@@ -2819,6 +2832,14 @@
             <button class="btn btn-primary" onclick="loadRiwayatPotonganGaji()">🔍 Tampilkan</button>
             <button class="btn btn-success" onclick="exportRiwayatPotonganExcel()" style="background:#16a34a;border-color:#16a34a">⬇ Export Excel</button>
           </div>
+          <div class="import-bar">
+            <label class="btn-import">
+              📥 Import Riwayat Pemotongan
+              <input type="file" id="riwayatPotFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importRiwayatPotonganFile(event)">
+            </label>
+            <button class="btn btn-outline btn-sm" onclick="downloadTemplateRiwayatPotongan()">⬇ Template Import</button>
+          </div>
+          <div class="import-hint">📋 Format kolom: Periode (YYYY-MM, atau kolom Bulan + Tahun) | ID Pegawai (atau Nama) | Gaji sesuai SPK | BPJS TK | Utang Ke Pegawai | Paguyuban. Total Potongan &amp; Net Gaji dihitung otomatis. Data pegawai + periode yang sama akan ditimpa. File hasil ⬇ Export Excel di tab ini juga bisa langsung diimpor.</div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>No</th><th>Periode</th><th>Nama</th><th>Jabatan</th><th>Gaji sesuai SPK</th><th>BPJS TK</th><th>Utang Ke Pegawai</th><th>Paguyuban</th><th>Total Potongan</th><th>Net Gaji</th><th>Aksi</th></tr></thead>
@@ -2892,10 +2913,6 @@
             Fitur ini mencetak berkas untuk diajukan ke bank: <b>Lampiran Potongan Gaji (.xlsx)</b> — daftar rekening pegawai yang didebet — dan <b>Surat Pengantar Potongan PPNPN (.docx)</b> — surat permohonan pendebetan ke bank; keduanya juga bisa diunduh sebagai satu berkas <b>PDF</b> siap cetak. Data jumlah per pegawai diambil dari tabel "Input Potongan" bulan yang sedang dipilih, jadi klik <b>🔄 Generate</b> pada tab tersebut terlebih dahulu. Pastikan juga setiap pegawai sudah punya <b>No. Rekening Tabungan Gaji</b> (menu Data Pegawai). Klik <b>⚙ Pengaturan</b> untuk memilih komponen potongan (BPJS TK / Utang ke Pegawai / Paguyuban) yang disertakan — jumlah pada lampiran &amp; surat akan otomatis menyesuaikan total potongan yang dipilih.
           </div>
 
-          <div class="form-row">
-            <div class="field"><label>Nomor Surat</label><input type="text" id="pot-nomor-surat" placeholder="cth: S-123/WPJ.09/KP.0903/2026"></div>
-            <div class="field"><label>Tanggal Surat</label><input type="date" id="pot-tanggal-surat"></div>
-          </div>
           <div class="form-row">
             <div class="field"><label>Tanggal Pendebetan</label><input type="date" id="pot-tanggal-debet"></div>
             <div class="field"><label>Kode Cabang Bank</label><input type="text" id="pot-kode-cabang" placeholder="cth: 0123"></div>
@@ -14204,6 +14221,139 @@ function exportRiwayatPotonganExcel() {
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
+
+// ---- Import Riwayat Pemotongan ----
+var _IMP_BULAN = { januari:1, februari:2, maret:3, april:4, mei:5, juni:6, juli:7, agustus:8, september:9, oktober:10, november:11, desember:12 };
+function _impAngka(v) {
+  if (typeof v === 'number') return Math.round(v);
+  var s = String(v == null ? '' : v).trim();
+  if (!s) return 0;
+  if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) return parseInt(s.replace(/\./g, ''), 10);
+  if (/^-?\d+(\.\d+)?$/.test(s)) return Math.round(parseFloat(s));
+  var d = s.replace(/[^\d-]/g, '');
+  return d ? parseInt(d, 10) : 0;
+}
+function _impNamaKey(s) { return String(s || '').toUpperCase().replace(/\s+/g, ' ').trim(); }
+function _impPeriode(r) {
+  var p = String(findCol(r, ['Periode']) || '').trim(), m;
+  if (p) {
+    if ((m = p.match(/^(\d{4})[-\/](\d{1,2})$/))) return { tahun: +m[1], bulan: +m[2] };
+    if ((m = p.match(/^(\d{1,2})[-\/](\d{4})$/))) return { tahun: +m[2], bulan: +m[1] };
+    if ((m = p.toLowerCase().match(/([a-z]+)\s+(\d{4})/)) && _IMP_BULAN[m[1]]) return { tahun: +m[2], bulan: _IMP_BULAN[m[1]] };
+  }
+  var b = String(findCol(r, ['Bulan']) || '').trim().toLowerCase();
+  var t = parseInt(findCol(r, ['Tahun']), 10) || 0;
+  var bulan = _IMP_BULAN[b] || parseInt(b, 10) || 0;
+  return { tahun: t, bulan: bulan };
+}
+
+async function importRiwayatPotonganFile(event) {
+  var input = event.target;
+  var file = input.files[0];
+  if (!file) return;
+  if (!SCRIPT_URL) { alert('⚠ Supabase belum dikonfigurasi!'); input.value = ''; return; }
+  readFileAsCSV(file, async function (csv) {
+    try {
+      // Lewati baris judul (mis. dari file hasil Export Excel) sampai baris header kolom
+      var lines = csv.replace(/^\uFEFF/, '').split(/\r?\n/);
+      var hi = -1;
+      for (var i = 0; i < lines.length; i++) {
+        var lw = lines[i].toLowerCase();
+        if (lw.indexOf('nama') >= 0 && lw.indexOf('gaji') >= 0) { hi = i; break; }
+        if (lw.indexOf('id') >= 0 && lw.indexOf('bpjs') >= 0) { hi = i; break; }
+      }
+      if (hi > 0) csv = lines.slice(hi).join('\n');
+      var parsed = csvToRows(csv);
+      if (!parsed.rows.length) { alert('File kosong atau format tidak dikenali.'); return; }
+
+      var pegawaiList = await getPegawaiCacheForPotongan();
+      var byId = {}, byNama = {};
+      pegawaiList.forEach(function (p) {
+        byId[p['ID PEGAWAI'] || p['idPegawai']] = p;
+        byNama[_impNamaKey(p['NAMA'])] = p;
+      });
+
+      var valid = [], skip = [];
+      parsed.rows.forEach(function (r, i) {
+        var idRaw = String(findCol(r, ['ID Pegawai', 'idPegawai', 'ID']) || '').trim();
+        var namaRaw = String(findCol(r, ['Nama']) || '').trim();
+        var p = (idRaw && byId[idRaw]) || byNama[_impNamaKey(namaRaw)];
+        var per = _impPeriode(r);
+        if (!namaRaw && !idRaw) return; // baris kosong / total
+        if (!p) { skip.push('Baris ' + (i + 2) + ': pegawai "' + (namaRaw || idRaw) + '" tidak ditemukan'); return; }
+        if (!per.bulan || per.bulan < 1 || per.bulan > 12 || !per.tahun) { skip.push('Baris ' + (i + 2) + ': periode tidak valid (' + (namaRaw || idRaw) + ')'); return; }
+        var gaji = _impAngka(findCol(r, ['Gaji sesuai SPK', 'Gaji SPK', 'Gaji'])) || Number(p['GAJI']) || 0;
+        var bpjs = _impAngka(findCol(r, ['BPJS TK', 'BPJSTK']));
+        var utang = _impAngka(findCol(r, ['Utang Ke Pegawai', 'Utang Pegawai', 'Utang']));
+        var pag = _impAngka(findCol(r, ['Paguyuban']));
+        var total = bpjs + utang + pag;
+        valid.push({ idPeg: p['ID PEGAWAI'] || p['idPegawai'], nama: p['NAMA'], bulan: per.bulan, tahun: per.tahun,
+          gaji: gaji, bpjs: bpjs, utang: utang, pag: pag, total: total, net: gaji - total });
+      });
+
+      if (!valid.length) { alert('Tidak ada baris valid untuk diimpor.' + (skip.length ? '\n\n' + skip.slice(0, 8).join('\n') : '')); return; }
+      var msg = 'Ditemukan ' + valid.length + ' baris valid' + (skip.length ? ' (' + skip.length + ' dilewati)' : '') +
+        '.\nData untuk pegawai + periode yang sama akan ditimpa.\n\nLanjut impor?';
+      if (skip.length) msg += '\n\nDilewati:\n' + skip.slice(0, 8).join('\n') + (skip.length > 8 ? '\n...' : '');
+      if (!confirm(msg)) return;
+
+      // Rincian utang yang sudah ada per periode (agar total utang & rincian tetap sinkron)
+      var utangExist = {};
+      var periodeSet = {};
+      valid.forEach(function (v) { periodeSet[v.tahun + '-' + v.bulan] = { bulan: v.bulan, tahun: v.tahun }; });
+      for (var k in periodeSet) {
+        var ru = await callAPI('getUtangPegawaiPeriode', { bulan: periodeSet[k].bulan, tahun: periodeSet[k].tahun });
+        ((ru && ru.success) ? ru.data : []).forEach(function (it) {
+          var key = it.idPegawai + '|' + it.tahun + '-' + it.bulan;
+          utangExist[key] = (utangExist[key] || 0) + (Number(it.jumlah) || 0);
+        });
+      }
+
+      var ok = 0, gagal = 0;
+      for (var j = 0; j < valid.length; j++) {
+        var v = valid[j];
+        var res = await callAPI('savePotonganGaji', {
+          idPegawai: v.idPeg, bulan: v.bulan, tahun: v.tahun, gaji: v.gaji,
+          bpjsTk: v.bpjs, utangPegawai: v.utang, paguyuban: v.pag,
+          totalPotongan: v.total, netGaji: v.net
+        });
+        var okRow = !!(res && res.success);
+        var exist = utangExist[v.idPeg + '|' + v.tahun + '-' + v.bulan] || 0;
+        if (okRow && exist !== v.utang) {
+          var ru2 = await callAPI('saveUtangPegawaiList', {
+            idPegawai: v.idPeg, bulan: v.bulan, tahun: v.tahun,
+            items: v.utang > 0 ? [{ nama: 'Hasil import', jumlah: v.utang }] : []
+          });
+          okRow = !!(ru2 && ru2.success);
+        }
+        if (okRow) ok++; else gagal++;
+      }
+      alert('✅ Import selesai: ' + ok + ' baris berhasil' + (gagal ? ', ' + gagal + ' gagal' : '') + '.');
+      loadRiwayatPotonganGaji();
+    } catch (err) {
+      alert('❌ Gagal mengimpor: ' + err.message);
+    } finally {
+      input.value = '';
+    }
+  });
+}
+
+function downloadTemplateRiwayatPotongan() {
+  var aoa = [
+    ['Periode', 'ID Pegawai', 'Nama', 'Gaji sesuai SPK', 'BPJS TK', 'Utang Ke Pegawai', 'Paguyuban'],
+    ['2026-05', 'CS2', 'Contoh Nama', 3600000, 224640, 0, 0]
+  ];
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 30 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 12 }];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Riwayat');
+  var out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  var blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'Template_Import_Riwayat_Pemotongan.xlsx';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
 // ---- Rekapitulasi Bulanan ----
 var rekapPotRowsRaw = [];
 function initRekapPotFilter() {
@@ -14459,9 +14609,6 @@ function initPengantarPotongan() {
   document.getElementById('pot-kota-surat').value = potPengantarSetting.kota || 'Subang';
   document.getElementById('pot-nama-pembuat-daftar').value = potPengantarSetting.namaPembuatDaftar || '';
   document.getElementById('pot-nip-pembuat-daftar').value = potPengantarSetting.nipPembuatDaftar || '';
-  if (!document.getElementById('pot-tanggal-surat').value) {
-    document.getElementById('pot-tanggal-surat').value = new Date().toISOString().slice(0, 10);
-  }
   if (!document.getElementById('pot-tanggal-debet').value) {
     document.getElementById('pot-tanggal-debet').value = new Date().toISOString().slice(0, 10);
   }
@@ -14529,8 +14676,104 @@ function ymdToInt(isoDateStr) {
   return parseInt(String(isoDateStr || '').replace(/-/g, ''), 10) || 0;
 }
 
-// Membangun & mengunduh lampiran_potongan_gaji.xlsx (format bank: Rekening Kredit / Rekening Debet)
-function buildLampiranPotonganXlsx(rows, setting, tanggalDebet, bulanVal, labelPotongan) {
+// Template lampiran (template_lampiran.xlsx: sheet "Utama" + "cetak") disematkan sebagai base64
+var LAMPIRAN_TEMPLATE_B64 = "UEsDBBQABgAIAAAAIQAnZcJVpgEAAH4GAAATAAgCW0NvbnRlbnRfVHlwZXNdLnhtbCCiBAIooAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEVc1O4zAQvq/EO0S+osaFw2q1asqBHwkJWCTYB5jak8aqY1uegW3fnokpaLUqLRWV9pIosef7GdufJ2fL3lfPmMnF0KiTeqwqDCZaF+aN+v14NfqhKmIIFnwM2KgVkjqbHn2bPK4SUiXVgRrVMaefWpPpsAeqY8IgI23MPbB85rlOYBYwR306Hn/XJgbGwCMeMNR0coEtPHmuLpfy+1XJzAVVnb/OG6gaBSl5Z4BFqH4O9h+SUWxbZ9BG89QLdE0pI1jqELn3dcpOGPMDMosxUnojZ0ZP+5GuXdVSWYRR5xIdi/UPGIaRj12t637JcmRnsbqHzHfQi3e99PpPzItZjIt6O8i+rSktqntw4U33Fv4ymXR5nRxYyOCvAO+p4/Q/6WDZ66jL8+utKDA7jBOvPNKhl7+A7mLuIKN9YDlF84ML+Bt7hw4D3px3slUP3IR33G38Ei23yGCBQd/ADP11aOMnhPS0zqbaeCByElMlK/yA8R4Wmw6dMN7nmEjyMuP+lt/CaageJQHCzA4/xyhh++Ue45DmFu0Gbl1uj+kLAAAA//8DAFBLAwQUAAYACAAAACEAMR2JzSIBAADeAgAACwAIAl9yZWxzLy5yZWxzIKIEAiigAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKyS0UoDMRBF3wX/IeS9O9tVRKTbvohQUBCpHzBNZrehSSYkUdu/N60WXahF0Mdk7tycuZPJbOOseKWYDPtWjqtaCvKKtfF9K58Xd6NrKVJGr9Gyp1ZuKcnZ9Pxs8kQWc2lKKxOSKC4+tXKVc7gBSGpFDlPFgXypdBwd5nKMPQRUa+wJmrq+gvjdQ04HnmKuWxnn+kKKxTaUl//iDY4yaswIiiONQixkMZsyi1hg7Cm3UrN6LNdpr6gKtYTjQM0PQM6oyIm7XCl2wF1n1G7Mpoa6GU4KymJKpgj2CVpckh2SPBxw73e1ue/4FNH49xF9YN2yenHk85EtfIIfFF/5bCy8cVwvmdenWC7/k4U2mbwmfXphGMKBCAa/cvoOAAD//wMAUEsDBBQABgAIAAAAIQBFhW3zOAQAAH0KAAAPAAAAeGwvd29ya2Jvb2sueG1srFZtc+I2EP7emf4Hn5uvjiVbxuAJuQlg32WaZJiESz4ywhagYktUFoHMzf33rozNS2g7NFcGZCQtj57dfXbF1edNkVuvTJVciq6NL5FtMZHKjItZ1/42Spy2bZWaiozmUrCu/cZK+/P1r79craVaTKRcWAAgyq4913oZuW6ZzllBy0u5ZAJ2plIVVMNUzdxyqRjNyjljushdD6GWW1Au7C1CpM7BkNMpT9lApquCCb0FUSynGuiXc74sG7QiPQeuoGqxWjqpLJYAMeE5128VqG0VaXQ7E1LRSQ5ub3BgbRS8W/DBCAavOQm2To4qeKpkKaf6EqDdLekT/zFyMT4KweY0BuchEVexV25yuGOlWh9k1dphtfZgGP00GgZpVVqJIHgfRAt23Dz7+mrKc/a8la5Fl8sHWphM5baV01LHGdcs69ohTOWa7RcC21KrZW/Fc9j1iO8T273eyXmorIxN6SrXIxByAw+V4RHPaxlLEMZNrpkSVLO+FBp0WPv1s5qrsPtzCQq3HtmfK64YFBboC3yFkaYRnZRDqufWSuXbCJZQcgvgKRZs5RRvl+WcKraUXGyVt4ToSEFzUJnZeaNCy3FjP57JMc/cpphK9/fh0CJ+xx0OH4YP7hf6B7cyKqyh1FLMqHAfuUg5PA+UT0/L7D9on6YmoC5EdOv19vv76ILzKmr0PdTKgu+3gzvI8RN9hYyDrrK6IdxCStvj70nbGwQ4RE4YxDcO8XHbuYnjwCEoRH47Cfsewj/AC9WKUklXel6ryGB2bQKSOdm6p5tmB6NoxbP9+d9R/XLM893Q7P0wnpp++czZutzrzUytzQsXmVx3bQebKnk7nq6rzRee6TnosEM8MNmufWV8NgfGGPkIFmmq+Ssb0QmsGBc8w7NrH/EbbPkl8HLMcMTPPSBY9WkgWj0tUdXWN00LCveBaeEm1HCKiswR6jbDxsFD45Rpujgwhoa5M/aqvDdHQMFxwTJTv3Dgwaw+drzJRXE5TrgpuwHVdEJLZso6pflTwwX8n/MsY+YWs68rpp9+e4yTT1fuAeI/ww8VFM34Bq6oU+Qa7uLmAkcXXy+84B3m4QngAdBKoY+YRxWlDkZe23jMNvqu1NUTSphDajBBNyHqEAfFPuiz3fGcNvE9p08GXhyE8SDuBUap5o6N/o+bpuokUXN5G5bQF/RI0XQBV/4jm/YgtiaEpjCB7yHZXtDuIR8okgQnDsEd5PR6LeIEg8QPQjzox0GyJ2vcn36wz7fd6teM6hX0QNP+qnlkxqRe3S1Otwu1WI7aT/Q4MI7Uv/43wyfwPmdnGifPZxr2H+5H92fa3sWj8UtSxf1vvX2fjQEmHeRDf/P9PnFImIROO0GB45OQ9APSizEK99nI1+nrx5LhEbeRS//wf1LdM01yDHhU/4m0SqbrrSMZGfqV+Hdo138BAAD//wMAUEsDBBQABgAIAAAAIQD+aepXCgEAAMwDAAAaAAgBeGwvX3JlbHMvd29ya2Jvb2sueG1sLnJlbHMgogQBKKAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC8k09LxDAQxe+C3yHM3aatuohsugdF2KuuHyCk06Zsm5TM+Kff3lCxdWGpl+Jx3pD3fjwy291n14p3DNR4pyBLUhDojC8bVyt4PTxd3YEg1q7UrXeoYECCXXF5sX3GVnN8RLbpSUQXRwosc38vJRmLnabE9+jipvKh0xzHUMtem6OuUeZpupHhtwcUJ55iXyoI+/IaxGHoY/Lf3r6qGoOP3rx16PhMhOTIhdFQhxpZwTh+i1kSQUGeZ8jXZPjw4UgWkWeOSSI5bvIlmOyfYRab2awJY3RrHqxu3NzMJC01crsmBFkdsHzhEC+AZpATeQnmZlUYHtp4cNOHpXH+iZcnN1h8AQAA//8DAFBLAwQUAAYACAAAACEAPyOd5g8MAADyPgAAGAAAAHhsL3dvcmtzaGVldHMvc2hlZXQxLnhtbKSV3W7aMBSA7yftHSLfN8EBQoMIVUVVrVI1VaXdro3jgNUkzmxTYNPefcdOnFSFbWmLIMfYPp/PrzO72Be598yk4qJMEPYHyGMlFSkv1wl6fLg+O0ee0qRMSS5KlqADU+hi/vnTbCfkk9owpj0glCpBG62raRAoumEFUb6oWAkrmZAF0fBXrgNVSUZSq1TkQTgYREFBeIlqwlT2YYgs45RdCbotWKlriGQ50WC/2vBKOVpB++AKIp+21RkVRQWIFc+5Plgo8go6vVmXQpJVDn7v8YhQby/hG8Jv6I6x80cnFZxKoUSmfSAHtc3H7sdBHBDako7974XBo0CyZ24S2KHC95mExy0r7GDDd8KiFmbCJadbnibo16D5nIHE5jHoHm7tN5rPbJ3cyfmsImu2ZPqxupNexvWDuIMJqFUUzGdBuyvlUBAmCJ5kWYIu8fQ2HJstdsc3znbqxdj7KUSxpCRnX02B5oAbQOm3s0tT2bfkILbaqCYohlVT8ishnszMDbgyACsrUjJvv6ygcBIEMTt0Qy2qW5bpBcsBv4iRR6jmz+wONBK0ElqL4p6vN9o2mIa5TIqfrLQ2s5zBZnDG8BMEqGZrzWiYGFR/WHcXNhrqlVp9iDHCHV4rXkI+GkUYmhidVDxx5FUIPjaqZtymwMTEpeNlsK9t/0PmUpaRba4XIv/OU72BiPp4EkfnkzFya/di94WZiEA2RlAxpuWm6eGKKQq9DvH2rbFU5JBKeHoFN3cWtCrZW7mryaOOrPTBdK+xesWUvjZZAgW6VRD9xhAbuhYHOy0OZIMbRh/hQagtD2TDsyHs7PqHLRAEqwuy0cUTfzQeYqhsuJVr1wDc0zVQsjiQDjc6wvWPVNTgQDpc7E/CaBy9NA9s72nepOGB/Lt5/XHw4rLegnS4sT8ehU3NufD1B0IHWyBIB4z8MIpf5aM/EMOdUpeuuVzq2sXHGXkDsO0FGDjg8AMpxq4bzKABxid87l802PWD6fCW2N4EXb/CzdK1uKtc3JVufCKXbzDDFS+Ohuf/tySwd84fAAAA//8AAAD//6xbbW/bNhD+K4HQAcmMJqYkv8RIDFR2bDndMGDDsM9B6qz90HaIs2z79yN5R4s8Hk+ylH1oO/L43El8eOQ9om8On/f7l/XDy8Py5vn7P2fPt5nKzg5/PXw76H8tVK7/xzY9/n14+f518/3568OLbfhs/iov80l2Bn31/suftjE7+1eVD4+LT/+t94fH/TdtOL4ssuXNo4H/YPBvs1Ij646Dbn5djm+uXpc3V49oUjEmKjRZMSZ5aLJmTIrQ5A5NCi+WMjTZoEmZXWF0W2yZHFtqbNF/HR9pEsLsGJNpaHLPmMxCk49gkhvPV3q6jnNmpqnrnM0vZyfPGdBAz5l7CVXUsopa1seW5rXQCQAT//3PyftHEO/VXocWW7DQz3R8+YoQqkYQdYx/F7XcRy0foSV+2zrc6G2Xbhl4S0RcBgbkNptq/j/ZwD8/PO8/ZWfP+ye9RorFh1wjHr7opZMtR7/+8sf5xXvz57sP7/KLm6sns2rIkqgAUQUvgi4bsJn774ouGzC5tguzuB6b/8iqQUc6Mib2u2Jxp8YQu8qW58XlbJSPzs/Hl3k50nng4uLihx/Xmgf2GfKyKKbjS+vF/kEIsvF86ScGOzL/gQmd+eZp4tdcF4vaveY8W94Vo00x2rrQFMRG1jE600/GPPuuWOwcoE54o3Xxvj4+6XQynZYkvHuAyw0N9OM1UxGsbsMEurpP5psBYfgGFNPL+nVJiFDBiJnPFTI7KzAJ6ETy5xpMkE5Tjk5goTlDXqkJza5YHVpe6ncn0MTDiLaTrdRZN/EFBDHO7cpvd75D/IgTBqMwKed1WRSziSY6yfgwMJ59u1F+RFiLYFt+wpY4I+k1P5whBkRmCJn+CkYEDCH73gpMRIaAicQQsBjGEA8jZojUWTfx9WYI4p/OEBiYYgjCegzBlpgh07dgiAGRGUJWfwUjAoaQY88KTESGgInEELAYxhAPI2aI1Fk38fVmCOKfzhAYmGIIwnoMwZaYIXqShucQAyIzhCSICkaEpxZy7F2BjUgRMJEogo4GbTMeRkwRqbNu4utNEcQ/nSIwMEURhPUogi0xRfQMDKeIAZEpQjJEBSNCipAyYQU24sEWTKSDLTpKHGxNr97Ry+ShVsfU7VDr+YlpJHXWzTMwx1kMcKKPsvPRZj7adg1ohz4Tp1rE1YfU0Xr+vnaoBXuiBagU2dCRRzZsicl2/RZkMyAy2UiuqWCE0mmyKSdJxbkCG5FsYCKRDR2J+aitOvIwYiJJnXUTXzIftTjfIb6Yj1iKwMCWosfWkIOrHosiE4BkkgqHBAzIycl9hUYiBdBG4oDzNYgEPkjMArG39mLszQPn4XQi4Mg2JnCK5Mn1rwLtLBJcvAKYLPMKh4RMiIRIwA2YQGtgBJJOJ85XYu9RanGXGz1Kb0Cz5AakdHCwA7XVy747hjPwTPY4HfXW3tP0Pss4/6cfZnBkaoNxwN4O45riLcbK28NzDOiEErOoIFk5Yd2vjHIiwKzQSKYWOBepBSZ8cTQDfaJVYHEBG34yhPFcaLGDUXlqBDCBplgzsaylwjlCi0wZc+oKekwyBYF9pmATw5Q30XxVQvT1cpBZwuG3EBgTEIXKcIgrEyXQdVkhDmH4Zb8Re7dib4290uSTHXbnAOVdhWHaPY5MzjtKuP68YxMz7121V/vl6+TvKqpdlfVEYSsCVjgm3JXIjrNCI/l8EkizrNLvfLHnE5c62g6pPgiTOkR1FsdKxGn7hLBz/nucT2SB1gFbJgWKvalVh1fKFkU+vCoqyeKYkB1UlEUjOV+0y7LOF7snbMJe/tONiFBjrzT5LOzOwUoznnMp8B5HJnNHrLg6X0zueBPN1cxkSwmrqOqKY0ISUN0VjeQUESivfIqQpNfOKULUXt3jsDyrsXdYiugiv7K1LHpvK2ECcRVP16eXMO3qqqLyqkIxz9czcqqvopFMhUBh5akgSaydqRDIqDn7xdc9VIIQnbRW892ZHjU7KKyKZ0FKYg13BaN1HcuN3iwAxUwsN6iCqlBl0+nrqGrlVEJFI5kFACRqGugrsStIvVsXZ2JiG+epEiKaUnQn7v0cme8xlOROgMDM3h8Il71nuV25VFS6VKjIBbNMtUs0kmc5UC/5WkGSLzsXlYFEqSbMaX7rHipBiXYdU83YsrKDeqnmbFmZki/hq72LNyZGbm7FDF7+FqXlUEglTRwTnAcKKmmikUgMtJGWv/M1qGTwQeKSQeytvRh7S5rOw+klA45MpQ0HzLAjUDn7po28XeVUVObEMb7CUFCVE23EigFtJCkKTYZJUT4IQw5Ru/Ri7K1dOv+na5c4MkkODJ0hhxGmhqeOdqGSfuiorOis72H5M19QoRKN5NQRCJXs+dH5GpY6AimSJLmt7yJWtrF3UCnhPPRIHXjfNLoMCBuLA2bYEYiTvVNHuziZU3Eyj8XJgoqTaCOnjnZxEmEgdaSulebH25ZtH0B8OCaJiHdKcaxIkxb/O+e/RxJJ3RlFmvjyZnhJPNAye9OkXbKkHzIqeyfWfLjyLoJTxRJtgjxDitk12ojHD09OfErSRDvvdlMDPfKS+FbshavFt9mwbNLlbilbkmJsyb3Gv10a0iTQLnvTBJWya+8nA3iZcXxsWplfj2hxS5+K3A8L1q6Jv4uiu/UVazNKfwidZ8vffv/5fF0sNDPcrfh5zpURd0lYALKXdMtyYi7pNteMyUlp0wVkwlYxXUayn826DFTj3AZO5IwuQ2f6w5+5Wk0uJruh9jcuwI6r5pdC/wMAAP//AAAA//9skE1uwjAQha9izQGaugjRjuJIEBAEqStO4JJJYmE8lmOE1NPXiZR2Ue/mffP7prxT6Kkma0dx5YeLCt6hKn+pCNQpOEs8v0HxjzcSmxzfStzm+E7iLsdriXWO7yXuc/wg8Sgz95wknub64s9WVXrd06cOvXGjsNQli68vGxDB9MMSR/YzXYP44hj5vqiBdEthUisQHXNcRHrGNPdC8eGF157CxXyTgg8Q41XbKUodHAy5qKNhp8Bq16acp7QbTasgNO3sonhyuI0DUax+AAAA//8DAFBLAwQUAAYACAAAACEA1AoNJUkIAACPJwAAGAAAAHhsL3dvcmtzaGVldHMvc2hlZXQyLnhtbJxUXW/aMBR9n7T/EPmdfAMBARVtioa0B7S227NxbsAijjPbFNC0/75rEygSU8cqJbmOfc+5534ko7u9qLxXUJrLekwiPyQe1EwWvF6NycvzrJMRTxtaF7SSNYzJATS5m3z+NNpJtdFrAOMhQ63HZG1MMwwCzdYgqPZlAzWelFIJavBVrQLdKKCFA4kqiMOwFwjKa3JkGKpbOGRZcga5ZFsBtTmSKKioQf16zRt9YhPsFjpB1WbbdJgUDVIsecXNwZEST7DhfFVLRZcV5r2PUsq8vcIrxjs5hXH7V5EEZ0pqWRofmYOj5uv0B8EgoOzMdJ3/TTRRGih45baBb1TxxyRF3TNX/EaWfJCsdyaz5VLDLS/G5Fc26+ZRPn3oPEZJ2EmzcNqZxvdZ5zFPo1mWRPlD7/43mYzcnCzUZNTQFTyBeWkWyiu5eZYL3MBZJcFkFJy9Co4DYYvgKSjHZBoN50lmXZzHdw47fbH2DF0+QQXMAGqKiGdk8xVK8wBVheA+8ex8L6XcWOQcfUIrySFsDMoMf4Wjd47e+qeLisuzKAs8CbwMP3NfBOZSQEm3lfkmd1+Ar9YGdaR+FytlR21YHHLQDGccQ/tJ1/IyWWEO+PQEtx8rzijdO7vjhVnjKvPTbhLFSMK22kjxo91v0Uccdtbh0La4JPTj3uDfSGyjQ6JtkTEu3wmVtgC0J4kDv5vGg17Wf18knrpQaP8ruV6LQ3vC9W9LDrvoItret2VLbtOKv0iHRHtCRhfIJWgz47a9f6tV4Lr6BwAA//8AAAD//5SazW7bOBSFXyXwaooBaon6deAYqCVb7mJWRR8gSFN01RnUQTvz9kPSl+T9c0V2VVwfX0qfyMMjOvvrt9fXt/n57fmw//H3r4cfT5t683D95/n71f7vcbd5+Ldun18ev/w3v15fXr+/PW2q9023OexfnPaDEz9tzLB5sJ9cbfnnoen325+H/fYFNEdFU1PJpLUZqGYGzYiHGqnmpPXZUc1Z0bQV1Syahl3zRdMY2ucjaHabrQVi+UbIpgSyEz9tmgrd+Y7d1fGmaYmGEZygj72o+LDahlEGjbGP8uvhz0+f//pjbh9n073bb7+6p1tXpuuangE7xdZOwz48kw8NY7TQTyvTV33FWWtX3sYrJ2SbErJOzKZv27Hpq2j49FUkDZ++oMHTt2Ur5aRdDutzjho7pfwaXETlIiofoSInYluCy4ntRCQTiC3Bo6Zhk3VSNB2bNDNoGu8ptWkbOelim4DiLCoLVIxbgR7XBVfIzOlKUDgxQ9GxaXHUNGz2T5qGowDNDYUxbd9W76v4j63gU+wYqYjKApU2UcEaQqUvoeLEnAq7vqOmSWvZP6NJ03AqoMmkEjtGKqKyQAXNFawhVOyGl79JOjGnwl1G0zB7mDQNpwKaTCqxY6QiKgtUEBWsIVSsueVTcWJOhZndUdMww5k0DacCmkwqsWOkIioLVBAVrCFUbIjKp+LEbK/v+F4PGmzDfEOeFI2wWNAAFe+wv/GV2DFSEZUFKogK1hAqtY0qBTnTqdls6bnf+pZcxA1XEwkyQZSJJvWMbGRpCSVEh5QonrIYfguaJCL23HhrEJF5w51XE0k80CkXTxw44RGlJYyM8YDKlyieogBdK/mx5w6sirgFayKJB4bLtJvUM+GJFxxTXlBhPFhF8RSl4PqWDkmu67kVqyLuxZpI4oHhbng6n2f4e1y8ooRElJYwGkaCVRRJUdKtlYjacx/WRAPbeiZNJJGQtMtfrlKLREMm3aDCNLCK0igKu7WSUgfhvppIuG9O3g3D5dqLTLzpgtP6ARXGczf01kWp16vZvjMI91Uy7SDcNyf4huHg1ej2IsAXkMy76SoTE5l4iYpOGZx5bdhZORhSwuogLFcTCcvNib01zb1rWSbI6/gCdJalJZTwlLmbfWscftfxKKl1EJariYTl5uRff3F2hsYdSXmbDhrMRObeoMJM7ibfGkffdSZK9h2E5yrBdhSem5N+/cVFJsJzZdwNX0iAllDCNHAGpmd+OPGu0jCQeK1HxdO6kXtuEOFIN3LP1URiBwoiMJVB25XV0ZjPnZMo2kwoIUqkRCnh4LtOScm0I3PVo9FEzIsmTSQplQXf1DNu3LK0hBLGczf4Ghx81/EowXfk5/O+Jdu+RnF2rHSSeMqCbxo44ZHBN6gwnrvB1+Dgu45HCb4jP9D0LTkefqKpiSQeEnxvR5q/eeFOPRMeGYKDCuO5G4INDsHreJQQvGNGefQtGZ4dPyDXRBIPCcGr55ypZ8IjU3FQYTx3U7HBqXgdj5Jld8x8j74lx8M8c9JEEg89Bl6LOKlnwiMPgoMK47mbig1OxWt4Zq+2d97HjLXI0oWU6EZQkjdn9xOkOyAa0pF2KI3y17eSrDYbyDep9cmV4q68Y/vNJXzB3zm9p5JANBuIEnhgW0oDsz3sEr4gB3YnQ/G0bfXReTWFGUpK65INe3aHDOw5hZLSumSzmxvYFdAUCCWlddoo2sd1IOCouDWUlNbJZHNagxul1ksDJTlx7S/v4THmtIaVjFtDSWmdFndOa3hzRFPTLnT/ZMkMZVljCSL/PbI07MotuTWx3E+uQVoaKb/QUdLKz7lLufIbsvJTVriNsk1/TvE/AAAA//8AAAD//zSNSw7CMAxEr2L5AJQKIT5quu+CVU9giNtEhDhyjZA4PSlSd/NmpDddoZlvpHPMCySezOF+d0LQOIctm5R/e0S4i5m8NgpMnnWlA8IkYhs0fbd6R7Z3gUKFdYxfdnhBWB6Uajq3CKKRs5FFyQ4TZV+3wvX7Gr1DHXyLVdR8RJ9LYLb+BwAA//8DAFBLAwQUAAYACAAAACEAvaC/vUsHAAAdIgAAEwAAAHhsL3RoZW1lL3RoZW1lMS54bWzsWktvGzcQvhfofyD2nliyJccyIgeWLMVJ/IKtpMiRWlG7tLnLBUnZ0a1IjgUKFE2LXgr01kPRNkAC9JL+Grcp2hTIX+iQXElLi4qtxkVfdoB4H98M583ZoW/eepQwdEyEpDytB+XrpQCRNOQ9mkb14H6nfW0lQFLhtIcZT0k9GBIZ3Fp7/72beFXFJCEI6FO5iutBrFS2urAgQ3iM5XWekRTe9blIsIJbES30BD4BvglbWCyVlhcSTNMApTgBtrv9Pg0J6miWwdqIeYvBbaqkfhAycaBZE4fCYHtHZY2QQ9lkAh1jVg9gnR4/6ZBHKkAMSwUv6kHJ/AQLazcX8GpOxNQM2gJd2/zkdDlB72jRrCmi7njRcrtSu7Ex5m8ATE3jWq1Ws1Ue8zMAHIagqZWlyLPSXik3RjwLIHs5zbtZqpYqLr7Af2lK5lqj0ajWclksUwOyl5Up/EppubK+6OANyOKrU/hKY73ZXHbwBmTxy1P49o3acsXFG1DMaHo0hdYObbdz7mNIn7NNL3wF4CulHD5BQTSMo0sv0eepmhVrCT7kog0ADWRY0RSpYUb6OIQobuKkKygOUIZTLuFBabHULi3B//pfxVxV9PJ4leACnX0UyqlHWhIkQ0EzVQ/uAtegAHnz8ts3L5+jNy+fnT5+cfr4h9MnT04ff295OYSbOI2KhK+//uT3Lz9Evz3/6vXTz/x4WcT//N1HP/34qR8I+TXR/9Xnz3558ezVFx//+s1TD3xd4G4R3qEJkWiHnKB9noBuxjCu5KQr5qPoxJg6FDgG3h7WLRU7wJ0hZj5cg7jGeyCgtPiAtweHjqwHsRgo6ln5Xpw4wG3OWYMLrwHu6bUKFu4M0si/uBgUcfsYH/vWbuLUcW1rkEFNhZCdtn0zJo6YewynCkckJQrpd/yIEA/ZQ0odu27TUHDJ+wo9pKiBqdckHdp1AmlCtEkT8MvQJyC42rHN9gPU4Myn9QY5dpGQEJh5hO8Q5pjxNh4onPhYdnDCigbfwir2CXkwFGER15IKPB0RxlGrR6T00ewK0Lfg9HsYqpnX7dtsmLhIoeiRj+cW5ryI3OBHzRgnmVdmmsZF7B15BCGK0R5XPvg2dzNE34MfcDrT3Q8ocdx9fiG4TyNHpEmA6DcD4fHlbcLdfByyPia+KrMuEqewrkMN90VHYxA5ob1FCMMnuEcIun/HI0GDZ47NJ0LfjaGqbBJfYN3Fbqzq+5RI6I10MzOdpltUOiF7QCI+Q57t4ZnCM8RpgsUszjvgdSd0YW/zltJdFh4VgTsUej6IF69RdiXwKAR3axbXvRg7u5a+l/54HQrHfxfJMcjLw3nzEmjI3DRQ2C9smw5mzgKTgOlgirZ85RZIHPdPSPS+asgGXrq+m7QTN0A35DQ5CU3f1vEwCg480/FUrzoe27Kd7XhmVZbNM33OLNy/sLvZwIN0j8CGMl26rpqbq+Ym+M83N7Ny+aqluWpprloa30fYX9LSTLoYaHAmEx4z70lmjnv6lLEDNWRkS5qJj4QPm14bHppRlJlHjsd/WQyXWh9YwMFFAhsaJLj6gKr4IMYZDIfKZngZyZx1JFHGJcyMzGMzRiVneJvBKIWRkJlxVvX0y9pPYrXNe/bxUnHKOWZjpIrMJHW00JJmcNHFlm6822JlK9VMs7mqlY1opmNwVBurrE08sv5YNXg4tiZ8MSP4zgYrL8OwWcsOczRor3va7tZHI7fopS/VRTKGb8LcR1rvaR+VjZNGsTKliNbDBoOeWJ7jo8JqNc32HVa7iJOKy1VmLDfy3rt4aTSmnXhJ5+2ZdGRpMTlZik7qQa26WA1QiLN60IcBLVwmGXhd6u8dzCI45QiVsGF/bjKbcJ14s+YPyzLM3K3dpxR26kAmpNrAMrahYV7lIcBSM0428i9WwayXpYCnGl1MiqUVCIa/TQqwo+ta0u+TUBWdXXhi5ukGkJdSPlBEHMS9E9RlA7GPwf06VEGfHpUwSTcVQd/AoZC2tnnlFuc86YpHMQZnn2OWxTgvtzpFR5ls4aYgjWUwd1ZaIx7o5pXdKDe/KiblL0mVYhj/z1TR+wmMtpd62gMhnEkKjHSm1AMuVMyhCmUxDdsCDmRM7YBogYNFeA1BBSej5rcgx/q3zTnLw6Q1TCjVPo2QoLAfqVgQsgdlyUTfOczK+d5lWbKcke0wJuLKzIrdJceEdXQNXNZ7e4BiCHVTTfIyYHBn48+9zzOoG+km55/a+dhknrc9mOyqlv6CvUilUPQLW0HNu/eZnmpcDt6ysc+51dqKNaXxYvXCW20GBxRwLqkgJkIqQhg0mtYXvNzh+1BbEZya2/YKQVRfs40H0gXSlscuNE72oQ0mzcp2Xnl3e+ltFJyt5p3ueF3I0j/T6c5p7HFz5i7n5OLbu8/5jJ1b2LF1sdP1mBqS9myK6vZo9CFjHGP+PqP4JxS8ewiO3oDD6gFT0h5DP4LjKPjKsMfdkPzWuYZ07Q8AAAD//wMAUEsDBBQABgAIAAAAIQBkpZP53AcAADoyAAANAAAAeGwvc3R5bGVzLnhtbORbe2/bNhD/f8C+g6ACwzpMkWRLsuTabpuHgQJdUawZMGAZAlmWHaJ6eJSc2h363XckJYuy9aAdO8k2A4klijz+7snjiR68XoWBdO/jBMXRUNbPNFnyIy+eomg+lH+7Hiu2LCWpG03dII78obz2E/n16PvvBkm6DvxPd76fSkAiSobyXZou+qqaeHd+6CZn8cKP4MksxqGbwi2eq8kC++40IYPCQO1omqWGLopkRqEfeiJEQhd/Xi4ULw4XboomKEDpmtKSpdDrv5tHMXYnAUBd6YbrSSvdwh1phfNJaOvOPCHycJzEs/QM6KrxbIY8fxeuozqq6xWUgPJhlHRT1Tol3lf4QEqGiv17RNQnjwbRMhyHaSJ58TJKh7K1aZLYk3fToWx0ZIkp5SKegphulR/+Wsbpq18X7Psn6cXPL15ot8qrm9onu2PY2GwAjL1V3twqsppD4ubXLWMLwI/5lC9f3cL1zY8UwA27KxMmbW9uX9YQNmsIn2nabYk2NFSRf/2adqufwNqeoFp0ZK7tJzxX28/24bG3j/BulBaGwLtLtiCuirKs1MzyRoNZHBUGqIOqqcP1P0fxl2hMnkGUAbMk3UaD5Kt07wbQohONenEQYymF8AFmSVsiN/RZjws3QBOMSLeZG6JgzZo7pIFGnKxfiMD/SaPKZjjmPN6dixOIdwzyc595QiRTkm8hzbcYuUGlLEti2yXRpCJBog/E9OgmoxWmieeToTwea/RDY9DGPg9inknzNFSr3WhfmJT5ve2mSkcomvorH9Yfuyy4Jsd+gDGeLF5AgpQisrgq2lnHcJxeTyefnu10xRlriliU6QTCHAqCzUrukJAJDaMBJD2pj6Mx3EjZ9fV6AQEzgvyMBT7ar6X3HLtrvWOKD0jiAE0JivkFH6ZhAWHi0M56juPYumXbtmN0dQPyDIhAk6z7Rv2w+pPozLFBYrUI5BoE1ERPP41TMGoCo07XdqwO8KsZNpXi6RFA8pGLugsAeqZpm7rTMeCPLpanR3DqabJIOIaP9khqbXHnfWRKrRgcdxLjKWyo+CScNY0GgT9Lwfoxmt+R7zReEBeJ0xQ2HaPBFLnzOHID4h/5CH4kbMRgzzWU0zvYM+Xp0rZjkSmyGYT6UywUilB3gJwjFurPmDs+b0x6Twq5rMhnAeW/rPET81bjf5kjglt7fhB8Ig74+2zj27BvGQ1WM253C/GEbDnIRptcwrqWXTJHZjcwV2kQ25KzUWSLWT1KcheLYE32UJQ2u4Ouxd05jTzF/dsAzaPQ5wd8xHHqeymt9tAQW4eeVAnE0HMsk82p2CDdontpxrP+lDzrFt1SZ0jqlZaJ/2QCB1s6QOK6uJVxetpjlG7RqsozMM6scPQ0SFTe/Vkw4OKAQSpt+8cBaTWrDgicqoj0a+IBGw2OygUGMCJ6x7k+iVFQPWGRQLqLMfoKMYSUXTwIDT6rlqxmDTGpFUM+KwtOmzvqK/ldHpyOhpATEqkoZkICcRShFoA3CYlsokiliYnsIQBJCT1FHidU6Qt2F9f+CoI1TZvVHQl3i6VCGP+HZTjx8ZjW1AvkpxL7/4UrknDvqKfaB0FphXmB5ZzAvHZMqQ0eKeJm1l8ND1orQsQRrJ9sNuh2vkl6xM4b4VVHsAPhiUmvlH7A1r4yxO6oV8T7iiiyneXVzQnO32BSD/F4UQQQJh8JAZ/pCq9szSJoSqaPvHBtT/WQZbqBVqs/w7x7+HPDTJzlV0eO5zrTHkmOUIxqDQHVIfSglEEIEGe5sFF6dkvO48KryFl3U5PKVbIu5sKW75EiHhcj6owMulSnEaLxGwjw5YWMGqwrpSixTY3LP4WR7ReK4WVAkeO2mgyAoHifOsetMSSOldZo8axZqS5RAXsVHrGJ/zU7pV0LpYc7dgpg1dRJGeI4CxlXBSlNtXGtbUYaFkWOVsmxNukgtJITM/5H7M/QqmoD+UDqVCZNiWS1kKvR1ghZME+tK0cePTc+Akt1O4adDJH4b0uRlld2Q1QSVJJeX03d1IBEgp+ou1UvCDuW0EiuHXMrPS7S6NwusBrddiw4hg+JWoRAKeYgg3/aAhMnfk76pQLZaSoYh+drHOS6mhjgf741PQH8oIp/NX5ypI+WrY9athEymcqaKq3MQy2ee0NXfj+3qdxL5CDTUL6Iw9DNmYClYLJEARysIJV4eoSnsr/0h/ZnPobEPW6QRQ+I5W8H+UnIIGljr6QYjftLBPP8zY6QaZoCFyb5R6/YP01nT79V0l1iDAe01yU8JTi9tmEFIqJKIUTdBkRXKxCYdE6EqKBI+kBq00EuKkgfxGYwGmYokywLn53O2xI+G1DwCbs9MRRWKwpp476QZ4oR7bUT5X1KjKjdTpTInjoqgSykZocjWrzwAs+arop33lTiKTliT9+Gb3wN9DL1Z+4ySK83D4dycf2LP0XLELwh6/UR3ccpJTGUi+v35GiMTl0K3p28T+AsC3xLS4zAa67Oe87l1bij2Nq5rRhd31Qc8/xSMY2L88vLsaN1tItvwCz5PUIfzh0/4Jg//V0CvBLTjX4SwI8BcMZsBv5T0TaUuRsGn5bEATaP3elY2ltT15RxV9MVw3Jtxba6pjI29c6lZZxfmWOTw24e+HMATdV19sMCAt7spyj0AxTluso1xLeCkuC2gQk114Ra/Ohj9A8AAAD//wMAUEsDBBQABgAIAAAAIQBhqNXyqQQAAGIMAAAUAAAAeGwvc2hhcmVkU3RyaW5ncy54bWx8V9ty2kgQfd+q/YcunnfDSEJIpGxSs0aAbBAqXZxS3towholhxEqjZPn7bTl2bVYj8sBNrT7T3ed0q7n59M/pCN9EVctS3Q6sD2wAQm3LnVT720Gezf/0B1BrVDs8lkrcDi6iHnya/v7bTV1rIF9V3w4OWp8/Dof19iBOWH8oz0KR5bmsTqjpZ7Uf1udK4K4+CKFPx6HN2Hh4QqkGsC0bpenckTuARsm/G3H3doWxwfSmltMbPY3Km6Ge3gzbX29X8ITda/f4hBRo9/ICv0qoRd2ghDR+6JrjUpdqb7plpcYjXLNGQkML3EVLZY1w12jD8Fd8n0JmnJ5TwHt4EBCLPX5Hwy3GfXNpnszw+CrMIM3jJORZxI2khG72WBMw1Un1ea858DQtwjmHhC/XPAp/AfLUyuPQAxPNeLSAhzyNOH1NumHwJJxDyoN5PgujrnEWzAIyJmHcaw3JBaI8mYU8Sgu+7LoHURamVAF6N/Of83uewCJcteFtHjLCMNJb8SwM5rDmOd1lWNd5moUPlFVSRJwgghzCNV8VPbdGECR0T8STnEjhkBpi3UQbinTJk4y+GVwlPM2KDcQ8uuMQ51liBPPKUAbLcMYLnhma4yviD9b5quiB/9x/arqJQ0oG6JOSDLuYWZAFESyDZM0/c4O6x5DyfeSrlgOzdAWVgcoRkCJaervQRV7kEdAriBZpaPD6hQdRnyDS5iyrLlYiXoSiSQUPldhJbZpPWL3UxqBoTkc8AJ7aSXPFuD1gtRdd49cfnpXYltWua2xbeY/H7uUtjSW1N1jfkBYWRMCVwcAs27ma7Uw8CSNw3pvOXW8ejufbzGLWZGK7ruN2D+JHqYEKXknUypiz8XvoC35vsNvGzSyL2T5zXMZM5BMCr+uLfEZI8EDTSRoH/BSd7zpGGTg9i1rKm5om2w4NUTijMYXAbMdxmOuYIVTyGVIUzw0947rx0dFUFmaNx77lOuOueSZ2gnwref6Fs2PZfl/cM0kHQtRUO4mqvuChi84812sPH/mMAjcOD5SWNdFC7yYpI8cfvSZt247r+F3oOX7FChby2FZu86IpAqPsbxAWqcJzHasLsUItxTOssSEQw/kH72zs+HQ+G3Wd102t5QvRVV0UUgCigfCEx0sP0n8UeH1VpGlbEUSEVUMqRXPaWiOHUSWYbbtURbsbSVSqkopIbUHPfWOveJfvaOKNXGbUIK6w1pcSYlRbhLjR1bVCWN7I93oK8ap5DUu5wwsaPfxWRc/zx67LDAWkeKSGgXVzvPTF/i4fb0KFM5r6868yZrZLgnedSbdcaXmWxBLQJ7HX3U/aBfBjfcYtLYa04dWi+iYGU+iC/EQJidPoyExooWApaF38bi4ZP+mBZOl1sR8lqeERj4K645osLeZ5o7HLjOwK0hBpSdAYqamrr8VteTQnzY4oaDVTUDRKqD3tRz2z5H3Ijnu8v6BQfVMkbde9/R9gj2EtJNjMNnQQi9NTgxpm+KzN+TejtqCE2scRTVdafbdYIYijeNFVqeSLQXHbDMSxNrfsMP4A1sSbWDYb01iYMIcay+gKGhx+23HehP1ftUP6jzD9FwAA//8DAFBLAwQUAAYACAAAACEAO20yS8EAAABCAQAAIwAAAHhsL3dvcmtzaGVldHMvX3JlbHMvc2hlZXQxLnhtbC5yZWxzhI/BisIwFEX3A/5DeHuT1oUMQ1M3IrhV5wNi+toG25eQ9xT9e7McZcDl5XDP5Tab+zypG2YOkSzUugKF5GMXaLDwe9otv0GxOOrcFAktPJBh0y6+mgNOTkqJx5BYFQuxhVEk/RjDfsTZsY4JqZA+5tlJiXkwyfmLG9Csqmpt8l8HtC9Ote8s5H1Xgzo9Uln+7I59Hzxuo7/OSPLPhEk5kGA+okg5yEXt8oBiQet39p5rfQ4Epm3My/P2CQAA//8DAFBLAwQUAAYACAAAACEAE8QsE8IAAABCAQAAIwAAAHhsL3dvcmtzaGVldHMvX3JlbHMvc2hlZXQyLnhtbC5yZWxzhI/BasMwEETvhfyD2HskO4dQiiVfSiHXJv0ARV7bovZKaLcl+fvo2IRCjsNj3jBdf1kX9YuFYyILrW5AIYU0RJosfJ0+tq+gWDwNfkmEFq7I0LvNS/eJi5da4jlmVtVCbGEWyW/GcJhx9axTRqpkTGX1UmOZTPbh209odk2zN+WvA9ydUx0GC+UwtKBO11yXn7vTOMaA7yn8rEjyz4TJJZJgOaJIPchV7cuEYkHrR/aYd/ocCYzrzN1zdwMAAP//AwBQSwMEFAAGAAgAAAAhAIeN4Uy9AQAALBUAACcAAAB4bC9wcmludGVyU2V0dGluZ3MvcHJpbnRlclNldHRpbmdzMS5iaW7slM1K41AUx/9JRq0zCxUENy5EXA2WaWn8WmlI2tGhscFYcSNSbIRATUoaERUFmbcY5kFmOcsufQDXrsQHcOP8b6yMDjIUcSOcG849n/fe3B+X4yLEHhLE6FD2kWIKHv0QUWanjKqIgwpeGtoHY/AK3rjxRYOOYfz4ZOaa0DCCbV2n3tYNzhbMF1e/Lqj1limtU5S+5/i65j87xllbr0+jixljdmx55/T8f6cNZMmH+Q1/VbZ6RwQe31U/v9xlke9uflO1o/iFUxSwyFdeoS5ytpBHGfMoMZanOFjgl2dNifEyrQJ9k36R2qZXwlzmnXHHjbLvVKuoR2ESdJTlNdpB4ocnASwTtSQMorSRhnGEqrXu+LbllXdte6mAjaATtw6zDM1aW1lF2HErTty4GTxYT+83OwZsmY77ePefH9vTkyy4oRiUO62WM6+P3O+3Q6sTv+cuLhmr9nLI/d1J1Sr/c08rf4WypfxR8P4x+8whDhBknaXOfhOwz3ho0OrgiPkETRb/W1ljLuqz1uYex2izc/lcoc5TnSxlTIYQEAJCQAgIASEgBISAEBACQkAICAEhIAT6IfAHAAD//wMAUEsDBBQABgAIAAAAIQCQJ0j7swEAADQVAAAnAAAAeGwvcHJpbnRlclNldHRpbmdzL3ByaW50ZXJTZXR0aW5nczIuYmlu7JTJSsNQFIb/JA5VFyoIblyIS2mhpXHaGZI60dhirHQnxUYIaFLSiKi4EB9CEF9F8BF8ANeuxAdwo/+NFVGKFHEjnBvOPeMd8nE5LgLsIUaENmUfCaZRpR8gTO2EURVxsIJuQ+szBh5QnzByGnQM4XrEzDShYRR1Xaeu6wZnC2bX1b8Lap1lSusUpV85Vte9L8c465u1Gdwja2THr269pZ9O60+T8394S9nqvxH4eFe93PueRZ67vaFqx3CHM+SxyFe+Ql3gbCGHEuZRZCxHcbDAL8eaIuMlWnn6Jv0CtU2viLnUO+eOWyXPKZdRC4PYbyur2mj5sRec+rBMVOLAD5NGEkQhytam49lWtbRr20t5bPnt6OAozdCstJRVgB0dRLEbNf13q9v/ZceBHdNxPxjcDLdmplj4RDEoL1olYz4eu5fPg2uTd3MX6v/LnRwynzuqWuXPdrTylyk7yh8DOUTsN0c4hJ92mBr7js9+U0WDVhvHzMdosvh7ZYW5sMdam3ucoMUO5nGFOk91tIQxGUJACAgBISAEhIAQEAJCQAgIASEgBISAEOiFwBsAAAD//wMAUEsDBBQABgAIAAAAIQARWS6WwAEAANcHAAAQAAAAeGwvY2FsY0NoYWluLnhtbHSVy07DMBBF90j8Q+Q9TR2gPNS0sqiLvYcPiFLTVMqjSiIEf48F9YTcSTaVejJzPXPtsdfbr6qMPl3bnZo6FXKxFJGr8+Zwqo+peH/b3zyKqOuz+pCVTe1S8e06sd1cX63zrMxfiuxUR16h7lJR9P35OY67vHBV1i2as6v9l4+mrbLe/22PcXduXXboCuf6qoyT5XIVV15AbNZ51KZil4jolAr/W/pKRHzB+ukXD2Cf3APREmMMkciXNuTaGa6YgpZ/5Qy5r2xd5c3xFf+rFYEJAMqYxkYSH1sg/baMF0okI1ivTu4uMWNDzcDH3sxwRTxsiUlwLUtk3KhikTrBXgwRMGmGK6ZgybdQoWJEywdwzBDBMxIioRemoOWKaQaCmtNcMQUtw66R20RQk/Z3tI9qQgE9t3SisEe2OzhaNgDIxDh9i94EAG1MY4XpOmGCRPDgzEhOKOAYWRosPMgYaSReQ5YImoqRRmIvlgjmsq7ZxWSJYC67EiTvIhA8XNNcMQXN5mp6fOzMVGG6ZjM1M1IzE4XpmpkfAHQ8jRV7bNh8zowhxu3o/YAHjr0rhhGLYnYQC8Mf05O8+QEAAP//AwBQSwMEFAAGAAgAAAAhACpp4F3LAAAAKwEAABkAAABkb2NNZXRhZGF0YS9MYWJlbEluZm8ueG1slM/NasMwDMDxVzG6J85XszbE6XnQPYRiy4vBHyVWy8bYu8+5bcfdhEA//pqvH8GLJ+3ZpaigrRsQFHUyLr4reLCtziAyYzToUyQFn5Thuszar37yuJK/ucyiIDFPx1LBxnyfpMx6o4C5Dk7vKSfLtU5BJmudJtk1XSODu98O4Y0YDTLCb1Y4o+CLzGjXfhyrc9911TDavrq0J6r0YJr+BYfTgJfvoxhXT+Wg1AfiLZWxZDum138oO4X0PJQWhFxm+ffH5QcAAP//AwBQSwMEFAAGAAgAAAAhAKg1dMu4AQAAWwMAABEACAFkb2NQcm9wcy9jb3JlLnhtbCCiBAEooAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHyTTW/bMAyG7wP2HwzdHclOk65C4gJb0dMKFEiGDbtpEutotSVDYur634/+iJMWxW4m+fIR+Ure3L7WVfICIVrvtixbCJaA095YV27Zj/19+oUlEZUzqvIOtqyDyG6Lz582upHaB3gMvoGAFmJCJBelbrbsgNhIzqM+QK3ighSOik8+1AopDCVvlH5WJfBciDWvAZVRqHgPTJuZyCak0TOyOYZqABjNoYIaHEaeLTJ+1iKEOn7YMFQulLXFrqGdpnEv2UaPxVn9Gu0sbNt20S6HMWj+jP96+L4bVk2t673SwIqN0RItVlBs+PmTvuLxz1/QOKbngAo6gEIfijvywpVD1ynVm/0MXeuDidT4JqJOA1EH2yBd4Yh9kyB1pSI+0J0+WTBfu2J3PKjQKYd+YL2r9ocFeLH9ixgPO0cT6zFYh2CKXOTrVKzSfL0XmVwKmWW/Z+RJRE4Mxo8LgknISjkaf6r8XH6729+znneViizNV3uRS3Et8yXx3vX31o7Aelrp/0Sa8CbNb3riKpdX1xfEE6AYXrNCKH3oxp31HA0PndZ1uEOFx+kCtP8gdfk7FP8AAAD//wMAUEsDBBQABgAIAAAAIQCGxVgRvwEAAOQDAAAQAAgBZG9jUHJvcHMvYXBwLnhtbCCiBAEooAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJxTy27bMBC8F+g/qLzHkpMgKAyKQeq0yKFpjdhOjsWWWlmEJVIgN4Ldr+9KQhSpNQo0t31xdjgcyutDVUYN+mCcTcV8logIrXaZsbtUbDdfzj6KKBDYDEpnMRVHDOJavX8nV97V6MlgiBjChlQURPUijoMusIIw47blTu58BcSp38Uuz43GW6efK7QUnyfJVYwHQpthdlYPgKJHXDT0VtDM6ZZfeNwcayas5E1dl0YD8S3VvdHeBZdT9PmgsZTxuCmZ3Rr1szd0VImMx6lcayhxycAqhzKgjF8L8g6hFW0FxgclG1o0qMn5KJhfLNuliH5CwJZOKhrwBiwxrXasT7q4rAN59eT8PhSIFGTMA32xC8ez49hcqvNugIN/DvZY36DCLHoAu8P/WTE/vaLl2N+Vd09V2BgqMXzPV+DphCgXY1E6ar0kPcstQQVjBQYtNBLsT3a6Mx9W3lj6ceNxcnzC8w9m92Bhh54vMERLV9Vgj1waoq/G7sO23rhbIHyxwLQo1wV4zNg1g0WGgrzj1/clg3xiK7RiTfMhDcuifZvsBeLvRuvnx/7TqvnVLLlI2Kqjmoxfv6f6DQAA//8DAFBLAQItABQABgAIAAAAIQAnZcJVpgEAAH4GAAATAAAAAAAAAAAAAAAAAAAAAABbQ29udGVudF9UeXBlc10ueG1sUEsBAi0AFAAGAAgAAAAhADEdic0iAQAA3gIAAAsAAAAAAAAAAAAAAAAA3wMAAF9yZWxzLy5yZWxzUEsBAi0AFAAGAAgAAAAhAEWFbfM4BAAAfQoAAA8AAAAAAAAAAAAAAAAAMgcAAHhsL3dvcmtib29rLnhtbFBLAQItABQABgAIAAAAIQD+aepXCgEAAMwDAAAaAAAAAAAAAAAAAAAAAJcLAAB4bC9fcmVscy93b3JrYm9vay54bWwucmVsc1BLAQItABQABgAIAAAAIQA/I53mDwwAAPI+AAAYAAAAAAAAAAAAAAAAAOENAAB4bC93b3Jrc2hlZXRzL3NoZWV0MS54bWxQSwECLQAUAAYACAAAACEA1AoNJUkIAACPJwAAGAAAAAAAAAAAAAAAAAAmGgAAeGwvd29ya3NoZWV0cy9zaGVldDIueG1sUEsBAi0AFAAGAAgAAAAhAL2gv71LBwAAHSIAABMAAAAAAAAAAAAAAAAApSIAAHhsL3RoZW1lL3RoZW1lMS54bWxQSwECLQAUAAYACAAAACEAZKWT+dwHAAA6MgAADQAAAAAAAAAAAAAAAAAhKgAAeGwvc3R5bGVzLnhtbFBLAQItABQABgAIAAAAIQBhqNXyqQQAAGIMAAAUAAAAAAAAAAAAAAAAACgyAAB4bC9zaGFyZWRTdHJpbmdzLnhtbFBLAQItABQABgAIAAAAIQA7bTJLwQAAAEIBAAAjAAAAAAAAAAAAAAAAAAM3AAB4bC93b3Jrc2hlZXRzL19yZWxzL3NoZWV0MS54bWwucmVsc1BLAQItABQABgAIAAAAIQATxCwTwgAAAEIBAAAjAAAAAAAAAAAAAAAAAAU4AAB4bC93b3Jrc2hlZXRzL19yZWxzL3NoZWV0Mi54bWwucmVsc1BLAQItABQABgAIAAAAIQCHjeFMvQEAACwVAAAnAAAAAAAAAAAAAAAAAAg5AAB4bC9wcmludGVyU2V0dGluZ3MvcHJpbnRlclNldHRpbmdzMS5iaW5QSwECLQAUAAYACAAAACEAkCdI+7MBAAA0FQAAJwAAAAAAAAAAAAAAAAAKOwAAeGwvcHJpbnRlclNldHRpbmdzL3ByaW50ZXJTZXR0aW5nczIuYmluUEsBAi0AFAAGAAgAAAAhABFZLpbAAQAA1wcAABAAAAAAAAAAAAAAAAAAAj0AAHhsL2NhbGNDaGFpbi54bWxQSwECLQAUAAYACAAAACEAKmngXcsAAAArAQAAGQAAAAAAAAAAAAAAAADwPgAAZG9jTWV0YWRhdGEvTGFiZWxJbmZvLnhtbFBLAQItABQABgAIAAAAIQCoNXTLuAEAAFsDAAARAAAAAAAAAAAAAAAAAPI/AABkb2NQcm9wcy9jb3JlLnhtbFBLAQItABQABgAIAAAAIQCGxVgRvwEAAOQDAAAQAAAAAAAAAAAAAAAAAOFCAABkb2NQcm9wcy9hcHAueG1sUEsFBgAAAAARABEAlwQAANZFAAAAAA==";
+
+function _titleCaseNama(s) {
+  return String(s || '').toLowerCase().replace(/(^|\s)(\S)/g, function (m, a, b) { return a + b.toUpperCase(); });
+}
+
+// Membangun & mengunduh lampiran potongan gaji berdasarkan template_lampiran.xlsx
+// (format/gaya sel template dipertahankan; jumlah baris menyesuaikan jumlah pegawai).
+async function buildLampiranPotonganXlsx(rows, setting, tanggalDebet, bulanVal, labelPotongan) {
+  if (!window.ExcelJS) return buildLampiranPotonganXlsxLama(rows, setting, tanggalDebet, bulanVal, labelPotongan);
+  var n = rows.length;
+  var totalAmount = rows.reduce(function (s, r) { return s + (Number(r.jumlah) || 0); }, 0);
+  var remarkLabel = 'POTONGAN ' + (labelPotongan || 'GAJI').toUpperCase();
+
+  var bin = atob(LAMPIRAN_TEMPLATE_B64), bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  var wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(bytes.buffer);
+
+  function cloneStyle(cell) { return JSON.parse(JSON.stringify(cell.style || {})); }
+  function styleRow(ws, rowNum, cols) { var o = []; for (var c = 1; c <= cols; c++) o.push(cloneStyle(ws.getRow(rowNum).getCell(c))); return o; }
+  function clearRows(ws, from, to, cols) {
+    for (var r = from; r <= to; r++) for (var c = 1; c <= cols; c++) { var cell = ws.getRow(r).getCell(c); cell.value = null; cell.style = {}; }
+  }
+
+  // ---------- Sheet "Utama" ----------
+  var wsU = wb.getWorksheet('Utama');
+  var stData = styleRow(wsU, 4, 10), stTot = styleRow(wsU, 25, 10);
+  clearRows(wsU, 3, Math.max(25, 3 + n), 12);
+  var sGaji = 0, sBpjs = 0, sUtang = 0, sPag = 0;
+  rows.forEach(function (r, idx) {
+    var rn = 3 + idx, row = wsU.getRow(rn);
+    var g = Math.round(Number(r.gaji) || 0), b = Math.round(Number(r.bpjsTk) || 0),
+        u = Math.round(Number(r.utang) || 0), p = Math.round(Number(r.paguyuban) || 0);
+    sGaji += g; sBpjs += b; sUtang += u; sPag += p;
+    row.getCell(1).value = { formula: '+ROW()-ROW($A$2)', result: idx + 1 };
+    row.getCell(2).value = String(r.nama || '').toUpperCase();
+    row.getCell(3).value = r.jabatan || '';
+    row.getCell(4).value = g;
+    row.getCell(5).value = b;
+    row.getCell(6).value = u;
+    row.getCell(7).value = p;
+    row.getCell(8).value = { formula: 'E' + rn + '+F' + rn + '+G' + rn, result: b + u + p };
+    row.getCell(9).value = { formula: '+D' + rn + '-H' + rn, result: g - (b + u + p) };
+    row.getCell(10).value = (r.sisaCuti === '' || r.sisaCuti == null) ? null : Number(r.sisaCuti);
+    for (var c = 1; c <= 10; c++) row.getCell(c).style = JSON.parse(JSON.stringify(stData[c - 1]));
+  });
+  var rt = 3 + n, rowT = wsU.getRow(rt);
+  for (var c2 = 1; c2 <= 10; c2++) rowT.getCell(c2).style = JSON.parse(JSON.stringify(stTot[c2 - 1]));
+  var colL = ['D', 'E', 'F', 'G', 'H', 'I'];
+  var tot = [sGaji, sBpjs, sUtang, sPag, sBpjs + sUtang + sPag, sGaji - (sBpjs + sUtang + sPag)];
+  colL.forEach(function (L, k) { rowT.getCell(4 + k).value = { formula: 'SUM(' + L + '3:' + L + (2 + n) + ')', result: tot[k] }; });
+  wsU.pageSetup.printArea = 'A1:H' + rt;
+
+  // ---------- Sheet "cetak" (format bank) ----------
+  var wsC = wb.getWorksheet('cetak');
+  var stRow = styleRow(wsC, 5, 8), stSig = cloneStyle(wsC.getCell('E28'));
+  var rowKotaTgl = 3 + n + 3, rowPembuat = rowKotaTgl + 1, rowTtd = rowPembuat + 7, rowNama = rowTtd + 1, rowNip = rowNama + 1;
+  clearRows(wsC, 4, Math.max(38, rowNip + 1), 9);
+  var r2 = wsC.getRow(2);
+  r2.getCell(1).value = String(setting.rekeningTujuan || '');
+  r2.getCell(2).value = setting.namaRekeningTujuan || '';
+  r2.getCell(3).value = remarkLabel;
+  r2.getCell(4).value = { formula: '+SUM(D4:D' + (3 + n) + ')', result: totalAmount };
+  r2.getCell(5).value = 0;
+  r2.getCell(6).value = n;
+  r2.getCell(7).value = ymdToInt(tanggalDebet);
+  r2.getCell(8).value = String(setting.kodeCabang || '');
+  rows.forEach(function (r, idx) {
+    var row = wsC.getRow(4 + idx);
+    row.getCell(1).value = String(r.rekening || '');
+    row.getCell(2).value = _titleCaseNama(r.nama);
+    row.getCell(3).value = 'POTONGAN GAJI';
+    row.getCell(4).value = Math.round(Number(r.jumlah) || 0);
+    for (var c = 1; c <= 8; c++) row.getCell(c).style = JSON.parse(JSON.stringify(stRow[c - 1]));
+  });
+  var kotaTgl = (setting.kota || 'Subang') + ', ' + fmtHariTanggalIndo(tanggalDebet).split(', ')[1];
+  [[rowKotaTgl, kotaTgl], [rowPembuat, 'Pembuat Daftar'], [rowTtd, 'Ditandatangani secara elektronik'],
+   [rowNama, setting.namaPembuatDaftar || ''], [rowNip, setting.nipPembuatDaftar ? ('NIP. ' + setting.nipPembuatDaftar) : '']]
+    .forEach(function (x) {
+      var cell = wsC.getRow(x[0]).getCell(5); cell.value = x[1]; cell.style = JSON.parse(JSON.stringify(stSig));
+      // Teks "Ditandatangani secara elektronik" dibuat samar (abu-abu muda) seperti pada surat Word
+      if (x[0] === rowTtd) cell.font = Object.assign({}, cell.font || {}, { color: { argb: 'FFC0C0C0' } });
+    });
+
+  var out = await wb.xlsx.writeBuffer();
+  var blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  var namaFile = 'Lampiran Potongan Gaji - ' + (bulanVal || '') + '.xlsx';
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = namaFile;
+  document.body.appendChild(a); a.click(); a.remove();
+  return { fileName: namaFile, totalAmount: totalAmount };
+}
+
+// (Cadangan) versi lama tanpa template: dipakai hanya jika ExcelJS gagal dimuat
+function buildLampiranPotonganXlsxLama(rows, setting, tanggalDebet, bulanVal, labelPotongan) {
   var n = rows.length;
   var totalAmount = rows.reduce(function (s, r) { return s + (Number(r.jumlah) || 0); }, 0);
   var remarkLabel = 'POTONGAN ' + (labelPotongan || 'GAJI').toUpperCase();
@@ -14615,15 +14858,15 @@ async function siapkanDataPengantarPotongan() {
   var namaBulanSaja = namaBulan.split(' ')[0] || '';
   var tahunSaja = parts[0] || '';
 
-  var nomorSurat = document.getElementById('pot-nomor-surat').value.trim();
-  var tglSurat = document.getElementById('pot-tanggal-surat').value;
+  // Nomor & tanggal surat tidak diinput di form: pada surat .docx dibiarkan sebagai placeholder
+  // [@NomorND] / [@TanggalND] (diisi otomatis oleh aplikasi naskah dinas). Tanggal hari ini hanya untuk PDF.
+  var nomorSurat = '[@NomorND]';
+  var tglSurat = new Date().toISOString().slice(0, 10);
   var tglDebet = document.getElementById('pot-tanggal-debet').value;
 
   simpanPotPengantarSettingDariForm();
   var setting = potPengantarSetting;
 
-  if (!nomorSurat) { alert('⚠ Nomor Surat wajib diisi.'); return null; }
-  if (!tglSurat) { alert('⚠ Tanggal Surat wajib diisi.'); return null; }
   if (!tglDebet) { alert('⚠ Tanggal Pendebetan wajib diisi.'); return null; }
   if (!setting.rekeningTujuan || !setting.namaRekeningTujuan) { alert('⚠ No. Rekening Tujuan & Nama Pemilik Rekening Tujuan wajib diisi.'); return null; }
   if (!setting.namaKepalaKantor) { alert('⚠ Nama Kepala Kantor (penandatangan surat) wajib diisi.'); return null; }
@@ -14645,7 +14888,14 @@ async function siapkanDataPengantarPotongan() {
     if (!rekening) tanpaRekening.push(r.nama);
     // Jumlah per pegawai mengikuti komponen yang dicentang di ⚙ Pengaturan, bukan hanya BPJS TK,
     // sehingga totalnya sesuai dengan kolom "Total Potongan" bila semua komponen dicentang.
-    rows.push({ rekening: rekening, nama: r.nama, jumlah: hitungJumlahPengantarPegawai(r) });
+    // Sisa Cuti hanya diisi bila data permohonan cuti sudah termuat di aplikasi (kalau belum, dikosongkan)
+    var sisaCuti = '';
+    try { if (typeof localPermohonan !== 'undefined' && localPermohonan && localPermohonan.length) sisaCuti = hitungSaldoCuti(idPeg).sisa; } catch (e) {}
+    rows.push({
+      rekening: rekening, nama: r.nama, jumlah: hitungJumlahPengantarPegawai(r),
+      jabatan: r.jabatan || '', gaji: Number(r.gaji) || 0, bpjsTk: Number(r.bpjsTk) || 0,
+      utang: hitungUtangTotal(r.utangItems), paguyuban: Number(r.paguyuban) || 0, sisaCuti: sisaCuti
+    });
   });
 
   if (tanpaRekening.length) {
@@ -14668,12 +14918,12 @@ async function cetakPengantarPotongan() {
   if (!d) return;
 
   try {
-    buildLampiranPotonganXlsx(d.rows, d.setting, d.tglDebet, d.bulanVal, d.labelPotongan);
+    await buildLampiranPotonganXlsx(d.rows, d.setting, d.tglDebet, d.bulanVal, d.labelPotongan);
 
     await buildSuratPengantarPotonganDocx({
-      nomor_surat: d.nomorSurat,
-      NomorND: d.nomorSurat,
-      TanggalND: fmtHariTanggalIndo(d.tglSurat),
+      nomor_surat: '[@NomorND]',
+      NomorND: '[@NomorND]',
+      TanggalND: '[@TanggalND]',
       bulan: d.namaBulanSaja,
       tahun: d.tahunSaja,
       rupiah: fmtRp(d.totalPotongan),
