@@ -3196,6 +3196,15 @@
               <div class="field"><label>Jam Pulang Default</label><input type="time" id="pgmDefPulang"></div>
               <button class="btn btn-success" onclick="simpanDefaultPengemudi()">💾 Simpan Jam Default</button>
             </div>
+            <div class="filter-bar" style="flex-wrap:wrap;gap:10px;margin-top:14px;align-items:flex-end">
+              <div class="field"><label>Jam Pulang Hari Jumat</label>
+                <input type="time" id="pgmJumatPulang" value="15:30">
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding-bottom:14px;cursor:pointer">
+                <input type="checkbox" id="pgmJumatAktif" checked> Aktifkan jam pulang Jumat
+              </label>
+            </div>
+            <div class="import-hint" style="margin-top:6px">Setiap hari <b>Jumat</b> (tanpa jadwal khusus), jam pulang pengemudi memakai jam di atas dan <b>bukan Pulang Cepat</b> bila absen pulang pada jam tersebut atau sesudahnya. Tombol <b>Simpan Jam Default</b> menyimpan pengaturan ini juga. Jadwal khusus per tanggal tetap diutamakan.</div>
           </div>
           <div class="card">
             <div class="card-title">📅 Jadwal Harian Pengemudi</div>
@@ -7290,7 +7299,13 @@ function normalisasiPengemudiSetting(x) {
     var r = x.jadwal[k] || {};
     j[k] = { bertugas: r.bertugas !== false, masuk: r.masuk || '', pulang: r.pulang || '', ket: r.ket || '' };
   });
-  return { configured: !!x.configured, defaultMasuk: x.defaultMasuk || '', defaultPulang: x.defaultPulang || '', jadwal: j };
+  return {
+    configured: !!x.configured, defaultMasuk: x.defaultMasuk || '', defaultPulang: x.defaultPulang || '',
+    // Jumat: jam pulang khusus (default aktif 15:30) — pulang pada/setelah jam ini = "Tepat Waktu".
+    jumatAktif: x.jumatAktif !== false,
+    jumatPulang: x.jumatPulang || '15:30',
+    jadwal: j
+  };
 }
 var pengemudiSetting = (function(){
   try { return normalisasiPengemudiSetting(JSON.parse(localStorage.getItem('ppnpn_pengemudi_setting') || 'null')); }
@@ -7322,6 +7337,13 @@ function getJadwalPengemudi(tanggalStr) {
   }
   if (isHariLibur(tanggalStr)) return null;
   var d = getDefaultJamPengemudi();
+  // Hari Jumat: jam pulang memakai jam pulang Jumat (mis. 15:30), sehingga
+  // absen pulang pukul 15:30 tidak dihitung "Pulang Cepat".
+  // Jadwal khusus per tanggal (agenda Kepala Kantor) tetap diutamakan.
+  if (pengemudiSetting.jumatAktif && pengemudiSetting.jumatPulang &&
+      new Date(tanggalStr + 'T00:00:00').getDay() === 5) {
+    return { masuk: d.masuk, pulang: pengemudiSetting.jumatPulang, ket: 'Jumat', sumber: 'jumat' };
+  }
   return { masuk: d.masuk, pulang: d.pulang, ket: '', sumber: 'default' };
 }
 
@@ -13319,6 +13341,8 @@ function loadPengemudiTab() {
   var d = getDefaultJamPengemudi();
   document.getElementById('pgmDefMasuk').value  = d.masuk;
   document.getElementById('pgmDefPulang').value = d.pulang;
+  document.getElementById('pgmJumatPulang').value = pengemudiSetting.jumatPulang || '15:30';
+  document.getElementById('pgmJumatAktif').checked = pengemudiSetting.jumatAktif !== false;
   var fb = document.getElementById('pgmFilterBulan');
   if (!fb.value) fb.value = todayVerified().slice(0, 7);
   var td = document.getElementById('pgmTglDari');
@@ -13335,6 +13359,10 @@ function pgmToggleStatus() {
 async function simpanDefaultPengemudi() {
   pengemudiSetting.defaultMasuk  = document.getElementById('pgmDefMasuk').value || '';
   pengemudiSetting.defaultPulang = document.getElementById('pgmDefPulang').value || '';
+  pengemudiSetting.jumatAktif  = document.getElementById('pgmJumatAktif').checked;
+  pengemudiSetting.jumatPulang = document.getElementById('pgmJumatPulang').value || '';
+  if (pengemudiSetting.jumatAktif && !pengemudiSetting.jumatPulang) { alert('Isi jam pulang Jumat, atau nonaktifkan opsinya.'); return; }
+  if (pengemudiSetting.jumatAktif && pengemudiSetting.defaultMasuk && pengemudiSetting.jumatPulang <= pengemudiSetting.defaultMasuk) { alert('Jam pulang Jumat harus setelah jam masuk default.'); return; }
   if (await persistPengemudiSetting()) pgmToast('✅ Jam default pengemudi tersimpan');
 }
 
