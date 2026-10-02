@@ -14121,19 +14121,59 @@ async function renderPotonganAbsenPegawai(u) {
     }
     html += '<div style="font-size:11.5px;color:var(--text-muted);margin-top:10px">Angka ini perkiraan berjalan. Potongan resmi mengikuti rekap yang dibuat admin ke bendahara di akhir bulan.</div>';
 
-    // Rekap resmi yang sudah diajukan (bulan-bulan sebelumnya)
+    // Rekap Potongan Absensi (rekap resmi yang sudah diajukan) + pencarian periode
     var rk = await callAPI('getRekapPotonganAbsen', { idPegawai: u.idPegawai });
     if (rk && rk.success && rk.data.length) {
-      html += '<div style="font-weight:700;font-size:13px;margin:14px 0 6px">Rekap resmi terakhir</div><div class="table-wrap"><table><thead><tr><th>Periode</th><th>Potongan</th><th>Nominal</th><th>Status</th></tr></thead><tbody>' +
-        rk.data.slice(0, 3).map(function(r){
-          return '<tr><td>' + fmtBulanTahun(r.tahun + '-' + String(r.bulan).padStart(2, '0')) + '</td><td>' + (r.persen ? '-' + r.persen + '%' : '0%') + '</td><td>' + fmtRp(r.nominal) + '</td><td>' + (r.status || '-') + '</td></tr>';
-        }).join('') + '</tbody></table></div>';
+      window.pdRekapResmiData = rk.data;
+      var inpSty = 'padding:7px 10px;border:1px solid var(--border,#d1d5db);border-radius:8px;font-size:13px;font-family:inherit';
+      html += '<div style="font-weight:700;font-size:13px;margin:18px 0 8px">Rekap Potongan Absensi</div>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px">' +
+          '<div><div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:3px">DARI PERIODE</div><input type="month" id="pdRekapDari" style="' + inpSty + '" onchange="renderRekapResmiPegawai()"></div>' +
+          '<div><div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:3px">SAMPAI PERIODE</div><input type="month" id="pdRekapSampai" style="' + inpSty + '" onchange="renderRekapResmiPegawai()"></div>' +
+          '<button class="btn btn-outline btn-sm" onclick="resetCariRekapResmiPegawai()">↺ Reset</button>' +
+        '</div>' +
+        '<div id="pdRekapResmiTabel"></div>';
+    } else {
+      window.pdRekapResmiData = [];
     }
     body.innerHTML = html;
+    renderRekapResmiPegawai();
   } catch (err) {
     console.log('Gagal memuat potongan absensi pegawai:', err);
     body.innerHTML = '<div class="alert alert-info">Potongan absensi belum dapat dimuat.</div>';
   }
+}
+
+// ---- Rekap Potongan Absensi (dashboard pegawai): tabel + pencarian periode ----
+function renderRekapResmiPegawai() {
+  var wrap = document.getElementById('pdRekapResmiTabel');
+  if (!wrap) return;
+  var dari = (document.getElementById('pdRekapDari') || {}).value || '';
+  var sampai = (document.getElementById('pdRekapSampai') || {}).value || '';
+  if (dari && sampai && sampai < dari) { var tmp = dari; dari = sampai; sampai = tmp; }
+  var rows = (window.pdRekapResmiData || []).filter(function(r){
+    var per = r.tahun + '-' + String(r.bulan).padStart(2, '0');
+    return (!dari || per >= dari) && (!sampai || per <= sampai);
+  });
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="alert alert-info" style="margin:0">Tidak ada rekap potongan pada periode yang dipilih.</div>';
+    return;
+  }
+  wrap.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Periode</th><th>Potongan</th><th>Nominal</th><th>Netto</th></tr></thead><tbody>' +
+    rows.map(function(r){
+      var netto = r.gaji ? fmtRp(Math.max(0, r.gaji - r.nominal)) : '-';
+      return '<tr><td>' + fmtBulanTahun(r.tahun + '-' + String(r.bulan).padStart(2, '0')) + '</td>' +
+        '<td>' + (r.persen ? '-' + r.persen + '%' : '0%') + '</td>' +
+        '<td>' + fmtRp(r.nominal) + '</td>' +
+        '<td>' + netto + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+
+function resetCariRekapResmiPegawai() {
+  var d = document.getElementById('pdRekapDari'), s = document.getElementById('pdRekapSampai');
+  if (d) d.value = '';
+  if (s) s.value = '';
+  renderRekapResmiPegawai();
 }
 
 // True bila pegawai masih punya kesempatan absen pulang untuk catatan tanggal tsb
