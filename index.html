@@ -5860,7 +5860,8 @@ async function callAPI(action, params={}) {
             idPegawai: r.id_pegawai, bulan: r.bulan, tahun: r.tahun,
             gaji: r.gaji, bpjsTk: r.bpjs_tk, utangPegawai: r.utang_pegawai,
             paguyuban: r.paguyuban,
-            totalPotongan: r.total_potongan, netGaji: r.net_gaji,
+            totalPotongan: (Number(r.bpjs_tk)||0) + (Number(r.utang_pegawai)||0) + (Number(r.paguyuban)||0),
+            netGaji: (Number(r.gaji)||0) - ((Number(r.bpjs_tk)||0) + (Number(r.utang_pegawai)||0) + (Number(r.paguyuban)||0)),
             bpjsKes: r.bpjs_kes, potonganAbsen: r.potongan_absen,
             absenStatus: r.absen_status, absenKet: r.absen_ket
           };
@@ -5882,7 +5883,8 @@ async function callAPI(action, params={}) {
             idPegawai: r.id_pegawai, bulan: r.bulan, tahun: r.tahun,
             gaji: r.gaji, bpjsTk: r.bpjs_tk, utangPegawai: r.utang_pegawai,
             paguyuban: r.paguyuban,
-            totalPotongan: r.total_potongan, netGaji: r.net_gaji,
+            totalPotongan: (Number(r.bpjs_tk)||0) + (Number(r.utang_pegawai)||0) + (Number(r.paguyuban)||0),
+            netGaji: (Number(r.gaji)||0) - ((Number(r.bpjs_tk)||0) + (Number(r.utang_pegawai)||0) + (Number(r.paguyuban)||0)),
             bpjsKes: r.bpjs_kes, potonganAbsen: r.potongan_absen,
             absenStatus: r.absen_status, absenKet: r.absen_ket
           };
