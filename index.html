@@ -634,6 +634,8 @@
 
   /* ========= ALERT ========= */
   .alert { padding: 14px 18px; border-radius: 12px; font-size: 14px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 10px; }
+  .alert.alert-block { display: block; line-height: 1.6; }
+  .alert.alert-block b, .alert.alert-block strong { font-weight: 700; }
   .alert-success { background: #dcfce7; border: 1px solid #bbf7d0; color: #15803d; }
   .alert-error { background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; }
   .alert-info { background: #dbeafe; border: 1px solid #bfdbfe; color: #1d4ed8; }
@@ -1740,6 +1742,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><text x="12" y="15.5" text-anchor="middle" font-size="9" font-weight="800" fill="currentColor" stroke="none" font-family="Arial, Helvetica, sans-serif">Rp</text></svg>
         Rekap Gaji
       </a>
+      <a class="nav-item" onclick="showPage('potonganAbsenSaya')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Potongan Absen
+      </a>
       <a class="nav-item" onclick="showPage('profil')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         Profil Saya
@@ -2058,6 +2064,14 @@
                     <div class="pd-stat-bar light"><div class="pd-stat-bar-fill red" id="pdAlpaBar" style="width:0%"></div></div>
                   </div>
                 </div>
+                <div class="pd-summary-row" id="pdPotAbsenRow">
+                  <div class="pd-summary-icon red">💸</div>
+                  <div class="pd-summary-body">
+                    <div class="pd-summary-top"><span>Potongan Absen</span><span class="pd-summary-frac" id="pdPotAbsenNominal">Rp 0</span></div>
+                    <div class="pd-stat-bar light"><div class="pd-stat-bar-fill red" id="pdPotAbsenBar" style="width:0%"></div></div>
+                    <div id="pdPotAbsenKet" style="font-size:11.5px;color:var(--text-muted);margin-top:4px">Memuat...</div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2372,6 +2386,33 @@
       </div>
 
       <!-- ===== REKAP GAJI SAYA (pegawai) ===== -->
+      <!-- ===== PEGAWAI: POTONGAN ABSEN SAYA (per periode tanggal) ===== -->
+      <div class="page" id="page-potonganAbsenSaya">
+        <div class="card">
+          <div class="card-title">💸 Potongan Absen Saya</div>
+          <div class="filter-bar">
+            <div class="field"><label>Dari Tanggal</label><input type="date" id="paFrom"></div>
+            <div class="field"><label>Sampai Tanggal</label><input type="date" id="paTo"></div>
+            <button class="btn btn-primary" onclick="loadPotonganAbsenSaya()">🔍 Tampilkan</button>
+            <button class="btn btn-outline" onclick="setPaPreset('bulanIni')">Bulan Ini</button>
+            <button class="btn btn-outline" onclick="setPaPreset('bulanLalu')">Bulan Lalu</button>
+          </div>
+          <div class="stats-grid" id="paStats" style="margin:14px 0">
+            <div class="stat-card amber"><div class="label">Terlambat</div><div class="value" id="pa-late">-</div><div class="sub">1% per kejadian</div></div>
+            <div class="stat-card blue"><div class="label">Pulang Cepat</div><div class="value" id="pa-early">-</div><div class="sub">1% per kejadian</div></div>
+            <div class="stat-card red"><div class="label">Tidak Masuk</div><div class="value" id="pa-absent">-</div><div class="sub">4% per hari</div></div>
+            <div class="stat-card green"><div class="label">Total Potongan</div><div class="value" id="pa-total">-</div><div class="sub" id="pa-total-sub">-</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tanggal</th><th>Jenis</th><th>Keterangan</th><th>Potongan</th></tr></thead>
+              <tbody id="paBody"><tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted)">Pilih periode lalu klik "Tampilkan".</td></tr></tbody>
+            </table>
+          </div>
+          <div class="alert alert-info alert-block" style="margin-top:12px;font-size:12.5px">ℹ️ Nominal di atas adalah <b>estimasi</b> (persen potongan × gaji sesuai SPK). Potongan yang benar-benar dipotong adalah yang sudah disetujui admin dan tampil di menu <b>Rekap Gaji</b>.</div>
+        </div>
+      </div>
+
       <div class="page" id="page-rekapGajiSaya">
         <div class="card">
           <div class="card-title">💰 Rekap Gaji Saya</div>
@@ -2789,7 +2830,7 @@
             <button class="btn btn-success" id="btnSimpanPotGaji" style="display:none" onclick="simpanSemuaPotonganGaji()">💾 Simpan Semua</button>
             <button class="btn btn-outline" id="btnExportPotGaji" style="display:none" onclick="exportPotonganGajiExcel()">⬇ Export Excel</button>
           </div>
-          <div class="alert alert-info" style="margin-bottom:14px;font-size:12.5px">
+          <div class="alert alert-info alert-block" style="margin-bottom:14px;font-size:12.5px">
             Rumus BPJS TK otomatis: <b>(3,7% + 2% + 0,24% + 0,3%) × Gaji sesuai SPK = 6,24% × Gaji</b>. Nilai ini otomatis menyesuaikan jika gaji pegawai berubah, namun tetap bisa ditimpa manual per baris bila diperlukan. Klik ✏️ pada kolom "Utang ke Pegawai" untuk mencatat rincian nama pemberi pinjaman. Klik 🗑 pada kolom "Aksi" untuk membatalkan/menghapus data seorang pegawai jika terjadi kesalahan saat input atau simpan. Kolom <b>Internal</b>: <b>BPJS Kesehatan</b> (otomatis 1% dari gaji) dan <b>Potongan Absen</b> (dihitung otomatis dari rekap absensi bulan tersebut; centang <b>Disetujui</b> agar tampil &amp; dipotong di Rekap Gaji pegawai) hanya untuk rekap internal pegawai — <b>tidak</b> ikut dalam Lampiran/Pengantar BRI.
           </div>
           <div class="stats-grid" id="potGajiStats" style="display:none;margin-bottom:14px">
@@ -2806,7 +2847,7 @@
                   <th rowspan="2">Total Potongan (BRI)</th><th rowspan="2">Net Gaji</th><th colspan="2" style="text-align:center;background:#dbeafe;color:#1e3a8a">Internal (tidak ke BRI)</th><th rowspan="2">Aksi</th>
                 </tr>
                 <tr>
-                  <th>BPJS TK</th><th>Utang Ke Pegawai</th><th>Paguyuban</th><th style="background:#dbeafe;color:#1e3a8a">BPJS Kesehatan (1%)</th><th style="background:#dbeafe;color:#1e3a8a">Potongan Absen</th>
+                  <th>BPJS TK</th><th>Utang Ke Pegawai</th><th>Paguyuban</th><th style="background:#dbeafe;color:#1e3a8a">BPJS Kesehatan (1%)</th><th style="background:#dbeafe;color:#1e3a8a">Potongan Absen<br><label style="font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap"><input type="checkbox" id="chkAbsenAll" onchange="toggleSemuaAbsenApproved(this.checked)"> Setujui semua <span id="absenAllCount"></span></label></th>
                 </tr>
               </thead>
               <tbody id="potGajiBody"><tr><td colspan="13" style="text-align:center;padding:24px;color:var(--text-muted)">Pilih bulan lalu klik "Generate" untuk memuat data pegawai.</td></tr></tbody>
@@ -2841,10 +2882,11 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>No</th><th>Periode</th><th>Nama</th><th>Jabatan</th><th>Gaji sesuai SPK</th><th>BPJS TK</th><th>Utang Ke Pegawai</th><th>Paguyuban</th><th>Total Potongan</th><th>Net Gaji</th><th>Aksi</th></tr></thead>
-              <tbody id="riwayatPotBody"><tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted)">Klik "Tampilkan" untuk memuat riwayat pemotongan.</td></tr></tbody>
+              <thead><tr><th>No</th><th>Periode</th><th>Nama</th><th>Jabatan</th><th>Gaji sesuai SPK</th><th>BPJS TK</th><th style="background:#dbeafe;color:#1e3a8a">BPJS Kesehatan (1%)<br><small>dipotong bendahara</small></th><th>Utang Ke Pegawai</th><th>Paguyuban</th><th>Total Potongan (BRI)</th><th>Net Gaji (BRI)</th><th style="background:#dbeafe;color:#1e3a8a">Potongan Absen<br><small>(disetujui)</small></th><th style="background:#dcfce7;color:#14532d">Net Diterima Pegawai</th><th>Aksi</th></tr></thead>
+              <tbody id="riwayatPotBody"><tr><td colspan="14" style="text-align:center;padding:24px;color:var(--text-muted)">Klik "Tampilkan" untuk memuat riwayat pemotongan.</td></tr></tbody>
             </table>
           </div>
+          <div class="alert alert-info alert-block" style="margin-top:12px;font-size:12.5px">ℹ️ <b>BPJS Kesehatan</b> (1% dari gaji SPK) otomatis sudah dipotong bendahara sebelum gaji ditransfer ke pegawai. <b>Net Diterima</b> = Gaji − Total Potongan − BPJS Kesehatan − Potongan Absen yang sudah disetujui.</div>
           <div class="pagination" id="pgRiwayatPot"></div>
         </div>
         </div>
@@ -2877,12 +2919,15 @@
           <div class="stats-grid" id="rekapPotStats" style="display:none;margin-bottom:14px">
             <div class="stat-card blue"><div class="label">Total Gaji SPK</div><div class="value" id="rp-total-gaji">-</div></div>
             <div class="stat-card amber"><div class="label">Total Potongan</div><div class="value" id="rp-total-potongan">-</div></div>
-            <div class="stat-card green"><div class="label">Total Net Gaji</div><div class="value" id="rp-total-net">-</div></div>
+            <div class="stat-card green"><div class="label">Total Net Gaji (BRI)</div><div class="value" id="rp-total-net">-</div></div>
+            <div class="stat-card blue"><div class="label">Total BPJS Kesehatan</div><div class="value" id="rp-total-bpjskes">-</div></div>
+            <div class="stat-card green"><div class="label">Total Net Diterima Pegawai</div><div class="value" id="rp-total-netditerima">-</div></div>
           </div>
+          <div class="alert alert-info alert-block" style="margin-bottom:12px;font-size:12.5px">ℹ️ <b>BPJS Kesehatan</b> (1% dari gaji SPK) otomatis sudah dipotong bendahara sebelum gaji ditransfer ke pegawai. Kolom <b>BRI</b> tidak memuat BPJS Kesehatan dan potongan absen.</div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>No</th><th>Bulan</th><th>Jumlah Pegawai</th><th>Total Gaji SPK</th><th>Total BPJS TK</th><th>Total Utang Pegawai</th><th>Total Paguyuban</th><th>Total Potongan</th><th>Total Net Gaji</th></tr></thead>
-              <tbody id="rekapPotBody"><tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Pilih periode lalu klik "Tampilkan".</td></tr></tbody>
+              <thead><tr><th>No</th><th>Bulan</th><th>Jumlah Pegawai</th><th>Total Gaji SPK</th><th>Total BPJS TK</th><th style="background:#dbeafe;color:#1e3a8a">Total BPJS Kesehatan (1%)<br><small>dipotong bendahara</small></th><th>Total Utang Pegawai</th><th>Total Paguyuban</th><th>Total Potongan (BRI)</th><th>Total Net Gaji (BRI)</th><th style="background:#dbeafe;color:#1e3a8a">Total Potongan Absen<br><small>(disetujui)</small></th><th style="background:#dcfce7;color:#14532d">Total Net Diterima</th></tr></thead>
+              <tbody id="rekapPotBody"><tr><td colspan="12" style="text-align:center;padding:24px;color:var(--text-muted)">Pilih periode lalu klik "Tampilkan".</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -2908,7 +2953,7 @@
             <span>🖨️ Cetak Pengantar Potongan BPJS TK</span>
             <button class="btn btn-sm btn-pengaturan-pengantar" onclick="bukaPengaturanPengantar()">⚙ Pengaturan</button>
           </div>
-          <div class="alert alert-info" style="margin-bottom:14px;font-size:12.5px">
+          <div class="alert alert-info alert-block" style="margin-bottom:14px;font-size:12.5px">
             Fitur ini mencetak berkas untuk diajukan ke bank: <b>Lampiran Potongan Gaji (.xlsx)</b> — daftar rekening pegawai yang didebet — dan <b>Surat Pengantar Potongan PPNPN (.docx)</b> — surat permohonan pendebetan ke bank; keduanya juga bisa diunduh sebagai satu berkas <b>PDF</b> siap cetak. Data jumlah per pegawai diambil dari tabel "Input Potongan" bulan yang sedang dipilih, jadi klik <b>🔄 Generate</b> pada tab tersebut terlebih dahulu. Pastikan juga setiap pegawai sudah punya <b>No. Rekening Tabungan Gaji</b> (menu Data Pegawai). Klik <b>⚙ Pengaturan</b> untuk memilih komponen potongan (BPJS TK / Utang ke Pegawai / Paguyuban) yang disertakan — jumlah pada lampiran &amp; surat akan otomatis menyesuaikan total potongan yang dipilih.
           </div>
 
@@ -8674,7 +8719,7 @@ function showPage(name) {
 
   // Access guard — pegawai tidak bisa akses halaman admin
   var adminPages = ['adminAbsensi','adminCuti','adminPegawai','adminPengaturan', 'adminChecklistCS', 'adminLembur', 'adminPotonganGaji', 'adminTodo']; 
-  var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga','rekapGajiSaya'];
+  var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga','rekapGajiSaya','potonganAbsenSaya'];
   if (!isAdmin && adminPages.indexOf(name) >= 0) {
     alert('Akses ditolak. Halaman ini hanya untuk admin.');
     return;
@@ -8704,6 +8749,7 @@ function showPage(name) {
     profil: '👤 Profil Saya',
     keluarga: '👨‍👩‍👧 Data Keluarga',
     rekapGajiSaya: '💰 Rekap Gaji Saya',
+    potonganAbsenSaya: '💸 Potongan Absen Saya',
     adminAbsensi: '📋 Rekap Absensi & Potongan',
     adminCuti: '✅ Persetujuan Cuti & Ijin Keluar',
     adminPegawai: '👥 Data Pegawai & Hak Cuti',
@@ -8737,6 +8783,7 @@ function showPage(name) {
   if (name === 'profil') loadProfil();
   if (name === 'keluarga') loadKeluarga();
   if (name === 'rekapGajiSaya') loadRekapGajiSaya();
+  if (name === 'potonganAbsenSaya') initPotonganAbsenSaya();
   if (name === 'adminAbsensi') { switchRekapMainTab('absensi'); initAdminAbsensiFilter(); loadAdminAbsensi(); initAdminPotongan(); }
   if (name === 'adminPegawai') { switchPegawaiMainTab('pegawai'); }
   
@@ -8846,6 +8893,90 @@ function startPulangCardWatcher() {
 }
 function stopPulangCardWatcher() {
   if (pulangCardInterval) { clearInterval(pulangCardInterval); pulangCardInterval = null; }
+}
+
+// Potongan absen bulan berjalan untuk dashboard pegawai.
+// Aturan: terlambat 1%, pulang cepat 1%, tidak masuk tanpa ijin 4%/hari (x gaji SPK).
+// Jika admin sudah menyetujui & menyimpan potongan bulan ini, nominal resmi yang ditampilkan; jika belum = estimasi.
+async function renderPdPotonganAbsen(u) {
+  var elN = document.getElementById('pdPotAbsenNominal');
+  var elK = document.getElementById('pdPotAbsenKet');
+  var elB = document.getElementById('pdPotAbsenBar');
+  if (!elN || !elK) return;
+  try {
+    var now = new Date();
+    var bulan = now.getMonth() + 1, tahun = now.getFullYear();
+    var pr = SCRIPT_URL ? await callAPI('getPegawai', { idPegawai: u.idPegawai }) : null;
+    var p = pr && pr.success && pr.data && pr.data[0];
+    if (!p) { elN.textContent = '-'; elK.textContent = 'Data gaji belum tersedia'; return; }
+    var gaji = Number(p['GAJI']) || 0;
+    var map = await hitungPotonganAbsenBulan([p], bulan, tahun, u.idPegawai);
+    var ab = map[u.idPegawai] || { terlambat: 0, cepat: 0, tidakMasuk: 0, persen: 0 };
+    var nominal = Math.round(ab.persen / 100 * gaji);
+    var persen = ab.persen;
+    var approved = false;
+    var rr = await callAPI('getRiwayatPotonganGaji', { idPegawai: u.idPegawai, bulan: bulan, tahun: tahun });
+    var rec = rr && rr.success && rr.data && rr.data[0];
+    if (rec && rec.absenStatus === 'Disetujui') {
+      approved = true;
+      nominal = Number(rec.potonganAbsen) || 0;
+    }
+    elN.textContent = fmtRp(nominal);
+    if (elB) elB.style.width = Math.min(100, persen * 4) + '%';
+    if (!persen && !approved) {
+      elK.textContent = 'Tidak ada potongan absen bulan ini 👍';
+    } else {
+      elK.textContent = (ketPotonganAbsen(ab) || 'Potongan absen') + ' — ' +
+        (approved ? '✅ Disetujui, masuk Rekap Gaji' : 'Estimasi, belum disetujui admin');
+    }
+  } catch (e) {
+    console.warn('Gagal memuat potongan absen dashboard:', e);
+    elN.textContent = '-';
+    elK.textContent = 'Gagal memuat';
+  }
+}
+
+// ---- Potongan Absen Saya (menu pegawai, filter periode tanggal) ----
+function _paYmd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function setPaPreset(jenis) {
+  var n = new Date();
+  var a, b;
+  if (jenis === 'bulanLalu') { a = new Date(n.getFullYear(), n.getMonth() - 1, 1); b = new Date(n.getFullYear(), n.getMonth(), 0); }
+  else { a = new Date(n.getFullYear(), n.getMonth(), 1); b = n; }
+  document.getElementById('paFrom').value = _paYmd(a);
+  document.getElementById('paTo').value = _paYmd(b);
+  loadPotonganAbsenSaya();
+}
+function initPotonganAbsenSaya() {
+  if (!document.getElementById('paFrom').value) { setPaPreset('bulanIni'); } else { loadPotonganAbsenSaya(); }
+}
+async function loadPotonganAbsenSaya() {
+  var u = currentUser;
+  var from = document.getElementById('paFrom').value, to = document.getElementById('paTo').value;
+  var body = document.getElementById('paBody');
+  if (!from || !to) { alert('Pilih tanggal awal dan akhir.'); return; }
+  if (from > to) { alert('Tanggal awal tidak boleh lebih besar dari tanggal akhir.'); return; }
+  body.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  var pr = SCRIPT_URL ? await callAPI('getPegawai', { idPegawai: u.idPegawai }) : null;
+  var p = pr && pr.success && pr.data && pr.data[0];
+  if (!p) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--danger)">Data pegawai tidak ditemukan.</td></tr>'; return; }
+  var gaji = Number(p['GAJI']) || 0;
+  var map = await hitungPotonganAbsenRentang([p], from, to, u.idPegawai);
+  var ab = map[u.idPegawai] || { terlambat: 0, cepat: 0, tidakMasuk: 0, persen: 0, detail: [] };
+  document.getElementById('pa-late').textContent = ab.terlambat + 'x';
+  document.getElementById('pa-early').textContent = ab.cepat + 'x';
+  document.getElementById('pa-absent').textContent = ab.tidakMasuk + ' hari';
+  document.getElementById('pa-total').textContent = ab.persen + '%';
+  document.getElementById('pa-total-sub').textContent = gaji ? '≈ ' + fmtRp(Math.round(ab.persen / 100 * gaji)) : 'Gaji SPK belum terisi';
+  if (!ab.detail.length) {
+    body.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada potongan absen pada periode ini 👍</td></tr>';
+    return;
+  }
+  var warna = { 'Terlambat': 'badge-amber', 'Pulang Cepat': 'badge-blue', 'Tidak Masuk': 'badge-red' };
+  body.innerHTML = ab.detail.map(function (d) {
+    return '<tr><td>' + fmtDate(d.tanggal) + '</td><td><span class="badge ' + (warna[d.jenis] || 'badge-gray') + '">' + d.jenis + '</span></td><td style="font-size:13px">' + d.ket + '</td>' +
+      '<td><strong>' + d.persen + '%</strong>' + (gaji ? ' <span style="color:var(--text-muted);font-size:12px">(' + fmtRp(Math.round(d.persen / 100 * gaji)) + ')</span>' : '') + '</td></tr>';
+  }).join('');
 }
 
 async function loadDashboard() {
@@ -9076,6 +9207,9 @@ async function loadDashboard() {
       var mEl = document.getElementById(mid);
       if (mEl) mEl.textContent = hariBerjalan;
     });
+
+    // ---- Potongan absen bulan ini (jumlah + nominal rupiah) ----
+    renderPdPotonganAbsen(u);
 
     // ---- Riwayat absensi terakhir (punya sendiri) — default 1 bulan ----
     var now3 = new Date();
@@ -11603,7 +11737,7 @@ function _pdRenderCuti(p) {
       '</td><td style="text-align:center">' + _pdEsc(pm.Jumlah_Hari || 0) + '</td><td><span class="badge ' + badge(pm.Status) + '">' + _pdEsc(pm.Status || 'Menunggu') + '</span></td></tr>';
   }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px">Belum ada riwayat cuti / ijin</td></tr>';
   document.getElementById('pdCuti').innerHTML =
-    '<div class="alert alert-info" style="font-size:13px">📅 Periode aktif: <b>' + _pdEsc(saldo.periode.label || '') + '</b></div>' +
+    '<div class="alert alert-info alert-block" style="font-size:13px">📅 Periode aktif: <b>' + _pdEsc(saldo.periode.label || '') + '</b></div>' +
     '<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin:12px 0">' +
       '<div class="stat-card blue"><div class="label">Hak Cuti</div><div class="value">' + saldo.hak + '</div></div>' +
       '<div class="stat-card red"><div class="label">Terpakai</div><div class="value">' + saldo.pakai + '</div></div>' +
@@ -14765,7 +14899,7 @@ function hitungBpjsKes(gaji) {
 // totalPotongan (tersimpan) = BPJS TK + utang + paguyuban (komponen yang ke BRI).
 // BPJS Kes & potongan absen ditambahkan di sini; potongan absen hanya dihitung jika sudah DISETUJUI.
 function rgsHitungTotal(r) {
-  var bpjsKes = Number(r.bpjsKes) || 0;
+  var bpjsKes = (r.bpjsKes != null) ? (Number(r.bpjsKes) || 0) : hitungBpjsKes(r.gaji);
   var absenOk = r.absenStatus === 'Disetujui';
   var absen = absenOk ? (Number(r.potonganAbsen) || 0) : 0;
   var total = (Number(r.totalPotongan) || 0) + bpjsKes + absen;
@@ -14774,20 +14908,31 @@ function rgsHitungTotal(r) {
 // Ringkasan potongan absen (% dari gaji) per pegawai untuk satu bulan.
 // Aturan sama dengan menu Rekapitulasi Potongan: terlambat 1%, pulang cepat 1%, tidak masuk tanpa ijin 4%/hari.
 // Untuk bulan berjalan, hari yang belum lewat tidak dihitung.
-async function hitungPotonganAbsenBulan(pegawaiList, bulan, tahun) {
+async function hitungPotonganAbsenBulan(pegawaiList, bulan, tahun, onlyIdPeg) {
+  var mm = String(bulan).padStart(2, '0');
+  var from = tahun + '-' + mm + '-01';
+  var to = tahun + '-' + mm + '-' + String(new Date(tahun, bulan, 0).getDate()).padStart(2, '0');
+  return hitungPotonganAbsenRentang(pegawaiList, from, to, onlyIdPeg);
+}
+// Potongan absen per pegawai untuk rentang tanggal (from..to), lengkap dengan rincian per tanggal.
+// Aturan: terlambat 1%, pulang cepat 1%, tidak masuk tanpa ijin 4%/hari. Hari ini baru dihitung "tidak masuk" setelah hari berlalu.
+async function hitungPotonganAbsenRentang(pegawaiList, from, to, onlyIdPeg) {
   var out = {};
   try {
-    var mm = String(bulan).padStart(2, '0');
-    var from = tahun + '-' + mm + '-01';
-    var to = tahun + '-' + mm + '-' + String(new Date(tahun, bulan, 0).getDate()).padStart(2, '0');
     var now = new Date();
     var hariIni = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
     if (from > hariIni) return out;
     if (to > hariIni) to = hariIni;
+    var toTM = to >= hariIni ? tambahHari(hariIni, -1) : to;   // batas hitung "tidak masuk"
 
-    var aRes = await callAPI('getAbsensi', { from: from, to: to });
+    var aParams = { from: from, to: to };
+    if (onlyIdPeg) aParams.idPegawai = onlyIdPeg;
+    var aRes = await callAPI('getAbsensi', aParams);
     if (aRes && aRes.success) {
-      localAbsensi = localAbsensi.filter(function (a) { return a.tanggal < from || a.tanggal > to; }).concat(aRes.data);
+      localAbsensi = localAbsensi.filter(function (a) {
+        if (onlyIdPeg && a.idPegawai !== onlyIdPeg) return true;
+        return a.tanggal < from || a.tanggal > to;
+      }).concat(aRes.data);
       localStorage.setItem('ppnpn_absensi', JSON.stringify(localAbsensi));
     }
     var cRes = await callAPI('getPermohonan', {});
@@ -14812,29 +14957,49 @@ async function hitungPotonganAbsenBulan(pegawaiList, bulan, tahun) {
     }
     await ensureLiburLoaded();
 
-    var hariKerja = hitungHariKerja(from, to);
+    var hariKerja = toTM >= from ? hitungHariKerja(from, toTM) : 0;
     pegawaiList.forEach(function (p) {
       var idPeg = p['ID PEGAWAI'] || p['idPegawai'] || '';
-      var absensiPeg = localAbsensi.filter(function (a) { return a.idPegawai === idPeg && a.tanggal >= from && a.tanggal <= to; });
-      var kena = absensiPeg.filter(function (a) {
+      var absensiRentang = localAbsensi.filter(function (a) { return a.idPegawai === idPeg && a.tanggal >= from && a.tanggal <= to; });
+      var absensiTM = absensiRentang.filter(function (a) { return a.tanggal <= toTM; });
+      var kena = absensiRentang.filter(function (a) {
         var libur = isPegawaiLiburOnDate(p, a.tanggal);
         var lembur = a.isLembur || isPenugasanLembur(idPeg, a.tanggal);
         return !(libur && !lembur);
       });
-      var terlambat = kena.filter(function (a) { return a.statusAbsenMasuk === 'Terlambat'; }).length;
-      var cepat = kena.filter(function (a) { return a.statusAbsenPulang === 'Pulang Cepat'; }).length;
-      var hariCuti = 0;
+      var detail = [];
+      kena.forEach(function (a) {
+        if (a.statusAbsenMasuk === 'Terlambat') detail.push({ tanggal: a.tanggal, jenis: 'Terlambat', ket: 'Absen masuk ' + (a.absenMasuk ? fmtTime(a.absenMasuk) + ' WIB' : '-'), persen: 1 });
+        if (a.statusAbsenPulang === 'Pulang Cepat') detail.push({ tanggal: a.tanggal, jenis: 'Pulang Cepat', ket: 'Absen pulang ' + (a.absenPulang ? fmtTime(a.absenPulang) + ' WIB' : '-'), persen: 1 });
+      });
+      var terlambat = detail.filter(function (d) { return d.jenis === 'Terlambat'; }).length;
+      var cepat = detail.filter(function (d) { return d.jenis === 'Pulang Cepat'; }).length;
+
+      // Tanggal cuti/ijin disetujui (hari kerja) dalam rentang
+      var cutiSet = {}, hariCuti = 0;
       localPermohonan.filter(function (pm) { return pm.ID_Karyawan === idPeg && pm.Status === 'Disetujui'; }).forEach(function (pm) {
         var mulai = pm.Tanggal_Mulai || '', selesai = pm.Tanggal_Selesai || '';
         if (!mulai || !selesai) return;
-        var st = mulai > from ? mulai : from, en = selesai < to ? selesai : to;
-        if (st <= en) hariCuti += hitungHariKerja(st, en);
+        var st = mulai > from ? mulai : from, en = selesai < toTM ? selesai : toTM;
+        if (st <= en) {
+          hariCuti += hitungHariKerja(st, en);
+          for (var d = st; d <= en; d = tambahHari(d, 1)) { var dw = new Date(d).getDay(); if (dw !== 0 && dw !== 6) cutiSet[d] = true; }
+        }
       });
-      var tidakMasuk = Math.max(0, hariKerja - absensiPeg.length - hariCuti);
-      out[idPeg] = { terlambat: terlambat, cepat: cepat, tidakMasuk: tidakMasuk, persen: terlambat * 1 + cepat * 1 + tidakMasuk * 4 };
+      var tidakMasuk = Math.max(0, hariKerja - absensiTM.length - hariCuti);
+      var adaAbsen = {};
+      absensiTM.forEach(function (a) { adaAbsen[a.tanggal] = true; });
+      var gap = [];
+      for (var d2 = from; d2 <= toTM; d2 = tambahHari(d2, 1)) {
+        var dw2 = new Date(d2).getDay();
+        if (dw2 !== 0 && dw2 !== 6 && !adaAbsen[d2] && !cutiSet[d2]) gap.push(d2);
+      }
+      gap.slice(0, tidakMasuk).forEach(function (t) { detail.push({ tanggal: t, jenis: 'Tidak Masuk', ket: 'Tidak ada absensi & tanpa ijin/cuti disetujui', persen: 4 }); });
+      detail.sort(function (x, y) { return x.tanggal.localeCompare(y.tanggal); });
+      out[idPeg] = { terlambat: terlambat, cepat: cepat, tidakMasuk: tidakMasuk, persen: terlambat * 1 + cepat * 1 + tidakMasuk * 4, detail: detail };
     });
   } catch (e) {
-    console.warn('Gagal menghitung potongan absen bulanan:', e);
+    console.warn('Gagal menghitung potongan absen:', e);
   }
   return out;
 }
@@ -15069,6 +15234,7 @@ function renderPotonganGajiTable() {
     return rowPotonganGajiHtml(idPeg, ids.indexOf(idPeg) + 1);
   }, 13, 'Tidak ada data');
   updatePotGajiStats();
+  syncChkAbsenAll();
 }
 
 function rowPotonganGajiHtml(idPeg, no) {
@@ -15092,7 +15258,7 @@ function rowPotonganGajiHtml(idPeg, no) {
     <td style="background:#eef4ff;min-width:170px">
       <input type="number" value="${Math.round(r.absenNominal || 0)}" style="width:100px" oninput="onAbsenNominalInput('${idPeg}', this.value)">
       <div style="font-size:11px;color:var(--text-muted);margin:3px 0">${r.absenKet || 'Tidak ada potongan absen'}</div>
-      <label style="font-size:12px;font-weight:600;cursor:pointer"><input type="checkbox" ${r.absenApproved ? 'checked' : ''} onchange="onAbsenApproveChange('${idPeg}', this.checked)"> Disetujui</label>
+      <label style="font-size:12px;font-weight:600;cursor:pointer"><input type="checkbox" class="chk-absen-row" ${r.absenApproved ? 'checked' : ''} onchange="onAbsenApproveChange('${idPeg}', this.checked)"> Disetujui</label>
     </td>
     <td><button class="btn btn-danger btn-sm" title="Hapus/batalkan data potongan pegawai ini (jika salah input/simpan)" onclick="dropPotonganGajiRow('${idPeg}')">🗑 Drop</button></td>
   </tr>`;
@@ -15104,7 +15270,23 @@ function onBpjsGajiInput(idPeg, val) {
 }
 function onBpjsKesGajiInput(idPeg, val) { potonganGajiState[idPeg].bpjsKes = parseRpInput(val); }
 function onAbsenNominalInput(idPeg, val) { potonganGajiState[idPeg].absenNominal = parseRpInput(val); }
-function onAbsenApproveChange(idPeg, checked) { potonganGajiState[idPeg].absenApproved = !!checked; }
+function onAbsenApproveChange(idPeg, checked) { potonganGajiState[idPeg].absenApproved = !!checked; syncChkAbsenAll(); }
+// Centang/lepas persetujuan potongan absen untuk SEMUA pegawai di daftar (semua halaman, bukan hanya halaman yang tampil).
+function toggleSemuaAbsenApproved(checked) {
+  Object.keys(potonganGajiState).forEach(function (id) { potonganGajiState[id].absenApproved = !!checked; });
+  document.querySelectorAll('.chk-absen-row').forEach(function (c) { c.checked = !!checked; });
+  syncChkAbsenAll();
+}
+function syncChkAbsenAll() {
+  var all = document.getElementById('chkAbsenAll');
+  if (!all) return;
+  var ids = Object.keys(potonganGajiState);
+  var n = ids.filter(function (id) { return potonganGajiState[id].absenApproved; }).length;
+  all.checked = ids.length > 0 && n === ids.length;
+  all.indeterminate = n > 0 && n < ids.length;
+  var cnt = document.getElementById('absenAllCount');
+  if (cnt) cnt.textContent = ids.length ? '(' + n + '/' + ids.length + ')' : '';
+}
 function onPaguyubanGajiInput(idPeg, val) {
   potonganGajiState[idPeg].paguyuban = parseRpInput(val);
   updateRowTotalCells(idPeg);
@@ -15304,7 +15486,7 @@ async function initRiwayatPotFilter() {
 
 async function loadRiwayatPotonganGaji() {
   var tbody = document.getElementById('riwayatPotBody');
-  tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
   var idPegawai = document.getElementById('rwPotPegawai').value;
   var tahun = document.getElementById('rwPotTahun').value;
   var bulan = document.getElementById('rwPotBulan').value;
@@ -15322,17 +15504,19 @@ async function loadRiwayatPotonganGaji() {
 
   riwayatPotRowsRaw = rows.map(function (r) {
     var p = pegMap[r.idPegawai] || {};
+    var t = rgsHitungTotal(r);
     return {
       idPegawai: r.idPegawai, bulan: r.bulan, tahun: r.tahun,
       nama: p['NAMA'] || r.idPegawai, jabatan: p['PEKERJAAN'] || '-',
       gaji: r.gaji, bpjsTk: r.bpjsTk, utangPegawai: r.utangPegawai,
-      paguyuban: r.paguyuban, totalPotongan: r.totalPotongan, netGaji: r.netGaji
+      paguyuban: r.paguyuban, totalPotongan: r.totalPotongan, netGaji: r.netGaji,
+      bpjsKes: t.bpjsKes, potonganAbsen: t.absen, absenOk: t.absenOk, netDiterima: t.netto
     };
   }).sort(function (a, b) { return (b.tahun - a.tahun) || (b.bulan - a.bulan) || String(a.nama).localeCompare(String(b.nama)); });
 
   renderPaged('riwayatPot', riwayatPotRowsRaw, 'riwayatPotBody', 'pgRiwayatPot', function (r, idx) {
     return rowRiwayatPotHtml(r);
-  }, 11, 'Tidak ada riwayat pemotongan untuk filter ini.');
+  }, 14, 'Tidak ada riwayat pemotongan untuk filter ini.');
 }
 
 function rowRiwayatPotHtml(r) {
@@ -15344,10 +15528,13 @@ function rowRiwayatPotHtml(r) {
     '<td>' + r.jabatan + '</td>' +
     '<td>' + fmtRp(r.gaji) + '</td>' +
     '<td>' + fmtRp(r.bpjsTk) + '</td>' +
+    '<td style="background:#eef4ff">' + fmtRp(r.bpjsKes) + '</td>' +
     '<td>' + fmtRp(r.utangPegawai) + '</td>' +
     '<td>' + fmtRp(r.paguyuban) + '</td>' +
     '<td><strong>' + fmtRp(r.totalPotongan) + '</strong></td>' +
     '<td>' + fmtRp(r.netGaji) + '</td>' +
+    '<td style="background:#eef4ff">' + (r.absenOk ? fmtRp(r.potonganAbsen) : '<span style="color:var(--text-muted);font-size:12px">Belum disetujui</span>') + '</td>' +
+    '<td style="background:#f0fdf4"><strong>' + fmtRp(r.netDiterima) + '</strong></td>' +
     '<td>' +
       '<button class="btn btn-outline btn-sm" title="Lihat rincian utang" onclick="lihatDetailUtangRiwayat(\'' + r.idPegawai + '\',' + r.bulan + ',' + r.tahun + ',\'' + r.nama.replace(/'/g, "\\'") + '\')">👁</button> ' +
       '<button class="btn btn-danger btn-sm" title="Hapus data ini" onclick="hapusRiwayatPotongan(\'' + r.idPegawai + '\',' + r.bulan + ',' + r.tahun + ')">🗑</button>' +
@@ -15376,11 +15563,11 @@ function exportRiwayatPotonganExcel() {
   var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
   html += '<head><meta charset="UTF-8"><' + 'style>th{background:#dbeafe;padding:7px;border:1px solid #888;font-weight:bold}td{padding:5px;border:1px solid #ccc}<' + '/style><' + '/head><body>';
   html += '<h2>RIWAYAT PEMOTONGAN GAJI PPNPN</h2><table><thead><tr>';
-  html += '<th>No</th><th>Periode</th><th>Nama</th><th>Jabatan</th><th>Gaji</th><th>BPJS TK</th><th>Utang Pegawai</th><th>Paguyuban</th><th>Total Potongan</th><th>Net Gaji</th>';
+  html += '<th>No</th><th>Periode</th><th>Nama</th><th>Jabatan</th><th>Gaji</th><th>BPJS TK</th><th>BPJS Kesehatan (1%)</th><th>Utang Pegawai</th><th>Paguyuban</th><th>Total Potongan (BRI)</th><th>Net Gaji (BRI)</th><th>Potongan Absen (disetujui)</th><th>Net Diterima Pegawai</th>';
   html += '<' + '/tr><' + '/thead><tbody>';
   riwayatPotRowsRaw.forEach(function (r, i) {
     html += '<tr><td>' + (i + 1) + '</td><td>' + fmtBulanTahun(r.tahun + '-' + String(r.bulan).padStart(2, '0')) + '</td><td>' + r.nama + '</td><td>' + r.jabatan + '</td>';
-    html += '<td>' + fmtRp(r.gaji) + '</td><td>' + fmtRp(r.bpjsTk) + '</td><td>' + fmtRp(r.utangPegawai) + '</td><td>' + fmtRp(r.paguyuban) + '</td><td>' + fmtRp(r.totalPotongan) + '</td><td>' + fmtRp(r.netGaji) + '</td><' + '/tr>';
+    html += '<td>' + fmtRp(r.gaji) + '</td><td>' + fmtRp(r.bpjsTk) + '</td><td>' + fmtRp(r.bpjsKes) + '</td><td>' + fmtRp(r.utangPegawai) + '</td><td>' + fmtRp(r.paguyuban) + '</td><td>' + fmtRp(r.totalPotongan) + '</td><td>' + fmtRp(r.netGaji) + '</td><td>' + fmtRp(r.potonganAbsen) + '</td><td>' + fmtRp(r.netDiterima) + '</td><' + '/tr>';
   });
   html += '<' + '/tbody><' + '/table><' + '/body><' + '/html>';
   var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
@@ -15398,7 +15585,7 @@ function initRekapPotFilter() {
 
 async function loadRekapPotonganBulanan() {
   var tbody = document.getElementById('rekapPotBody');
-  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
   var tahun = parseInt(document.getElementById('rekapPotTahun').value, 10);
   var bulanAwal = parseInt(document.getElementById('rekapPotBulanAwal').value, 10);
   var bulanAkhir = parseInt(document.getElementById('rekapPotBulanAkhir').value, 10);
@@ -15410,40 +15597,48 @@ async function loadRekapPotonganBulanan() {
 
   var perBulan = {};
   for (var b = bulanAwal; b <= bulanAkhir; b++) {
-    perBulan[b] = { bulan: b, jumlahPegawai: 0, totalGaji: 0, totalBpjs: 0, totalUtang: 0, totalPaguyuban: 0, totalPotongan: 0, totalNet: 0 };
+    perBulan[b] = { bulan: b, jumlahPegawai: 0, totalGaji: 0, totalBpjs: 0, totalBpjsKes: 0, totalUtang: 0, totalPaguyuban: 0, totalPotongan: 0, totalNet: 0, totalAbsen: 0, totalNetDiterima: 0 };
   }
   rows.forEach(function (r) {
     var agg = perBulan[r.bulan];
     if (!agg) return;
+    var t = rgsHitungTotal(r);
     agg.jumlahPegawai++;
     agg.totalGaji += Number(r.gaji) || 0;
     agg.totalBpjs += Number(r.bpjsTk) || 0;
+    agg.totalBpjsKes += t.bpjsKes;
     agg.totalUtang += Number(r.utangPegawai) || 0;
     agg.totalPaguyuban += Number(r.paguyuban) || 0;
     agg.totalPotongan += Number(r.totalPotongan) || 0;
     agg.totalNet += Number(r.netGaji) || 0;
+    agg.totalAbsen += t.absen;
+    agg.totalNetDiterima += t.netto;
   });
 
   rekapPotRowsRaw = Object.keys(perBulan).map(function (k) { return perBulan[k]; });
 
   if (!rekapPotRowsRaw.some(function (r) { return r.jumlahPegawai > 0; })) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Belum ada data potongan tersimpan untuk periode ini.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--text-muted)">Belum ada data potongan tersimpan untuk periode ini.</td></tr>';
     document.getElementById('rekapPotStats').style.display = 'none';
     return;
   }
 
   var namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-  var grandGaji = 0, grandPot = 0, grandNet = 0;
+  var G = { gaji: 0, bpjs: 0, bpjsKes: 0, utang: 0, pagu: 0, pot: 0, net: 0, absen: 0, netDit: 0 };
   tbody.innerHTML = rekapPotRowsRaw.map(function (r, i) {
-    grandGaji += r.totalGaji; grandPot += r.totalPotongan; grandNet += r.totalNet;
+    G.gaji += r.totalGaji; G.bpjs += r.totalBpjs; G.bpjsKes += r.totalBpjsKes; G.utang += r.totalUtang; G.pagu += r.totalPaguyuban;
+    G.pot += r.totalPotongan; G.net += r.totalNet; G.absen += r.totalAbsen; G.netDit += r.totalNetDiterima;
     return '<tr><td>' + (i + 1) + '</td><td><strong>' + namaBulan[r.bulan] + ' ' + tahun + '</strong></td><td>' + r.jumlahPegawai + '</td>' +
-      '<td>' + fmtRp(r.totalGaji) + '</td><td>' + fmtRp(r.totalBpjs) + '</td><td>' + fmtRp(r.totalUtang) + '</td><td>' + fmtRp(r.totalPaguyuban) + '</td>' +
-      '<td><strong>' + fmtRp(r.totalPotongan) + '</strong></td><td>' + fmtRp(r.totalNet) + '</td></tr>';
-  }).join('') + '<tr style="background:#fef3c7;font-weight:700"><td colspan="3" style="text-align:right">GRAND TOTAL</td><td>' + fmtRp(grandGaji) + '</td><td></td><td></td><td></td><td>' + fmtRp(grandPot) + '</td><td>' + fmtRp(grandNet) + '</td></tr>';
+      '<td>' + fmtRp(r.totalGaji) + '</td><td>' + fmtRp(r.totalBpjs) + '</td><td style="background:#eef4ff">' + fmtRp(r.totalBpjsKes) + '</td><td>' + fmtRp(r.totalUtang) + '</td><td>' + fmtRp(r.totalPaguyuban) + '</td>' +
+      '<td><strong>' + fmtRp(r.totalPotongan) + '</strong></td><td>' + fmtRp(r.totalNet) + '</td><td style="background:#eef4ff">' + fmtRp(r.totalAbsen) + '</td><td style="background:#f0fdf4"><strong>' + fmtRp(r.totalNetDiterima) + '</strong></td></tr>';
+  }).join('') + '<tr style="background:#fef3c7;font-weight:700"><td colspan="3" style="text-align:right">GRAND TOTAL</td><td>' + fmtRp(G.gaji) + '</td><td>' + fmtRp(G.bpjs) + '</td><td>' + fmtRp(G.bpjsKes) + '</td><td>' + fmtRp(G.utang) + '</td><td>' + fmtRp(G.pagu) + '</td><td>' + fmtRp(G.pot) + '</td><td>' + fmtRp(G.net) + '</td><td>' + fmtRp(G.absen) + '</td><td>' + fmtRp(G.netDit) + '</td></tr>';
+  window._rekapPotGrand = G;
 
-  document.getElementById('rp-total-gaji').textContent = fmtRp(grandGaji);
-  document.getElementById('rp-total-potongan').textContent = fmtRp(grandPot);
-  document.getElementById('rp-total-net').textContent = fmtRp(grandNet);
+  document.getElementById('rp-total-gaji').textContent = fmtRp(G.gaji);
+  document.getElementById('rp-total-potongan').textContent = fmtRp(G.pot);
+  document.getElementById('rp-total-net').textContent = fmtRp(G.net);
+  document.getElementById('rp-total-bpjskes').textContent = fmtRp(G.bpjsKes);
+  document.getElementById('rp-total-netditerima').textContent = fmtRp(G.netDit);
   document.getElementById('rekapPotStats').style.display = '';
 }
 
@@ -15454,15 +15649,16 @@ function exportRekapPotonganBulananExcel() {
   var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
   html += '<head><meta charset="UTF-8"><' + 'style>th{background:#dbeafe;padding:7px;border:1px solid #888;font-weight:bold}td{padding:5px;border:1px solid #ccc}<' + '/style><' + '/head><body>';
   html += '<h2>REKAPITULASI PEMOTONGAN GAJI PPNPN — TAHUN ' + tahun + '</h2><table><thead><tr>';
-  html += '<th>No</th><th>Bulan</th><th>Jumlah Pegawai</th><th>Total Gaji</th><th>Total BPJS TK</th><th>Total Utang</th><th>Total Paguyuban</th><th>Total Potongan</th><th>Total Net Gaji</th>';
+  html += '<th>No</th><th>Bulan</th><th>Jumlah Pegawai</th><th>Total Gaji</th><th>Total BPJS TK</th><th>Total BPJS Kesehatan (1%)</th><th>Total Utang</th><th>Total Paguyuban</th><th>Total Potongan (BRI)</th><th>Total Net Gaji (BRI)</th><th>Total Potongan Absen (disetujui)</th><th>Total Net Diterima</th>';
   html += '<' + '/tr><' + '/thead><tbody>';
-  var grandGaji = 0, grandPot = 0, grandNet = 0;
+  var G = { gaji: 0, bpjs: 0, bpjsKes: 0, utang: 0, pagu: 0, pot: 0, net: 0, absen: 0, netDit: 0 };
   rekapPotRowsRaw.forEach(function (r, i) {
-    grandGaji += r.totalGaji; grandPot += r.totalPotongan; grandNet += r.totalNet;
+    G.gaji += r.totalGaji; G.bpjs += r.totalBpjs; G.bpjsKes += r.totalBpjsKes; G.utang += r.totalUtang; G.pagu += r.totalPaguyuban;
+    G.pot += r.totalPotongan; G.net += r.totalNet; G.absen += r.totalAbsen; G.netDit += r.totalNetDiterima;
     html += '<tr><td>' + (i + 1) + '</td><td>' + namaBulan[r.bulan] + ' ' + tahun + '</td><td>' + r.jumlahPegawai + '</td>';
-    html += '<td>' + fmtRp(r.totalGaji) + '</td><td>' + fmtRp(r.totalBpjs) + '</td><td>' + fmtRp(r.totalUtang) + '</td><td>' + fmtRp(r.totalPaguyuban) + '</td><td>' + fmtRp(r.totalPotongan) + '</td><td>' + fmtRp(r.totalNet) + '</td><' + '/tr>';
+    html += '<td>' + fmtRp(r.totalGaji) + '</td><td>' + fmtRp(r.totalBpjs) + '</td><td>' + fmtRp(r.totalBpjsKes) + '</td><td>' + fmtRp(r.totalUtang) + '</td><td>' + fmtRp(r.totalPaguyuban) + '</td><td>' + fmtRp(r.totalPotongan) + '</td><td>' + fmtRp(r.totalNet) + '</td><td>' + fmtRp(r.totalAbsen) + '</td><td>' + fmtRp(r.totalNetDiterima) + '</td><' + '/tr>';
   });
-  html += '<tr style="font-weight:bold"><td colspan="3" style="text-align:right">GRAND TOTAL</td><td>' + fmtRp(grandGaji) + '</td><td></td><td></td><td></td><td>' + fmtRp(grandPot) + '</td><td>' + fmtRp(grandNet) + '</td><' + '/tr>';
+  html += '<tr style="font-weight:bold"><td colspan="3" style="text-align:right">GRAND TOTAL</td><td>' + fmtRp(G.gaji) + '</td><td>' + fmtRp(G.bpjs) + '</td><td>' + fmtRp(G.bpjsKes) + '</td><td>' + fmtRp(G.utang) + '</td><td>' + fmtRp(G.pagu) + '</td><td>' + fmtRp(G.pot) + '</td><td>' + fmtRp(G.net) + '</td><td>' + fmtRp(G.absen) + '</td><td>' + fmtRp(G.netDit) + '</td><' + '/tr>';
   html += '<' + '/tbody><' + '/table><' + '/body><' + '/html>';
   var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
   var url = URL.createObjectURL(blob);
