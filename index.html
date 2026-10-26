@@ -1281,6 +1281,18 @@
     background: #10b981; color: #fff; font-size: 10px; font-weight: 800; letter-spacing: 0.5px;
     padding: 3px 10px; border-radius: 9999px; box-shadow: 0 4px 10px rgba(16,185,129,0.4);
   }
+  .pd-piket-clean {
+    margin-top: 10px; max-width: 640px; padding: 12px 16px; border-radius: 14px;
+    background: #166534; border: 2px solid #86efac; color: #fff;
+    font-size: 14px; line-height: 1.45; text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    animation: pdPiketBlink 1.3s ease-in-out infinite;
+  }
+  .pd-piket-clean strong { color: #fff; }
+  @keyframes pdPiketBlink {
+    0%, 100% { background: #166534; border-color: #86efac; box-shadow: 0 0 0 0 rgba(34,197,94,0.65); }
+    50%      { background: #15803d; border-color: #dcfce7; box-shadow: 0 0 0 12px rgba(34,197,94,0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .pd-piket-clean { animation: none; } }
   .pd-hero-date { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #1f6e4f; margin-bottom: 6px; }
   .pd-hero h2 { font-family: 'Sora', sans-serif; font-size: 27px; font-weight: 800; margin-bottom: 8px; line-height: 1.2; color: #0d2b20; }
   .pd-hero p { font-size: 14px; color: #35594a; max-width: 420px; line-height: 1.5; }
@@ -1738,6 +1750,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
         Jadwal Hari Libur
       </a>
+      <a class="nav-item" onclick="showPage('jadwalKebersihan')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V10l7-6 7 6v11"/><path d="M9 21v-6h6v6"/></svg>
+        Jadwal Kebersihan
+      </a>
       <a class="nav-item" onclick="showPage('rekapGajiSaya')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><text x="12" y="15.5" text-anchor="middle" font-size="9" font-weight="800" fill="currentColor" stroke="none" font-family="Arial, Helvetica, sans-serif">Rp</text></svg>
         Rekap Gaji
@@ -1903,6 +1919,11 @@
             <div id="adminPiketBody"><div class="alert alert-info">⏳ Memuat data...</div></div>
           </div>
 
+          <div class="card" id="adminKebersihanWrap" style="margin-top:20px">
+            <div class="card-title">🧹 Jadwal Kebersihan per Tanggal</div>
+            <div id="pkc-host-dash"></div>
+          </div>
+
           <div class="pd-bottom-grid">
             <div style="display:grid;grid-template-columns:1fr;gap:16px" id="dashCards">
               <div class="card" id="myAbsenCard">
@@ -1954,6 +1975,7 @@
                   <span class="pd-checklist-reminder-dot"></span>
                   Setelah melakukan absensi, jangan lupa mengisi cek list tugas harian.
                 </div>
+                <div id="pdPiketKebersihan" class="pd-piket-clean" style="display:none"></div>
               </div>
             </div>
             <div class="pd-hero-actions">
@@ -2341,7 +2363,10 @@
           </div>
           <div class="form-row">
             <div class="field"><label>Tempat Lahir</label><input type="text" id="pf-ttl"></div>
-            <div class="field"><label>Tanggal Lahir</label><input type="date" id="pf-tgl"></div>
+            <div class="field"><label>Tanggal Lahir</label><input type="date" id="pf-tgl" onchange="updatePensiunProfil()"></div>
+          </div>
+          <div class="form-row single">
+            <div class="field"><label>Tanggal Pensiun (usia 58 tahun)</label><input type="text" id="pf-pensiun" disabled></div>
           </div>
           <div class="form-row">
             <div class="field"><label>Jenis Kelamin</label>
@@ -2409,7 +2434,7 @@
               <tbody id="paBody"><tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted)">Pilih periode lalu klik "Tampilkan".</td></tr></tbody>
             </table>
           </div>
-          <div class="alert alert-info alert-block" style="margin-top:12px;font-size:12.5px">ℹ️ Nominal di atas adalah <b>estimasi</b> (persen potongan × gaji sesuai SPK). Potongan yang benar-benar dipotong adalah yang sudah disetujui admin dan tampil di menu <b>Rekap Gaji</b>.</div>
+          <div class="alert alert-info alert-block" style="margin-top:12px;font-size:12.5px">ℹ️ Angka di atas hanya <b>estimasi</b> berdasarkan <b>SPK (Surat Perjanjian Kerja)</b> (persen potongan × gaji sesuai SPK), <b>bukan angka riil potongan gaji</b>.</div>
         </div>
       </div>
 
@@ -2438,10 +2463,10 @@
         <!-- ===== SUB: REKAP ABSENSI ===== -->
         <div id="rekapAbsensiWrap">
         <div class="stats-grid" style="margin-bottom:16px">
-          <div class="stat-card blue"><div class="label">Total Hadir</div><div class="value" id="adm-hadir">-</div><div class="sub">Hari ini</div></div>
-          <div class="stat-card amber"><div class="label">Terlambat</div><div class="value" id="adm-late">-</div><div class="sub">Hari ini</div></div>
-          <div class="stat-card red"><div class="label">Tidak Hadir</div><div class="value" id="adm-absent">-</div><div class="sub">Hari ini</div></div>
-          <div class="stat-card green"><div class="label">Total Pegawai</div><div class="value" id="adm-total">-</div><div class="sub">Aktif</div></div>
+          <div class="stat-card blue" style="cursor:pointer" title="Klik untuk lihat detail" onclick="showStatAbsenDetail('hadir')"><div class="label">Total Hadir</div><div class="value" id="adm-hadir">-</div><div class="sub">Hari ini</div></div>
+          <div class="stat-card amber" style="cursor:pointer" title="Klik untuk lihat detail" onclick="showStatAbsenDetail('late')"><div class="label">Terlambat</div><div class="value" id="adm-late">-</div><div class="sub">Hari ini</div></div>
+          <div class="stat-card red" style="cursor:pointer" title="Klik untuk lihat detail" onclick="showStatAbsenDetail('absent')"><div class="label">Tidak Hadir</div><div class="value" id="adm-absent">-</div><div class="sub">Hari ini</div></div>
+          <div class="stat-card green" style="cursor:pointer" title="Klik untuk lihat detail" onclick="showStatAbsenDetail('total')"><div class="label">Total Pegawai</div><div class="value" id="adm-total">-</div><div class="sub">Aktif</div></div>
         </div>
         <div class="card">
           <div class="card-title">📋 Rekap Absensi</div>
@@ -2661,10 +2686,10 @@
             </label>
             <button class="btn btn-outline btn-sm" onclick="downloadTemplatePegawai()">⬇ Template Import</button>
           </div>
-          <div class="import-hint">📋 Format kolom: ID Pegawai | Nama | NIK | Pekerjaan | Tim | No HP</div>
+          <div class="import-hint">📋 Format kolom: ID Pegawai | Nama | NIK | Pekerjaan | Tim | No HP | TTL (cth: Subang, 9 Mei 1975) | Alamat &nbsp;—&nbsp; ID Pegawai boleh dikosongkan jika NIK/Nama sudah terdaftar</div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th style="width:36px"><input type="checkbox" id="chkAllPegawai" onchange="toggleAllPegawai(this)"></th><th>ID</th><th>Nama</th><th>NIK</th><th>Pekerjaan</th><th>Tim</th><th>Gaji SPK</th><th>BPJS TK</th><th>Password</th><th>Hak Cuti</th><th>Aksi</th></tr></thead>
+              <thead><tr><th style="width:36px"><input type="checkbox" id="chkAllPegawai" onchange="toggleAllPegawai(this)"></th><th>ID</th><th>Nama</th><th>NIK</th><th>Tempat, Tgl Lahir</th><th>Tgl Pensiun</th><th>Pekerjaan</th><th>Tim</th><th>Gaji SPK</th><th>BPJS TK</th><th>Password</th><th>Hak Cuti</th><th>Aksi</th></tr></thead>
               <tbody id="adminPegawaiBody"></tbody>
             </table>
           </div>
@@ -3791,6 +3816,7 @@
           <div class="tab active" onclick="switchChecklistCSTab('eval')">📊 Evaluasi Progress</div>
           <div class="tab" onclick="switchChecklistCSTab('tugas')">📋 Kelola Daftar Tugas</div>
           <div class="tab" onclick="switchChecklistCSTab('dash')">📈 Dashboard Evaluasi PPNPN</div>
+          <div class="tab" onclick="switchChecklistCSTab('jadwal')">🗓 Jadwal Piket &amp; Tandem</div>
         </div>
 
         <div id="csEvalWrap">
@@ -3924,6 +3950,55 @@
             <div style="font-size:11.5px;color:var(--text-muted);margin-top:10px">Kategori: Baik &ge; 80% · Cukup 50–79% · Kurang &lt; 50%. Tugas Insidentil tidak masuk perhitungan (dievaluasi manual).</div>
           </div>
         </div><!-- end csDashWrap -->
+
+        <!-- ===== JADWAL PIKET KEBERSIHAN & TANDEM/PENGGANTI ===== -->
+        <div id="csJadwalWrap" style="display:none">
+          <div class="card">
+            <div class="card-title">🗓 Jadwal Piket Kebersihan</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Petugas piket otomatis mendapat notifikasi di layar setelah absen masuk pada hari bertugasnya. Jadwal <b>rotasi pekanan</b> berganti petugas tiap pekan (Senin–Minggu) mengikuti urutan petugas.</p>
+            <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px"><button class="btn btn-primary btn-sm" onclick="openPiketItem('')">+ Tambah Jadwal Piket</button> <button class="btn btn-outline btn-sm" onclick="terapkanPolaAula()" title="Ganti jadwal Aula Lantai 2 & 3 dengan pola bergilir standar">🔄 Terapkan Pola Aula Lantai 2 &amp; 3</button></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Area</th><th>Hari</th><th>Petugas</th><th>Aksi</th></tr></thead>
+                <tbody id="piketItemBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:16px">
+            <div class="card-title">🔁 Tandem / Pengganti CS (berhalangan)</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Jika seorang CS berhalangan, tunjuk pengganti. Pada tanggal tersebut pengganti otomatis mengambil <b>jadwal piket</b> dan <b>tugas checklist</b> milik CS yang berhalangan, dan mendapat notifikasi setelah absen masuk.</p>
+            <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+              <div class="field"><label>CS Berhalangan</label><select id="tdBerhalangan"></select></div>
+              <div class="field"><label>Pengganti</label><select id="tdPengganti"></select></div>
+              <div class="field"><label>Dari Tanggal</label><input type="date" id="tdMulai"></div>
+              <div class="field"><label>Sampai Tanggal</label><input type="date" id="tdSelesai"></div>
+              <div class="field"><label>Alasan (opsional)</label><input type="text" id="tdAlasan" placeholder="mis. sakit / cuti"></div>
+              <button class="btn btn-primary" style="align-self:flex-end" onclick="tambahTandem()">+ Simpan Tandem</button>
+            </div>
+            <div class="table-wrap" style="margin-top:10px">
+              <table>
+                <thead><tr><th>Tanggal</th><th>Berhalangan</th><th>Pengganti</th><th>Alasan</th><th>Aksi</th></tr></thead>
+                <tbody id="tandemBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:16px">
+            <div class="card-title">🔎 Cek Jadwal Kebersihan per Tanggal</div>
+            <div id="pkc-host-adm"></div>
+          </div>
+
+          <div class="card" style="margin-top:16px">
+            <div class="card-title">👀 Pratinjau 3 Pekan ke Depan</div>
+            <div class="table-wrap" style="max-height:420px;overflow:auto">
+              <table>
+                <thead><tr><th>Tanggal</th><th>Area</th><th>Petugas</th></tr></thead>
+                <tbody id="piketPreviewBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div><!-- end csJadwalWrap -->
       </div>
 
       <!-- ===== PEGAWAI: JADWAL HARI LIBUR (read-only) ===== -->
@@ -3938,6 +4013,15 @@
             </table>
           </div>
           <div class="pagination" id="pgLiburUser"></div>
+        </div>
+      </div>
+
+      <!-- ===== PEGAWAI: JADWAL KEBERSIHAN (read-only) ===== -->
+      <div class="page" id="page-jadwalKebersihan">
+        <div class="card">
+          <div class="card-title">🧹 Jadwal Kebersihan per Tanggal</div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Lihat petugas kebersihan Aula Lantai 2, Aula Lantai 3, dan Toilet Lantai 2 (P3) pada tanggal tertentu. Halaman ini hanya untuk dilihat.</p>
+          <div id="pkc-host-peg"></div>
         </div>
       </div>
 
@@ -4047,6 +4131,14 @@
     <div class="form-row">
       <div class="field"><label>No. BPJS Ketenagakerjaan</label><input type="text" id="adm-peg-nobpjs" inputmode="numeric" placeholder="cth: 2012345678"></div>
       <div class="field"><label>No. BPJS Kesehatan</label><input type="text" id="adm-peg-nobpjskes" inputmode="numeric" placeholder="cth: 0001234567890"></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>Tempat Lahir</label><input type="text" id="adm-peg-tmplahir" placeholder="cth: Subang"></div>
+      <div class="field"><label>Tanggal Lahir</label><input type="date" id="adm-peg-tgllahir" onchange="updatePensiunPreview()"></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>Alamat</label><textarea id="adm-peg-alamat" rows="2" placeholder="cth: Jl. Otista No. 28, Soklat, Subang"></textarea></div>
+      <div class="field"><label>Tanggal Pensiun (otomatis)</label><input type="text" id="adm-peg-pensiun" disabled placeholder="Dihitung dari tanggal lahir"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('pegawaiAdminModal')">Batal</button>
@@ -4404,6 +4496,74 @@
   @media (max-width:520px){ .pd-grid { grid-template-columns: 1fr; } }
 </style>
 <!-- Modal Detail Pegawai (klik baris di Data Pegawai & Hak Cuti) -->
+<!-- Modal tambah/edit jadwal piket -->
+<div class="modal-backdrop" id="modalPiketItem">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3 id="pkTitle">Jadwal Piket</h3>
+      <button class="modal-close" onclick="closeModal('modalPiketItem')">✕</button>
+    </div>
+    <input type="hidden" id="pkId">
+    <div class="field" style="margin-bottom:10px"><label>Nama Area</label><input type="text" id="pkNama" placeholder="mis. Aula Lantai 2"></div>
+    <div class="field" style="margin-bottom:10px"><label>Jenis Jadwal</label>
+      <select id="pkTipe" onchange="pkTipeChanged()">
+        <option value="harian">Hari tetap setiap pekan</option>
+        <option value="pekanan">Rotasi pekanan (bergantian tiap pekan)</option>
+        <option value="bergilir">Bergilir otomatis (bergantian tiap hari bertugas)</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:10px"><label>Hari Bertugas</label>
+      <div id="pkHariWrap" style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px"></div>
+    </div>
+    <div class="field" style="margin-bottom:10px"><label style="display:flex;align-items:flex-start;gap:6px;font-size:13px;font-weight:400"><input type="checkbox" id="pkLewatiLibur" checked style="margin-top:3px"> <span><b>Lewati hari libur kantor</b> — pada tanggal libur (menu Jadwal Hari Libur) tidak ada petugas, dan giliran tidak terpakai sehingga rotasi berlanjut ke hari bertugas berikutnya.</span></label></div>
+    <div class="field" id="pkMulaiWrap" style="margin-bottom:10px"><label id="pkMulaiLabel">Mulai tanggal</label><input type="date" id="pkMulai"></div>
+    <div class="field" id="pkJumlahWrap" style="margin-bottom:10px"><label>Jumlah petugas per giliran</label><input type="number" id="pkJumlah" min="1" value="1"></div>
+    <div class="field" style="margin-bottom:10px"><label>Petugas</label>
+      <select id="pkMode" onchange="pkModeChanged()">
+        <option value="semuaCS">Semua Cleaning Service</option>
+        <option value="pilih">Pilih petugas tertentu</option>
+      </select>
+    </div>
+    <div id="pkPilihWrap" style="margin-bottom:10px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <select id="pkPilihPeg" style="flex:1"></select>
+        <button class="btn btn-outline btn-sm" onclick="pkTambahPetugas()">+ Tambah</button>
+      </div>
+      <div id="pkPetugasList"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalPiketItem')">Batal</button>
+      <button class="btn btn-primary btn-sm" onclick="simpanPiketItem()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+<!-- Modal notifikasi absen berhasil -->
+<div class="modal-backdrop" id="modalAbsenSukses">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3 id="absenSuksesTitle">Absen Berhasil</h3>
+      <button class="modal-close" onclick="closeModal('modalAbsenSukses')">✕</button>
+    </div>
+    <div id="absenSuksesBody"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-primary btn-sm" onclick="closeModal('modalAbsenSukses')">OK</button>
+    </div>
+  </div>
+</div>
+<!-- Modal detail kartu statistik Rekap Absensi (admin) -->
+<div class="modal-backdrop" id="modalStatAbsen">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <h3 id="statAbsenTitle">Detail</h3>
+      <button class="modal-close" onclick="closeModal('modalStatAbsen')">✕</button>
+    </div>
+    <div id="statAbsenInfo" style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px"></div>
+    <div class="table-wrap" style="max-height:60vh;overflow:auto" id="statAbsenBody"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalStatAbsen')">Tutup</button>
+    </div>
+  </div>
+</div>
 <div class="modal-backdrop" id="modalPegDetail">
   <div class="modal" style="max-width:640px">
     <div class="modal-header">
@@ -5845,6 +6005,9 @@ async function callAPI(action, params={}) {
         if (params.FOTO_URL !== undefined) row.foto_url = params.FOTO_URL || null;
         if (params.NO_BPJS !== undefined) row.no_bpjs = params.NO_BPJS || null;
         if (params.NO_BPJS_KES !== undefined) row.no_bpjs_kes = params.NO_BPJS_KES || null;
+        if (params.TEMPAT_LAHIR !== undefined) row.tempat_lahir = params.TEMPAT_LAHIR || null;
+        if (params.TGL_LAHIR !== undefined) row.tgl_lahir = params.TGL_LAHIR || null;
+        if (params.ALAMAT !== undefined) row.alamat = params.ALAMAT || null;
         const { error } = await supabaseClient.from('pegawai').upsert(row, { onConflict: 'id_pegawai' });
         return { success: !error, error: error?error.message:null };
       }
@@ -6317,6 +6480,25 @@ async function callAPI(action, params={}) {
         return { success: !errPgs, error: errPgs?errPgs.message:null };
       }
 
+      // ===== JADWAL PIKET KEBERSIHAN + TANDEM/PENGGANTI CS (jsonb di tabel konfigurasi) =====
+      case 'getJadwalPiketSetting': {
+        const { data, error } = await supabaseClient.from('konfigurasi').select('jadwal_piket_setting').eq('id',1).limit(1);
+        if (error || !data || !data.length || !data[0].jadwal_piket_setting) return { success:false, error: error?error.message:null };
+        return { success:true, data: data[0].jadwal_piket_setting };
+      }
+
+      case 'saveJadwalPiketSetting': {
+        const existingJp = await supabaseClient.from('konfigurasi').select('id').eq('id',1).limit(1);
+        const rowJp = { jadwal_piket_setting: params.setting || {} };
+        let errJp;
+        if (existingJp.data && existingJp.data.length) {
+          errJp = (await supabaseClient.from('konfigurasi').update(rowJp).eq('id',1)).error;
+        } else {
+          errJp = (await supabaseClient.from('konfigurasi').insert(Object.assign({id:1}, rowJp))).error;
+        }
+        return { success: !errJp, error: errJp?errJp.message:null };
+      }
+
       case 'getSpkSettings': {
         const { data, error } = await supabaseClient.from('konfigurasi').select('*').eq('id',1).limit(1);
         if (error || !data || !data.length) return { success:false };
@@ -6707,6 +6889,7 @@ async function loadChecklist() {
   var u = currentUser;
   var semuaTugas = await ensureDaftarTugasLoaded(true);
   var myTugas = getTugasUntukPegawai(u, semuaTugas);
+  try { myTugas = myTugas.concat(await getTugasPenggantiUntuk(u, semuaTugas)); } catch (e) { console.warn('Tugas pengganti gagal dimuat:', e); }
 
   var byPeriode = { Harian: [], Mingguan: [], Bulanan: [], Insidentil: [] };
   myTugas.forEach(function(t){ (byPeriode[t.periode] || byPeriode.Harian).push(t); });
@@ -7827,13 +8010,15 @@ async function refreshTodoBadge(skipFetch) {
 
 // Tab di halaman Evaluasi Tugas CS: Evaluasi Progress | Kelola Daftar Tugas
 function switchChecklistCSTab(tab) {
-  var urut = ['eval', 'tugas', 'dash'];
+  var urut = ['eval', 'tugas', 'dash', 'jadwal'];
   document.querySelectorAll('#csMainTabs .tab').forEach(function (t, i) {
     t.classList.toggle('active', urut[i] === tab);
   });
   document.getElementById('csEvalWrap').style.display = tab === 'eval' ? 'block' : 'none';
   document.getElementById('csTugasWrap').style.display = tab === 'tugas' ? 'block' : 'none';
   document.getElementById('csDashWrap').style.display = tab === 'dash' ? 'block' : 'none';
+  document.getElementById('csJadwalWrap').style.display = tab === 'jadwal' ? 'block' : 'none';
+  if (tab === 'jadwal') initJadwalPiketAdmin();
   if (tab === 'tugas') loadDaftarTugasAdminTable();
   if (tab === 'dash') {
     if (!document.getElementById('dashFrom').value || !document.getElementById('dashTo').value) setDashRange('bulan');
@@ -8112,7 +8297,7 @@ function exportTableExcel(tbodyId, judul, namaFile) {
   var tbody = document.getElementById(tbodyId);
   if (!tbody) { alert('Tabel tidak ditemukan.'); return; }
   var table = tbody.closest('table');
-  var ths = Array.prototype.slice.call(table.querySelectorAll('thead tr:last-child th'));
+  var ths = Array.prototype.slice.call(table.querySelectorAll('thead tr:last-child th')).filter(function (th) { return !th.classList.contains('bulkx-th'); });
   var keep = [], headers = [];
   ths.forEach(function (th, i) {
     var t = (th.textContent || '').replace(/\s+/g, ' ').trim();
@@ -8131,7 +8316,7 @@ function exportTableExcel(tbodyId, judul, namaFile) {
 
   var data = [];
   rowEls.forEach(function (tr) {
-    var cells = tr.cells;
+    var cells = Array.prototype.slice.call(tr.cells).filter(function (c) { return !c.classList.contains('bulkx-cell'); });
     if (!cells.length || (cells.length === 1 && cells[0].colSpan > 1)) return; // pesan kosong / memuat
     var row = keep.map(function (ci) { return cells[ci] ? exportCellText(cells[ci], cells[ci]) : ''; });
     data.push(row);
@@ -8721,7 +8906,7 @@ function showPage(name) {
 
   // Access guard — pegawai tidak bisa akses halaman admin
   var adminPages = ['adminAbsensi','adminCuti','adminPegawai','adminPengaturan', 'adminChecklistCS', 'adminLembur', 'adminPotonganGaji', 'adminTodo']; 
-  var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga','rekapGajiSaya','potonganAbsenSaya'];
+  var pegawaiOnlyPages = ['absensi','cuti','ijinKeluar','profil','keluarga','rekapGajiSaya','potonganAbsenSaya','jadwalKebersihan'];
   if (!isAdmin && adminPages.indexOf(name) >= 0) {
     alert('Akses ditolak. Halaman ini hanya untuk admin.');
     return;
@@ -8761,7 +8946,8 @@ function showPage(name) {
     adminPengaturan: '⏰ Jam Kerja, Libur & Konfig',
     tukarShiftKoordinator: '🔁 Tukar Shift',
     
-    libur: '🗓 Jadwal Hari Libur'
+    libur: '🗓 Jadwal Hari Libur',
+    jadwalKebersihan: '🧹 Jadwal Kebersihan'
   };
   document.getElementById('topbarTitle').textContent = titles[name] || name;
 
@@ -8797,6 +8983,7 @@ function showPage(name) {
   if (name === 'tukarShiftKoordinator') { initTukarShiftKoorForm(); renderRiwayatTukarShiftKoor(); initUbahTimSection('koor'); }
   
   if (name === 'libur') loadLiburUserPage();
+  if (name === 'jadwalKebersihan') initPkcWidget('peg');
   if (name === 'dashboard') { loadDashboard(); if (!isAdmin) initPushNotifBanner(); }
   if (name === 'checklist') loadChecklist();
 
@@ -9082,6 +9269,7 @@ async function loadDashboard() {
     document.getElementById('recentAbsenTitle').textContent = '📅 Riwayat Absensi Semua Pegawai';
     filterDashAbsen();
     renderAdminPiketHariIni();
+    try { initPkcWidget('dash'); } catch (e) { console.warn(e); }
 
   } else {
     adminWrap.style.display = 'none';
@@ -9143,6 +9331,7 @@ async function loadDashboard() {
 
     // ---- Side card: Absen Pulang (berkedip persis di jam pulang sampai absen pulang) ----
     updatePulangCard();
+    try { renderPiketHeroPegawai(); } catch (e) { console.warn('Tugas kebersihan dashboard gagal:', e); }
 
     // ---- Side card: Sisa Cuti ----
     document.getElementById('pdSisaCuti').textContent = sisa + ' Hari';
@@ -9287,7 +9476,7 @@ async function filterDashAbsen() {
 
   var rowFnDash = isAdmin
     ? function(a){
-        return '<tr>' +
+        return '<tr data-bulk-key="' + String(a.IdAbsen || (a.idPegawai + '_' + a.tanggal)).replace(/"/g, '&quot;') + '">' +
           '<td>' + fmtDate(a.tanggal) + '</td>' +
           '<td><strong>' + (a.namaPegawai||'-') + '</strong></td>' +
           '<td>' + (fmtTime(a.absenMasuk)||'-') + '</td>' +
@@ -10481,15 +10670,21 @@ async function doAbsen(type) {
     upsertLocalAbsen(todayAbsenData);
     var pesanMasuk = '✅ Absen masuk berhasil! ' + nowStr + ' — Status: ' + statusMasuk + (isLemburHariIni ? ' 🔥 (Lembur)' : '');
     showAlert('absenAlert', 'success', pesanMasuk);
+    var notifOkMasuk = true;
     if (SCRIPT_URL) {
       var saveResMasuk = await postAPI('saveAbsensi', todayAbsenData);
       if (!saveResMasuk || !saveResMasuk.success) {
+        notifOkMasuk = false;
         showAlert('absenAlert', 'error', '⚠ Absen tercatat di perangkat ini, TAPI GAGAL tersimpan ke database: ' + (saveResMasuk ? saveResMasuk.error : 'Tidak ada respons dari server') + '. Data bisa hilang jika buka dari perangkat lain — hubungi admin.');
       } else if (fotoUploadError) {
         showAlert('absenAlert', 'warn', '✅ Absen masuk tersimpan, tapi foto gagal diunggah: ' + fotoUploadError);
       }
     } else if (fotoUploadError) {
       showAlert('absenAlert', 'warn', '✅ Absen masuk tersimpan, tapi foto gagal diunggah: ' + fotoUploadError);
+    }
+    // Notifikasi sukses + jadwal piket hari ini (hanya jika benar-benar tersimpan)
+    if (notifOkMasuk) {
+      try { tampilkanNotifAbsen('masuk', { tanggal: todayAbsenData.tanggal, jam: nowStr, status: statusMasuk, lembur: isLemburHariIni }); } catch (e) {}
     }
 
   } else { // pulang
@@ -10532,15 +10727,21 @@ async function doAbsen(type) {
       ? '🔄 Jam pulang diperbarui: ' + nowStr + ' — Durasi: ' + durasi + ' — Status: ' + statusPulang + infoShift
       : '🏠 Absen pulang berhasil! ' + nowStr + ' — Durasi: ' + durasi + ' — Status: ' + statusPulang + infoShift;
     showAlert('absenAlert', statusPulang === 'Pulang Cepat' ? 'warn' : 'success', pesanPulang);
+    var notifOkPulang = true;
     if (SCRIPT_URL) {
       var saveResPulang = await postAPI('saveAbsensi', todayAbsenData);
       if (!saveResPulang || !saveResPulang.success) {
+        notifOkPulang = false;
         showAlert('absenAlert', 'error', '⚠ Absen tercatat di perangkat ini, TAPI GAGAL tersimpan ke database: ' + (saveResPulang ? saveResPulang.error : 'Tidak ada respons dari server') + '. Data bisa hilang jika buka dari perangkat lain — hubungi admin.');
       } else if (fotoUploadError) {
         showAlert('absenAlert', 'warn', '✅ Absen pulang tersimpan, tapi foto gagal diunggah: ' + fotoUploadError);
       }
     } else if (fotoUploadError) {
       showAlert('absenAlert', 'warn', '✅ Absen pulang tersimpan, tapi foto gagal diunggah: ' + fotoUploadError);
+    }
+
+    if (notifOkPulang) {
+      try { tampilkanNotifAbsen('pulang', { tanggal: todayAbsenData.tanggal, jam: nowStr, status: statusPulang, durasi: durasi }); } catch (e) {}
     }
 
     // Shift jaga kemarin sudah ditutup — halaman kembali ke mode hari ini.
@@ -10925,7 +11126,8 @@ function loadProfil() {
   document.getElementById('pf-nobpjskes').value = saved?.NO_BPJS_KES || '';
   document.getElementById('pf-nohp').value = saved?.NO_HP || '';
   document.getElementById('pf-ttl').value = saved?.TEMPAT_LAHIR || '';
-  document.getElementById('pf-tgl').value = saved?.TGL_LAHIR || '';
+  document.getElementById('pf-tgl').value = normTgl(saved?.TGL_LAHIR);
+  updatePensiunProfil();
   document.getElementById('pf-jk').value = saved?.JENIS_KELAMIN || 'Laki-laki';
   document.getElementById('pf-pendidikan').value = saved?.PENDIDIKAN || 'SLTA';
   document.getElementById('pf-alamat').value = saved?.ALAMAT || '';
@@ -11012,6 +11214,773 @@ function switchRekapMainTab(tab) {
   document.getElementById('rekapPotonganWrap').style.display = tab==='potongan' ? '' : 'none';
 }
 
+// ============================================================
+// JADWAL PIKET KEBERSIHAN, TANDEM/PENGGANTI CS, NOTIFIKASI ABSEN
+// Disimpan di tabel konfigurasi (kolom jsonb jadwal_piket_setting);
+// cadangan di localStorage bila kolom belum dibuat.
+// ============================================================
+var DEFAULT_JADWAL_PIKET = {
+  piket: [
+    { id:'PKT-TOILET-L2P', nama:'Toilet Lantai 2 (Perempuan / P3)', tipe:'pekanan', hari:[1,2,3,4,5], mulai:'2026-10-26', semuaCS:false,
+      petugas:[{id:'',nama:'Vina Valentina'},{id:'',nama:'Mustikandryna Okeu Imalyana'},{id:'',nama:'Yuyun Yunengsih'}] },
+    { id:'PKT-AULA-L2', nama:'Aula Lantai 2', tipe:'bergilir', hari:[1,4], mulai:'2026-10-26', perGiliran:1, semuaCS:false,
+      petugas:[{id:'',nama:'Arif Saefudin'},{id:'',nama:'Latief Maulana'},{id:'',nama:'Mustikandryna Okeu Imalyana'},{id:'',nama:'Prastyo Panca Putra'},{id:'',nama:'Sopiyan Sopandi'},{id:'',nama:'Vina Valentina'},{id:'',nama:'Yuyun Yunengsih'}] },
+    { id:'PKT-AULA-L3', nama:'Aula Lantai 3', tipe:'bergilir', hari:[2,5], mulai:'2026-10-27', perGiliran:1, semuaCS:false,
+      petugas:[{id:'',nama:'Yuyun Yunengsih'},{id:'',nama:'Vina Valentina'},{id:'',nama:'Sopiyan Sopandi'},{id:'',nama:'Prastyo Panca Putra'},{id:'',nama:'Mustikandryna Okeu Imalyana'},{id:'',nama:'Latief Maulana'},{id:'',nama:'Arif Saefudin'}] }
+  ],
+  tandem: []
+};
+var jadwalPiketCfg = (function () {
+  try {
+    var c = JSON.parse(localStorage.getItem('ppnpn_jadwal_piket') || 'null');
+    if (c && Array.isArray(c.piket)) { if (!Array.isArray(c.tandem)) c.tandem = []; return c; }
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_JADWAL_PIKET));
+})();
+var _pkPetugasDraft = [];
+var _PKT_HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+
+function _pktEsc(v) { return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _pktNorm(v) { return String(v || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+// Cocokkan referensi petugas {id,nama} dengan pegawai (id jika keduanya punya, selain itu nama)
+function _pktSama(ref, u) {
+  if (!ref || !u) return false;
+  var rid = String(ref.id || '').trim().toUpperCase(), uid = String(u.idPegawai || '').trim().toUpperCase();
+  if (rid && uid) return rid === uid;
+  var a = _pktNorm(ref.nama), b = _pktNorm(u.namaPegawai);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  return a.length >= 6 && b.length >= 6 && (a.indexOf(b) >= 0 || b.indexOf(a) >= 0);
+}
+function _pktDayNum(tgl) { var p = String(tgl).split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000; }
+function _pktDow(tgl) { return new Date(_pktDayNum(tgl) * 86400000).getUTCDay(); }
+function _pktMonday(tgl) { var dn = _pktDayNum(tgl); return dn - ((new Date(dn * 86400000).getUTCDay() + 6) % 7); }
+// Siapa petugas dasar (sebelum tandem) untuk item pada tanggal tertentu
+// Jumlah hari bertugas pada pekan yang sama SEBELUM tanggal tgl (Senin = awal pekan)
+function _pktDutyBefore(it, tgl) {
+  var dow = _pktDow(tgl), pos = (dow + 6) % 7, c = 0;
+  (it.hari || []).forEach(function (d) { if (((d + 6) % 7) < pos) c++; });
+  return c;
+}
+// Hari libur kantor: tidak ada petugas & giliran tidak terpakai (bisa dimatikan per jadwal lewat it.lewatiLibur = false)
+function _pktLiburAktif(it) { return it.lewatiLibur !== false && Array.isArray(localLibur); }
+function _pktLibur(it, tgl) { return _pktLiburAktif(it) && isHariLibur(tgl); }
+function _pktTglDariNum(n) { return new Date(n * 86400000).toISOString().slice(0, 10); }
+// Jumlah hari bertugas efektif (bukan hari libur) dari tanggal mulai sampai SEBELUM tgl; negatif bila tgl sebelum mulai
+function _pktGiliranKe(it, tgl) {
+  var skip = _pktLiburAktif(it), hari = it.hari || [];
+  function ok(n) { return hari.indexOf(new Date(n * 86400000).getUTCDay()) >= 0 && !(skip && isHariLibur(_pktTglDariNum(n))); }
+  var a = _pktDayNum(it.mulai), b = _pktDayNum(tgl), c = 0, n;
+  if (b >= a) { for (n = a; n < b; n++) if (ok(n)) c++; return c; }
+  for (n = b; n < a; n++) if (ok(n)) c--;
+  return c;
+}
+function _pktBase(it, tgl) {
+  if (_pktLibur(it, tgl)) return { semuaCS: false, list: [], libur: true, ket: (typeof getKeteranganLibur === 'function' ? getKeteranganLibur(tgl) : '') };
+  var list = it.petugas || [];
+  var k = Math.max(1, parseInt(it.perGiliran, 10) || 1);
+  if ((it.tipe === 'pekanan' || it.tipe === 'bergilir') && list.length && it.mulai) {
+    var n = list.length, idx;
+    var minggu = Math.round((_pktMonday(tgl) - _pktMonday(it.mulai)) / 7);
+    if (it.tipe === 'pekanan') idx = minggu;
+    else idx = _pktGiliranKe(it, tgl);
+    k = Math.min(k, n);
+    var grup = [];
+    for (var j = 0; j < k; j++) grup.push(list[(((idx * k + j) % n) + n) % n]);
+    return { semuaCS: false, list: grup };
+  }
+  if (it.semuaCS) return { semuaCS: true, list: [] };
+  return { semuaCS: false, list: list };
+}
+function _pktTandemAktif(cfg, tgl) { return (cfg.tandem || []).filter(function (t) { return t.mulai <= tgl && t.selesai >= tgl; }); }
+function _pktBerhalanganDiBase(base, t) {
+  if (base.semuaCS) return /cleaning/i.test(t.pekerjaanBerhalangan || 'Cleaning Service');
+  return base.list.some(function (r) { return _pktSama(r, { idPegawai: t.idBerhalangan, namaPegawai: t.namaBerhalangan }); });
+}
+// Daftar piket yang menjadi tugas pegawai u pada tanggal tgl (sudah memperhitungkan tandem)
+function getPiketUntukPegawai(u, tgl, cfg) {
+  cfg = cfg || jadwalPiketCfg;
+  var out = [], dow = _pktDow(tgl), td = _pktTandemAktif(cfg, tgl);
+  (cfg.piket || []).forEach(function (it) {
+    if ((it.hari || []).indexOf(dow) < 0) return;
+    var base = _pktBase(it, tgl);
+    var userBase = base.semuaCS ? /cleaning/i.test(u.pekerjaan || '') : base.list.some(function (r) { return _pktSama(r, u); });
+    var userBerhalangan = td.some(function (t) { return _pktSama({ id: t.idBerhalangan, nama: t.namaBerhalangan }, u); });
+    var on = userBase && !userBerhalangan, notes = [];
+    td.forEach(function (t) {
+      if (_pktSama({ id: t.idPengganti, nama: t.namaPengganti }, u) && _pktBerhalanganDiBase(base, t)) {
+        on = true; notes.push('Menggantikan ' + t.namaBerhalangan + (t.alasan ? ' (' + t.alasan + ')' : ''));
+      }
+    });
+    if (on) out.push({ id: it.id, nama: it.nama, note: notes.join('; ') });
+  });
+  return out;
+}
+function _pktPetugasTeks(it, tgl, cfg) {
+  var base = _pktBase(it, tgl), td = _pktTandemAktif(cfg, tgl);
+  if (base.libur) return '<span style="color:var(--text-muted)">🚫 Libur kantor' + (base.ket ? ' (' + _pktEsc(base.ket) + ')' : '') + ' — tidak ada petugas</span>';
+  if (base.semuaCS) {
+    var s = 'Semua Cleaning Service';
+    td.forEach(function (t) { if (_pktBerhalanganDiBase(base, t)) s += ' · ' + t.namaBerhalangan + ' → diganti ' + t.namaPengganti; });
+    return _pktEsc(s);
+  }
+  return base.list.map(function (r) {
+    var rep = null;
+    td.forEach(function (t) { if (_pktSama(r, { idPegawai: t.idBerhalangan, namaPegawai: t.namaBerhalangan })) rep = t; });
+    return rep ? '<b>' + _pktEsc(rep.namaPengganti) + '</b> <small style="color:var(--text-muted)">(pengganti ' + _pktEsc(r.nama) + ')</small>' : _pktEsc(r.nama);
+  }).join(', ') || '-';
+}
+
+async function ensureJadwalPiketLoaded() {
+  try { await ensureLiburLoaded(); } catch (e) { console.warn('Gagal ambil hari libur:', e); }
+  if (SCRIPT_URL) {
+    try {
+      var r = await callAPI('getJadwalPiketSetting', {});
+      if (r && r.success && r.data && Array.isArray(r.data.piket)) {
+        if (!Array.isArray(r.data.tandem)) r.data.tandem = [];
+        jadwalPiketCfg = r.data;
+        localStorage.setItem('ppnpn_jadwal_piket', JSON.stringify(jadwalPiketCfg));
+      }
+    } catch (e) { console.warn('Gagal ambil jadwal piket:', e); }
+  }
+  return jadwalPiketCfg;
+}
+async function simpanJadwalPiketCfg() {
+  localStorage.setItem('ppnpn_jadwal_piket', JSON.stringify(jadwalPiketCfg));
+  if (!SCRIPT_URL) return true;
+  var r = await callAPI('saveJadwalPiketSetting', { setting: jadwalPiketCfg });
+  if (!r || !r.success) {
+    alert('⚠ Tersimpan di perangkat ini saja, belum masuk database (pegawai lain belum akan melihatnya).\n\nJalankan SQL ini di Supabase (SQL Editor), lalu simpan ulang:\nalter table konfigurasi add column if not exists jadwal_piket_setting jsonb;\n\nDetail: ' + (r && r.error ? r.error : 'tidak ada respons'));
+    return false;
+  }
+  return true;
+}
+
+// Tugas checklist milik CS yang berhalangan, dioper ke pengganti pada hari ini
+async function getTugasPenggantiUntuk(u, semuaTugas) {
+  var cfg = await ensureJadwalPiketLoaded();
+  var tgl = todayVerified(), hasil = [];
+  _pktTandemAktif(cfg, tgl).forEach(function (t) {
+    if (!_pktSama({ id: t.idPengganti, nama: t.namaPengganti }, u)) return;
+    var ref = { idPegawai: t.idBerhalangan, namaPegawai: t.namaBerhalangan };
+    (semuaTugas || []).forEach(function (x) {
+      var tid = String(x.idPegawai || '').trim().toUpperCase(), tn = _pktNorm(x.namaPegawai);
+      var milikX = (tid && tid === String(ref.idPegawai || '').trim().toUpperCase()) ||
+                   (!tid && tn && !/semua/i.test(tn) && tn === _pktNorm(ref.namaPegawai));
+      if (milikX) hasil.push(Object.assign({}, x, { uraian: '🔁 [Pengganti ' + t.namaBerhalangan + '] ' + x.uraian }));
+    });
+  });
+  return hasil;
+}
+
+
+// ============================================================
+// CEK JADWAL KEBERSIHAN PER TANGGAL (admin, dashboard admin, pegawai - hanya baca)
+// Memakai jadwal piket (jadwalPiketCfg) + tandem/pengganti; bisa diexport ke Excel.
+// ============================================================
+var _pkcRows = {};
+var _PKC_MAKS_HARI = 92;
+function _pkcPlain(it, tgl, cfg) {
+  var base = _pktBase(it, tgl), td = _pktTandemAktif(cfg, tgl);
+  if (base.libur) return 'Libur kantor' + (base.ket ? ' (' + base.ket + ')' : '') + ' — tidak ada petugas';
+  if (base.semuaCS) {
+    var s = 'Semua Cleaning Service';
+    td.forEach(function (t) { if (_pktBerhalanganDiBase(base, t)) s += ' · ' + t.namaBerhalangan + ' → diganti ' + t.namaPengganti; });
+    return s;
+  }
+  return base.list.map(function (r) {
+    var rep = null;
+    td.forEach(function (t) { if (_pktSama(r, { idPegawai: t.idBerhalangan, namaPegawai: t.namaBerhalangan })) rep = t; });
+    return rep ? rep.namaPengganti + ' (pengganti ' + r.nama + ')' : r.nama;
+  }).join(', ') || '-';
+}
+function _pkcEl(p, k) { return document.getElementById('pkc-' + p + '-' + k); }
+async function initPkcWidget(p) {
+  var host = document.getElementById('pkc-host-' + p);
+  if (!host) return;
+  if (!_pkcEl(p, 'from')) {
+    host.innerHTML =
+      '<div class="filter-bar" style="flex-wrap:wrap;gap:10px;align-items:flex-end">' +
+        '<div class="field"><label>Dari Tanggal</label><input type="date" id="pkc-' + p + '-from"></div>' +
+        '<div class="field"><label>Sampai Tanggal <span style="font-weight:400;color:var(--text-muted);font-size:11px">(opsional)</span></label><input type="date" id="pkc-' + p + '-to"></div>' +
+        '<div class="field"><label>Area</label><select id="pkc-' + p + '-area"></select></div>' +
+        '<button class="btn btn-primary" onclick="pkcTampilkan(\'' + p + '\')">🔍 Tampilkan</button>' +
+        '<button class="btn btn-outline" onclick="pkcHariIni(\'' + p + '\')">Hari Ini</button>' +
+        '<button class="btn btn-success" style="background:#16a34a;border-color:#16a34a" onclick="pkcExport(\'' + p + '\')">📊 Export Excel</button>' +
+      '</div>' +
+      '<div id="pkc-' + p + '-info" style="font-size:12.5px;color:var(--text-muted);margin:8px 0"></div>' +
+      '<div class="table-wrap" style="max-height:420px;overflow:auto"><table>' +
+        '<thead><tr><th>Tanggal</th><th>Area</th><th>Petugas</th></tr></thead>' +
+        '<tbody id="pkc-' + p + '-body"></tbody></table></div>';
+    var t = todayVerified();
+    _pkcEl(p, 'from').value = t;
+  }
+  try { await ensureLiburLoaded(); } catch (e) {}
+  var cfg = (p === 'adm') ? jadwalPiketCfg : await ensureJadwalPiketLoaded();
+  var sel = _pkcEl(p, 'area'), cur = sel.value;
+  sel.innerHTML = '<option value="">Semua Area</option>' + (cfg.piket || []).map(function (it) {
+    return '<option value="' + _pktEsc(it.id) + '">' + _pktEsc(it.nama) + '</option>';
+  }).join('');
+  sel.value = cur;
+  pkcTampilkan(p);
+}
+function pkcHariIni(p) {
+  var t = todayVerified();
+  _pkcEl(p, 'from').value = t; _pkcEl(p, 'to').value = '';
+  pkcTampilkan(p);
+}
+function pkcTampilkan(p) {
+  var cfg = jadwalPiketCfg, body = _pkcEl(p, 'body'), info = _pkcEl(p, 'info');
+  var from = _pkcEl(p, 'from').value, to = _pkcEl(p, 'to').value || from, areaId = _pkcEl(p, 'area').value;
+  _pkcRows[p] = null;
+  if (!from) { body.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:18px;color:var(--text-muted)">Pilih tanggal terlebih dahulu</td></tr>'; info.textContent = ''; return; }
+  if (to < from) { alert('Tanggal "Sampai" tidak boleh sebelum tanggal "Dari".'); return; }
+  var n = Math.round((_pktDayNum(to) - _pktDayNum(from))) + 1;
+  if (n > _PKC_MAKS_HARI) { alert('Rentang maksimal ' + _PKC_MAKS_HARI + ' hari. Persempit rentang tanggal.'); return; }
+  var rows = [], mine = {};
+  var isPeg = currentUser && currentUser.status !== 'Admin';
+  for (var i = 0; i < n; i++) {
+    var d = tambahHari(from, i), dow = _pktDow(d);
+    if (isPeg) { mine[d] = {}; try { getPiketUntukPegawai(currentUser, d, cfg).forEach(function (x) { mine[d][x.id] = true; }); } catch (e) {} }
+    (cfg.piket || []).forEach(function (it) {
+      if (areaId && it.id !== areaId) return;
+      if ((it.hari || []).indexOf(dow) < 0) return;
+      rows.push({ tgl: d, hari: _PKT_HARI[dow], area: it.nama, petugas: _pkcPlain(it, d, cfg), html: _pktPetugasTeks(it, d, cfg), mine: !!(mine[d] && mine[d][it.id]) });
+    });
+  }
+  _pkcRows[p] = { from: from, to: to, rows: rows };
+  info.textContent = 'Periode ' + fmtDate(from) + (to !== from ? ' s.d. ' + fmtDate(to) : '') + ' · ' + rows.length + ' jadwal ditemukan';
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:18px;color:var(--text-muted)">Tidak ada jadwal kebersihan pada ' + (n > 1 ? 'rentang' : 'tanggal') + ' ini</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(function (r) {
+    return '<tr' + (r.mine ? ' style="background:rgba(16,185,129,0.10)"' : '') + '><td>' + r.hari + ', ' + fmtDate(r.tgl) + '</td><td>' + _pktEsc(r.area) + '</td><td>' + r.html +
+      (r.mine ? ' <span style="font-size:11px;font-weight:700;color:#059669">⭐ Tugas Anda</span>' : '') + '</td></tr>';
+  }).join('');
+}
+function pkcExport(p) {
+  var d = _pkcRows[p];
+  if (!d || !d.rows.length) { alert('Tidak ada data untuk diekspor. Klik Tampilkan terlebih dahulu.'); return; }
+  if (!window.XLSX) { alert('Library Excel belum termuat. Periksa koneksi internet lalu muat ulang halaman.'); return; }
+  var headers = ['Tanggal', 'Hari', 'Area', 'Petugas'];
+  var data = d.rows.map(function (r) { return [fmtDate(r.tgl), r.hari, r.area, r.petugas]; });
+  var judul = 'Jadwal Kebersihan ' + fmtDate(d.from) + (d.to !== d.from ? ' s.d. ' + fmtDate(d.to) : '');
+  var aoa = [[judul], ['Diekspor: ' + fmtDate(todayVerified())], [], headers].concat(data);
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = headers.map(function (h, ci) {
+    var m = h.length;
+    data.forEach(function (r) { var l = String(r[ci] == null ? '' : r[ci]).length; if (l > m) m = l; });
+    return { wch: Math.min(60, m + 2) };
+  });
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Jadwal Kebersihan');
+  XLSX.writeFile(wb, 'jadwal_kebersihan_' + d.from.replace(/-/g, '') + (d.to !== d.from ? '_' + d.to.replace(/-/g, '') : '') + '.xlsx');
+}
+
+
+// ============================================================
+// HAPUS MASSAL (centang beberapa baris) UNTUK MENU ADMIN
+// Memasang kolom centang + tombol "Hapus Terpilih" pada tabel yang sudah punya
+// tombol hapus per baris. Kunci baris dibaca dari tombol hapus yang sudah ada
+// (atau atribut data-bulk-key), lalu dihapus lewat API hapus yang sama.
+// Tabel yang sudah punya hapus massal sendiri (Absensi, Cuti, Ijin, Pegawai,
+// Libur, Tugas CS) tidak disentuh.
+// ============================================================
+var BULKX_SEL = {};
+function _bxApi(action, params) { return SCRIPT_URL ? callAPI(action, params) : Promise.resolve({ success: true }); }
+async function _bxLoop(keys, fn) {
+  var ok = [], gagal = [];
+  for (var i = 0; i < keys.length; i++) {
+    var r;
+    try { r = await fn(keys[i]); } catch (e) { r = null; }
+    if (r && r.success) ok.push(keys[i]); else gagal.push(keys[i]);
+  }
+  return { ok: ok, gagal: gagal };
+}
+var BULKX_CFG = [
+  { tbody: 'riwayatSpkLemburBody', nama: 'riwayat SPK Lembur',
+    re: /hapusRiwayatSpkLembur\(\s*'?([^'),\s]+)'?\s*\)/,
+    hapus: function (keys) { return _bxLoop(keys, function (k) { return callAPI('deleteSpkLemburRiwayat', { id: k }); }); },
+    sesudah: function () { loadRiwayatSpkLembur(); } },
+  { tbody: 'riwayatPotBody', nama: 'data pemotongan gaji',
+    re: /hapusRiwayatPotongan\(\s*'([^']*)'\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/,
+    hapus: function (keys) { return _bxLoop(keys, function (k) { var a = k.split('|'); return callAPI('deletePotonganGaji', { idPegawai: a[0], bulan: +a[1], tahun: +a[2] }); }); },
+    sesudah: function () { loadRiwayatPotonganGaji(); } },
+  { tbody: 'adminTodoBody', nama: 'to do',
+    re: /hapusTodo\(\s*'((?:[^'\\]|\\.)*)'\s*\)/,
+    hapus: function (keys) { return _bxLoop(keys, function (k) { return (!todoLocalMode && SCRIPT_URL) ? callAPI('deleteTodo', { id: k }) : Promise.resolve({ success: true }); }); },
+    sesudah: function (ok) {
+      todoList = todoList.filter(function (x) { return ok.indexOf(String(x.id)) < 0; });
+      if (todoLocalMode) todoSaveLocal();
+      renderTodo(); refreshTodoBadge(true);
+    } },
+  { tbody: 'tukarShiftBody', nama: 'catatan tukar shift',
+    re: /hapusTukarShift\(\s*'([^']*)'\s*,\s*'([^']*)'\s*\)/,
+    hapus: function (keys) { return _bxLoop(keys, function (k) { return _bxApi('deleteShiftOverride', { id: k.split('|')[1] }); }); },
+    sesudah: function (ok) {
+      ok.forEach(function (k) {
+        var a = k.split('|');
+        if (shiftOverride[a[0]]) {
+          shiftOverride[a[0]] = shiftOverride[a[0]].filter(function (o) { return o.id !== a[1]; });
+          if (!shiftOverride[a[0]].length) delete shiftOverride[a[0]];
+        }
+      });
+      simpanShiftOverrideLocal(); renderRiwayatTukarShift();
+    } },
+  { tbody: 'piketItemBody', nama: 'jadwal piket',
+    re: /hapusPiketItem\(\s*'([^']*)'\s*\)/,
+    hapus: function (keys) { return Promise.resolve({ ok: keys, gagal: [] }); },
+    sesudah: async function (ok) {
+      jadwalPiketCfg.piket = (jadwalPiketCfg.piket || []).filter(function (x) { return ok.indexOf(x.id) < 0; });
+      await simpanJadwalPiketCfg(); renderPiketAdmin();
+    } },
+  { tbody: 'tandemBody', nama: 'data tandem/pengganti',
+    re: /hapusTandem\(\s*'([^']*)'\s*\)/,
+    hapus: function (keys) { return Promise.resolve({ ok: keys, gagal: [] }); },
+    sesudah: async function (ok) {
+      jadwalPiketCfg.tandem = (jadwalPiketCfg.tandem || []).filter(function (x) { return ok.indexOf(x.id) < 0; });
+      await simpanJadwalPiketCfg(); renderPiketAdmin();
+    } },
+  { tbody: 'recentAbsenBody', nama: 'data absensi',
+    attr: true,
+    hapus: async function (keys) {
+      var r = await _bxApi('deleteAbsensi', { idAbsen: keys });
+      return (r && r.success) ? { ok: keys, gagal: [] } : { ok: [], gagal: keys };
+    },
+    sesudah: function (ok) {
+      localAbsensi = localAbsensi.filter(function (a) { return ok.indexOf(a.IdAbsen || (a.idPegawai + '_' + a.tanggal)) < 0; });
+      saveLocal(); filterDashAbsen();
+    } }
+];
+function _bxKey(cfg, tr) {
+  var k = tr.getAttribute('data-bulk-key');
+  if (k != null && k !== '') return k;
+  if (!cfg.re) return null;
+  var els = tr.querySelectorAll('[onclick]');
+  for (var i = 0; i < els.length; i++) {
+    var m = cfg.re.exec(els[i].getAttribute('onclick') || '');
+    if (m) return m.slice(1).join('|').replace(/\\'/g, "'");
+  }
+  return null;
+}
+function _bxBar(cfg, tbody) {
+  var id = 'bulkx-bar-' + cfg.tbody, bar = document.getElementById(id);
+  if (bar) return bar;
+  var table = tbody.closest('table'); if (!table) return null;
+  var anchor = table.closest('.table-wrap') || table;
+  bar = document.createElement('div');
+  bar.id = id; bar.className = 'bulkx-bar'; bar.style.cssText = 'display:none;justify-content:flex-end;align-items:center;gap:8px;margin:6px 0';
+  bar.innerHTML = '<span class="bulkx-info" style="font-size:12.5px;color:var(--text-muted)"></span>' +
+    '<button type="button" class="btn btn-outline btn-sm" data-bx="batal">Batal pilih</button>' +
+    '<button type="button" class="btn btn-danger btn-sm" data-bx="hapus">🗑 Hapus Terpilih</button>';
+  anchor.parentNode.insertBefore(bar, anchor);
+  bar.querySelector('[data-bx="batal"]').onclick = function () { BULKX_SEL[cfg.tbody].clear(); _bxDecorate(cfg); };
+  bar.querySelector('[data-bx="hapus"]').onclick = function () { bulkxHapus(cfg.tbody); };
+  return bar;
+}
+function _bxUpdate(cfg, tbody) {
+  var set = BULKX_SEL[cfg.tbody], bar = _bxBar(cfg, tbody);
+  if (bar) {
+    bar.style.display = set.size ? 'flex' : 'none';
+    bar.querySelector('.bulkx-info').textContent = set.size + ' baris dipilih';
+    bar.querySelector('[data-bx="hapus"]').textContent = '🗑 Hapus Terpilih (' + set.size + ')';
+  }
+  var th = tbody.closest('table').querySelector('thead .bulkx-th input');
+  if (th) {
+    var chks = tbody.querySelectorAll('.bulkx-chk');
+    th.checked = chks.length > 0 && tbody.querySelectorAll('.bulkx-chk:checked').length === chks.length;
+  }
+}
+function _bxDecorate(cfg) {
+  var tbody = document.getElementById(cfg.tbody);
+  if (!tbody) return;
+  var set = BULKX_SEL[cfg.tbody];
+  var rows = Array.prototype.slice.call(tbody.children).filter(function (r) { return r.tagName === 'TR'; });
+  var keyed = rows.map(function (tr) { return _bxKey(cfg, tr); });
+  var any = keyed.some(function (k) { return k != null; });
+  var table = tbody.closest('table'), headRow = table.querySelector('thead tr');
+  var hasTh = headRow && headRow.querySelector('.bulkx-th');
+  if (!any && !hasTh) return;
+  if (any && headRow && !hasTh) {
+    var th = document.createElement('th');
+    th.className = 'bulkx-th'; th.style.width = '36px';
+    th.innerHTML = '<input type="checkbox" title="Pilih semua baris di halaman ini">';
+    headRow.insertBefore(th, headRow.firstChild);
+    th.firstChild.onchange = function () {
+      tbody.querySelectorAll('.bulkx-chk').forEach(function (c) {
+        c.checked = th.firstChild.checked;
+        if (c.checked) set.add(c.value); else set.delete(c.value);
+      });
+      _bxUpdate(cfg, tbody);
+    };
+  }
+  rows.forEach(function (tr, i) {
+    if (tr.firstElementChild && tr.firstElementChild.classList.contains('bulkx-cell')) return;
+    if (tr.cells.length === 1 && tr.cells[0].colSpan > 1) { tr.cells[0].colSpan += 1; return; }
+    var td = document.createElement('td');
+    td.className = 'bulkx-cell';
+    if (keyed[i] != null) {
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'bulkx-chk'; cb.value = keyed[i]; cb.checked = set.has(keyed[i]);
+      cb.onchange = function () { if (cb.checked) set.add(cb.value); else set.delete(cb.value); _bxUpdate(cfg, tbody); };
+      td.appendChild(cb);
+    }
+    tr.insertBefore(td, tr.firstChild);
+  });
+  _bxUpdate(cfg, tbody);
+}
+async function bulkxHapus(id) {
+  var cfg = BULKX_CFG.filter(function (c) { return c.tbody === id; })[0], set = BULKX_SEL[id];
+  if (!cfg || !set || !set.size) return;
+  var keys = Array.from(set);
+  if (!confirm('Hapus ' + keys.length + ' ' + cfg.nama + ' terpilih? Tindakan ini tidak bisa dibatalkan.')) return;
+  var hasil;
+  try { hasil = await cfg.hapus(keys); } catch (e) { hasil = { ok: [], gagal: keys }; }
+  hasil.ok.forEach(function (k) { set.delete(k); });
+  if (hasil.ok.length) { try { await cfg.sesudah(hasil.ok); } catch (e) { console.warn(e); } }
+  _bxDecorate(cfg);
+  if (hasil.gagal.length) alert('⚠ ' + hasil.ok.length + ' berhasil dihapus, ' + hasil.gagal.length + ' gagal. Baris yang gagal tetap terpilih — coba lagi.');
+  else alert('✅ ' + hasil.ok.length + ' ' + cfg.nama + ' berhasil dihapus.');
+}
+function initBulkX() {
+  BULKX_CFG.forEach(function (cfg) {
+    var tbody = document.getElementById(cfg.tbody);
+    if (!tbody || tbody.__bulkx) return;
+    tbody.__bulkx = true;
+    BULKX_SEL[cfg.tbody] = new Set();
+    new MutationObserver(function () { _bxDecorate(cfg); }).observe(tbody, { childList: true });
+    _bxDecorate(cfg);
+  });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initBulkX); else initBulkX();
+
+
+// Tugas kebersihan pegawai pada dashboard (selain notifikasi setelah absen masuk):
+// tampilkan tugas hari ini; bila tidak ada, tampilkan jadwal berikutnya (maks. 90 hari ke depan).
+async function renderPiketHeroPegawai() {
+  var el = document.getElementById('pdPiketKebersihan');
+  if (!el) return;
+  el.style.display = 'none';
+  var u = currentUser;
+  if (!u || u.status === 'Admin') return;
+  var cfg = await ensureJadwalPiketLoaded();
+  var hariIni = todayVerified();
+  var fmtItems = function (items) {
+    return items.map(function (p) { return '<strong>' + _pktEsc(p.nama) + '</strong>' + (p.note ? ' <span style="font-size:12px">— ' + _pktEsc(p.note) + '</span>' : ''); });
+  };
+  var today = getPiketUntukPegawai(u, hariIni, cfg), html = '';
+  if (today.length) {
+    html = '<div style="font-weight:800;margin-bottom:4px">🧹 Piket Kebersihan</div>' +
+      '<ul style="margin:0;padding-left:18px">' + fmtItems(today).map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>';
+  } else {
+    var next = null;
+    for (var i = 1; i <= 90 && !next; i++) {
+      var d = tambahHari(hariIni, i), r = getPiketUntukPegawai(u, d, cfg);
+      if (r.length) next = { tgl: d, items: r };
+    }
+    if (!next) return;
+    html = '<div style="font-weight:800;margin-bottom:4px">🧹 Piket Kebersihan Berikutnya</div>' +
+      '<div>' + _PKT_HARI[_pktDow(next.tgl)] + ', ' + fmtDate(next.tgl) + ' — ' + fmtItems(next.items).join(', ') + '</div>';
+  }
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+
+// ---------- Admin: tampilan & pengelolaan ----------
+function piketPegawaiOpsi() {
+  return getPegawaiListForStats().filter(function (p) { return /cleaning|pramubakti/i.test(p.pekerjaan || ''); })
+    .sort(function (a, b) { return String(a.namaPegawai).localeCompare(String(b.namaPegawai)); });
+}
+async function initJadwalPiketAdmin() {
+  await ensureJadwalPiketLoaded();
+  if (!localAllPegawai || !localAllPegawai.length) await refreshAllPegawai();
+  var opsi = '<option value="">— pilih pegawai —</option>' + piketPegawaiOpsi().map(function (p) {
+    return '<option value="' + _pktEsc(p.idPegawai) + '">' + _pktEsc(p.namaPegawai) + ' (' + _pktEsc(p.pekerjaan) + ')</option>';
+  }).join('');
+  ['tdBerhalangan', 'tdPengganti', 'pkPilihPeg'].forEach(function (id) { var el = document.getElementById(id); if (el) el.innerHTML = opsi; });
+  var t = todayVerified();
+  if (!document.getElementById('tdMulai').value) document.getElementById('tdMulai').value = t;
+  if (!document.getElementById('tdSelesai').value) document.getElementById('tdSelesai').value = t;
+  renderPiketAdmin();
+}
+function renderPiketAdmin() {
+  var cfg = jadwalPiketCfg;
+  var urutHari = [1, 2, 3, 4, 5, 6, 0];
+  var rows = (cfg.piket || []).map(function (it) {
+    var hari = urutHari.filter(function (d) { return (it.hari || []).indexOf(d) >= 0; }).map(function (d) { return _PKT_HARI[d]; }).join(', ');
+    var ptg;
+    if (it.tipe === 'pekanan' || it.tipe === 'bergilir') {
+      ptg = '<div style="font-size:11.5px;color:var(--text-muted);margin-bottom:2px">' + (it.tipe === 'bergilir' ? 'Bergilir tiap hari bertugas, mulai ' : 'Rotasi pekanan, mulai pekan ') + fmtDate(it.mulai) + (it.lewatiLibur !== false ? ' · lewati hari libur' : '') + ((parseInt(it.perGiliran, 10) || 1) > 1 ? ' · ' + it.perGiliran + ' orang/giliran' : '') + '</div>' +
+        (it.petugas || []).map(function (p, i) { return (i + 1) + '. ' + _pktEsc(p.nama); }).join('<br>');
+    } else {
+      ptg = it.semuaCS ? 'Semua Cleaning Service' : (it.petugas || []).map(function (p) { return _pktEsc(p.nama); }).join(', ');
+    }
+    return '<tr><td><strong>' + _pktEsc(it.nama) + '</strong></td><td>' + hari + '</td><td style="font-size:13px">' + ptg + '</td>' +
+      '<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openPiketItem(\'' + _pktEsc(it.id) + '\')">✏️</button> ' +
+      '<button class="btn btn-outline btn-sm" onclick="hapusPiketItem(\'' + _pktEsc(it.id) + '\')">🗑</button></td></tr>';
+  }).join('');
+  document.getElementById('piketItemBody').innerHTML = rows || '<tr><td colspan="4" style="text-align:center;padding:18px;color:var(--text-muted)">Belum ada jadwal piket</td></tr>';
+
+  var td = (cfg.tandem || []).slice().sort(function (a, b) { return b.mulai.localeCompare(a.mulai); });
+  document.getElementById('tandemBody').innerHTML = td.map(function (t) {
+    return '<tr><td>' + fmtDate(t.mulai) + (t.selesai !== t.mulai ? ' – ' + fmtDate(t.selesai) : '') + '</td><td>' + _pktEsc(t.namaBerhalangan) + '</td>' +
+      '<td><strong>' + _pktEsc(t.namaPengganti) + '</strong></td><td>' + _pktEsc(t.alasan || '-') + '</td>' +
+      '<td><button class="btn btn-outline btn-sm" onclick="hapusTandem(\'' + _pktEsc(t.id) + '\')">🗑</button></td></tr>';
+  }).join('') || '<tr><td colspan="5" style="text-align:center;padding:18px;color:var(--text-muted)">Belum ada tandem / pengganti</td></tr>';
+
+  var prev = '', start = todayVerified();
+  for (var i = 0; i < 21; i++) {
+    var d = tambahHari(start, i), dow = _pktDow(d);
+    (cfg.piket || []).forEach(function (it) {
+      if ((it.hari || []).indexOf(dow) < 0) return;
+      prev += '<tr><td>' + _PKT_HARI[dow] + ', ' + fmtDate(d) + '</td><td>' + _pktEsc(it.nama) + '</td><td>' + _pktPetugasTeks(it, d, cfg) + '</td></tr>';
+    });
+  }
+  try { initPkcWidget('adm'); } catch (e) { console.warn(e); }
+  document.getElementById('piketPreviewBody').innerHTML = prev || '<tr><td colspan="3" style="text-align:center;padding:18px;color:var(--text-muted)">Tidak ada jadwal</td></tr>';
+}
+
+function openPiketItem(id) {
+  var it = (jadwalPiketCfg.piket || []).filter(function (x) { return x.id === id; })[0] ||
+    { id: '', nama: '', tipe: 'harian', hari: [], mulai: '', semuaCS: true, petugas: [] };
+  document.getElementById('pkTitle').textContent = it.id ? 'Edit Jadwal Piket' : 'Tambah Jadwal Piket';
+  document.getElementById('pkId').value = it.id;
+  document.getElementById('pkNama').value = it.nama;
+  document.getElementById('pkTipe').value = it.tipe;
+  document.getElementById('pkMulai').value = it.mulai || '';
+  document.getElementById('pkLewatiLibur').checked = it.lewatiLibur !== false;
+  document.getElementById('pkJumlah').value = it.perGiliran || 1;
+  document.getElementById('pkMode').value = it.semuaCS ? 'semuaCS' : 'pilih';
+  _pkPetugasDraft = JSON.parse(JSON.stringify(it.petugas || []));
+  document.getElementById('pkHariWrap').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(function (d) {
+    return '<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" class="pk-hari" value="' + d + '"' + ((it.hari || []).indexOf(d) >= 0 ? ' checked' : '') + '> ' + _PKT_HARI[d] + '</label>';
+  }).join('');
+  pkTipeChanged();
+  renderPkPetugas();
+  document.getElementById('modalPiketItem').classList.add('open');
+  if (!document.getElementById('pkPilihPeg').options.length) initJadwalPiketAdmin();
+}
+function pkTipeChanged() {
+  var tipe = document.getElementById('pkTipe').value;
+  var rotasi = tipe !== 'harian';
+  document.getElementById('pkMulaiWrap').style.display = rotasi ? '' : 'none';
+  document.getElementById('pkJumlahWrap').style.display = rotasi ? '' : 'none';
+  document.getElementById('pkMulaiLabel').textContent = tipe === 'bergilir'
+    ? 'Giliran pertama mulai tanggal (petugas urutan #1 bertugas di hari bertugas pertama sejak tanggal ini)'
+    : 'Pekan pertama dimulai (pilih hari Senin) — petugas urutan #1 bertugas di pekan ini';
+  var mode = document.getElementById('pkMode');
+  if (rotasi) mode.value = 'pilih';
+  mode.disabled = rotasi;
+  pkModeChanged();
+  renderPkPetugas();
+}
+function pkModeChanged() {
+  document.getElementById('pkPilihWrap').style.display = document.getElementById('pkMode').value === 'pilih' ? '' : 'none';
+}
+function pkTambahPetugas() {
+  var id = document.getElementById('pkPilihPeg').value;
+  if (!id) return;
+  var p = piketPegawaiOpsi().filter(function (x) { return x.idPegawai === id; })[0];
+  if (!p) return;
+  if (_pkPetugasDraft.some(function (x) { return x.id === id; })) { alert('Petugas sudah ada dalam daftar.'); return; }
+  _pkPetugasDraft.push({ id: p.idPegawai, nama: p.namaPegawai });
+  renderPkPetugas();
+}
+function pkGeser(i, dir) {
+  var j = i + dir;
+  if (j < 0 || j >= _pkPetugasDraft.length) return;
+  var t = _pkPetugasDraft[i]; _pkPetugasDraft[i] = _pkPetugasDraft[j]; _pkPetugasDraft[j] = t;
+  renderPkPetugas();
+}
+function pkHapusPetugas(i) { _pkPetugasDraft.splice(i, 1); renderPkPetugas(); }
+function renderPkPetugas() {
+  var rotasi = document.getElementById('pkTipe').value !== 'harian';
+  document.getElementById('pkPetugasList').innerHTML = _pkPetugasDraft.length
+    ? _pkPetugasDraft.map(function (p, i) {
+        return '<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--border,#e5e7eb);border-radius:8px;margin-bottom:4px">' +
+          '<span style="flex:1;font-size:13px">' + (rotasi ? '<b>' + (i + 1) + '.</b> ' : '') + _pktEsc(p.nama) + '</span>' +
+          (rotasi ? '<button class="btn btn-outline btn-sm" onclick="pkGeser(' + i + ',-1)">▲</button><button class="btn btn-outline btn-sm" onclick="pkGeser(' + i + ',1)">▼</button>' : '') +
+          '<button class="btn btn-outline btn-sm" onclick="pkHapusPetugas(' + i + ')">✕</button></div>';
+      }).join('')
+    : '<div style="font-size:12.5px;color:var(--text-muted)">Belum ada petugas dipilih.</div>';
+}
+async function simpanPiketItem() {
+  var nama = document.getElementById('pkNama').value.trim();
+  var tipe = document.getElementById('pkTipe').value;
+  var hari = Array.prototype.slice.call(document.querySelectorAll('.pk-hari:checked')).map(function (c) { return +c.value; });
+  var mode = tipe !== 'harian' ? 'pilih' : document.getElementById('pkMode').value;
+  var mulai = document.getElementById('pkMulai').value;
+  if (!nama) { alert('Nama area wajib diisi.'); return; }
+  if (!hari.length) { alert('Pilih minimal satu hari bertugas.'); return; }
+  if (mode === 'pilih' && !_pkPetugasDraft.length) { alert('Pilih minimal satu petugas.'); return; }
+  if (tipe !== 'harian' && !mulai) { alert('Isi tanggal mulai rotasi.'); return; }
+  var jumlah = Math.max(1, parseInt(document.getElementById('pkJumlah').value, 10) || 1);
+  if (tipe !== 'harian' && jumlah > _pkPetugasDraft.length) { alert('Jumlah petugas per giliran tidak boleh melebihi jumlah petugas yang dipilih.'); return; }
+  var id = document.getElementById('pkId').value || genId('PKT');
+  var item = { id: id, nama: nama, tipe: tipe, hari: hari, mulai: tipe !== 'harian' ? mulai : '', perGiliran: tipe !== 'harian' ? jumlah : 1, semuaCS: mode === 'semuaCS', lewatiLibur: document.getElementById('pkLewatiLibur').checked, petugas: mode === 'pilih' ? _pkPetugasDraft : [] };
+  var idx = jadwalPiketCfg.piket.findIndex(function (x) { return x.id === id; });
+  if (idx >= 0) jadwalPiketCfg.piket[idx] = item; else jadwalPiketCfg.piket.push(item);
+  await simpanJadwalPiketCfg();
+  closeModal('modalPiketItem');
+  renderPiketAdmin();
+}
+// Mengganti jadwal Aula Lantai 2 & 3 yang tersimpan dengan pola bergilir standar (DEFAULT_JADWAL_PIKET)
+async function terapkanPolaAula() {
+  var defs = DEFAULT_JADWAL_PIKET.piket.filter(function (d) { return d.id === 'PKT-AULA-L2' || d.id === 'PKT-AULA-L3'; });
+  var ringkas = defs.map(function (d) {
+    return '• ' + d.nama + ' (' + d.hari.map(function (h) { return _PKT_HARI[h]; }).join(' & ') + '), bergilir mulai ' + fmtDate(d.mulai) + ': ' + d.petugas.map(function (x) { return x.nama; }).join(' → ');
+  }).join('\n');
+  if (!confirm('Jadwal Aula Lantai 2 & 3 yang sekarang tersimpan akan DIGANTI dengan pola berikut:\n\n' + ringkas + '\n\nLanjutkan?')) return;
+  defs.forEach(function (d) {
+    var item = JSON.parse(JSON.stringify(d)), nm = _pktNorm(d.nama);
+    var idx = jadwalPiketCfg.piket.findIndex(function (x) { return x.id === d.id || _pktNorm(x.nama) === nm; });
+    if (idx >= 0) { item.id = jadwalPiketCfg.piket[idx].id; jadwalPiketCfg.piket[idx] = item; } else jadwalPiketCfg.piket.push(item);
+  });
+  var ok = await simpanJadwalPiketCfg();
+  renderPiketAdmin();
+  if (ok) alert('✅ Jadwal Aula Lantai 2 & 3 sudah diganti dengan pola bergilir.');
+}
+async function hapusPiketItem(id) {
+  if (!confirm('Hapus jadwal piket ini?')) return;
+  jadwalPiketCfg.piket = jadwalPiketCfg.piket.filter(function (x) { return x.id !== id; });
+  await simpanJadwalPiketCfg();
+  renderPiketAdmin();
+}
+async function tambahTandem() {
+  var idB = document.getElementById('tdBerhalangan').value, idP = document.getElementById('tdPengganti').value;
+  var mulai = document.getElementById('tdMulai').value, selesai = document.getElementById('tdSelesai').value;
+  var alasan = document.getElementById('tdAlasan').value.trim();
+  if (!idB || !idP) { alert('Pilih CS yang berhalangan dan penggantinya.'); return; }
+  if (idB === idP) { alert('Pengganti tidak boleh orang yang sama.'); return; }
+  if (!mulai || !selesai || selesai < mulai) { alert('Rentang tanggal tidak valid.'); return; }
+  var opsi = piketPegawaiOpsi();
+  var b = opsi.filter(function (x) { return x.idPegawai === idB; })[0], p = opsi.filter(function (x) { return x.idPegawai === idP; })[0];
+  if (!b || !p) { alert('Data pegawai tidak ditemukan.'); return; }
+  jadwalPiketCfg.tandem.push({ id: genId('TDM'), mulai: mulai, selesai: selesai, idBerhalangan: b.idPegawai, namaBerhalangan: b.namaPegawai,
+    pekerjaanBerhalangan: b.pekerjaan, idPengganti: p.idPegawai, namaPengganti: p.namaPegawai, alasan: alasan });
+  await simpanJadwalPiketCfg();
+  document.getElementById('tdAlasan').value = '';
+  renderPiketAdmin();
+}
+async function hapusTandem(id) {
+  if (!confirm('Hapus tandem / pengganti ini?')) return;
+  jadwalPiketCfg.tandem = jadwalPiketCfg.tandem.filter(function (x) { return x.id !== id; });
+  await simpanJadwalPiketCfg();
+  renderPiketAdmin();
+}
+
+// ---------- Notifikasi setelah absen berhasil (+ piket hari ini) ----------
+async function tampilkanNotifAbsen(jenis, info) {
+  var masuk = jenis === 'masuk';
+  document.getElementById('absenSuksesTitle').textContent = masuk ? '✅ Absen Masuk Berhasil' : '🏠 Absen Pulang Berhasil';
+  var warna = /terlambat/i.test(info.status) ? '#dc2626' : (/cepat/i.test(info.status) ? '#d97706' : '#16a34a');
+  var baris = [['Tanggal', fmtDate(info.tanggal)], ['Jam', info.jam + ' WIB'], ['Status', '<b style="color:' + warna + '">' + _pktEsc(info.status) + '</b>']];
+  if (info.durasi) baris.push(['Durasi kerja', _pktEsc(info.durasi)]);
+  if (info.lembur) baris.push(['Keterangan', '🔥 Lembur']);
+  document.getElementById('absenSuksesBody').innerHTML =
+    '<div style="text-align:center;font-size:52px;line-height:1.1;margin-bottom:6px">' + (masuk ? '✅' : '🏠') + '</div>' +
+    '<table style="width:100%;font-size:14px">' + baris.map(function (r) { return '<tr><td style="padding:4px 0;color:var(--text-muted)">' + r[0] + '</td><td style="padding:4px 0;text-align:right">' + r[1] + '</td></tr>'; }).join('') + '</table>' +
+    '<div id="absenSuksesPiket"></div>';
+  document.getElementById('modalAbsenSukses').classList.add('open');
+  try { if (navigator.vibrate) navigator.vibrate(masuk ? [120, 60, 120] : 150); } catch (e) {}
+  if (!masuk) return;
+  try {
+    await ensureJadwalPiketLoaded();
+    var piket = getPiketUntukPegawai(currentUser, info.tanggal);
+    if (!piket.length) return;
+    document.getElementById('absenSuksesPiket').innerHTML =
+      '<div style="margin-top:14px;padding:12px 14px;border-radius:12px;background:#fef3c7;border:1px solid #fcd34d;text-align:left">' +
+      '<div style="font-weight:800;color:#92400e;margin-bottom:6px">🧹 Anda bertugas piket hari ini</div>' +
+      '<ul style="margin:0;padding-left:18px;font-size:13.5px;color:#78350f">' +
+      piket.map(function (p) { return '<li><strong>' + _pktEsc(p.nama) + '</strong>' + (p.note ? ' <span style="font-size:12px">— ' + _pktEsc(p.note) + '</span>' : '') + '</li>'; }).join('') +
+      '</ul></div>';
+  } catch (e) { console.warn('Notif piket gagal:', e); }
+}
+
+// Detail data di balik kartu statistik Rekap Absensi (klik kartu -> popup).
+async function showStatAbsenDetail(jenis) {
+  var st = window._admStatToday;
+  if (!st) { alert('Data belum dimuat. Klik 🔍 Tampilkan terlebih dahulu.'); return; }
+  try { await ensureLiburLoaded(); } catch (e) {}
+  var esc = function (v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  var pegMap = {};
+  st.pegawai.forEach(function (p) { pegMap[p.idPegawai] = p; });
+  var jabLabel = function (job, tim) {
+    return esc(job || '-') + (job === 'Security' && tim ? ' — ' + esc(tim) : '');
+  };
+  var rowsAbsen = function (list) {
+    if (!list.length) return '<div class="alert alert-info">Tidak ada data.</div>';
+    var h = '<table><thead><tr><th>No</th><th>Nama</th><th>Jabatan</th><th>Absen Masuk</th><th>Status Masuk</th><th>Absen Pulang</th><th>Status Pulang</th></tr></thead><tbody>';
+    list.forEach(function (a, i) {
+      var p = pegMap[a.idPegawai] || {};
+      var job = a.pekerjaan || p.pekerjaan;
+      var sm = a.statusAbsenMasuk || '-';
+      var cls = sm === 'Terlambat' ? 'color:#dc2626;font-weight:700' : 'color:#16a34a;font-weight:700';
+      h += '<tr><td style="text-align:center">' + (i + 1) + '</td>' +
+        '<td><strong>' + esc(a.namaPegawai || p.namaPegawai) + '</strong>' + (a.isLembur ? ' <span class="badge" style="background:#ede9fe;color:#7c3aed">🔥 Lembur</span>' : '') + '</td>' +
+        '<td>' + jabLabel(job, p.Tim) + '</td>' +
+        '<td>' + (a.absenMasuk ? fmtTime(a.absenMasuk) + ' WIB' : '-') + '</td>' +
+        '<td style="' + cls + '">' + esc(sm) + '</td>' +
+        '<td>' + (a.absenPulang ? fmtTime(a.absenPulang) + ' WIB' : '-') + '</td>' +
+        '<td>' + esc(a.statusAbsenPulang || (a.absenMasuk && !a.absenPulang ? 'Belum Pulang' : '-')) + '</td></tr>';
+    });
+    return h + '</tbody></table>';
+  };
+  var title = '', info = '', html = '';
+  var tglTxt = fmtDate(st.tanggal);
+  if (jenis === 'hadir') {
+    title = '✅ Total Hadir';
+    info = 'Tanggal ' + tglTxt + ' · ' + st.todayData.length + ' pegawai';
+    html = rowsAbsen(st.todayData.slice().sort(function (a, b) { return String(a.namaPegawai).localeCompare(String(b.namaPegawai)); }));
+  } else if (jenis === 'late') {
+    var late = st.todayData.filter(function (a) { return a.statusAbsenMasuk === 'Terlambat'; });
+    title = '⏰ Terlambat';
+    info = 'Tanggal ' + tglTxt + ' · ' + late.length + ' pegawai';
+    html = rowsAbsen(late);
+  } else if (jenis === 'absent') {
+    var hadirIds = {};
+    st.todayData.forEach(function (a) { hadirIds[a.idPegawai] = true; });
+    var tdy = st.tanggal;
+    var list = st.pegawai.filter(function (p) { return !hadirIds[p.idPegawai]; }).map(function (p) {
+      var ket = 'Belum absen', urut = 0;
+      var cuti = (localPermohonan || []).some(function (pm) {
+        return pm.ID_Karyawan === p.idPegawai && pm.Status === 'Disetujui' && (pm.Tanggal_Mulai || '') <= tdy && (pm.Tanggal_Selesai || '') >= tdy;
+      });
+      if (cuti) { ket = 'Cuti/Ijin disetujui'; urut = 1; }
+      else if (isPegawaiLiburOnDate(p, tdy)) { ket = (p.pekerjaan === 'Security' ? 'Libur (jadwal piket)' : 'Hari libur'); urut = 2; }
+      return { p: p, ket: ket, urut: urut };
+    }).sort(function (a, b) { return a.urut - b.urut || String(a.p.namaPegawai).localeCompare(String(b.p.namaPegawai)); });
+    title = '❌ Tidak Hadir';
+    info = 'Tanggal ' + tglTxt + ' · ' + list.length + ' pegawai (belum absen, cuti/ijin, atau libur sesuai jadwal)';
+    if (!list.length) html = '<div class="alert alert-info">Semua pegawai sudah hadir.</div>';
+    else {
+      html = '<table><thead><tr><th>No</th><th>Nama</th><th>Jabatan</th><th>Keterangan</th></tr></thead><tbody>';
+      list.forEach(function (r, i) {
+        var col = r.urut === 0 ? '#dc2626' : (r.urut === 1 ? '#16a34a' : '#6b7280');
+        html += '<tr><td style="text-align:center">' + (i + 1) + '</td><td><strong>' + esc(r.p.namaPegawai) + '</strong></td>' +
+          '<td>' + jabLabel(r.p.pekerjaan, r.p.Tim) + '</td><td style="color:' + col + ';font-weight:700">' + esc(r.ket) + '</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+  } else {
+    title = '👥 Total Pegawai Aktif';
+    info = st.pegawai.length + ' pegawai';
+    var sorted = st.pegawai.slice().sort(function (a, b) { return String(a.pekerjaan).localeCompare(String(b.pekerjaan)) || String(a.namaPegawai).localeCompare(String(b.namaPegawai)); });
+    html = '<table><thead><tr><th>No</th><th>ID Pegawai</th><th>Nama</th><th>Jabatan</th></tr></thead><tbody>';
+    sorted.forEach(function (p, i) {
+      html += '<tr><td style="text-align:center">' + (i + 1) + '</td><td style="font-family:Space Mono,monospace;font-size:12px">' + esc(p.idPegawai) + '</td>' +
+        '<td><strong>' + esc(p.namaPegawai) + '</strong></td><td>' + jabLabel(p.pekerjaan, p.Tim) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+  document.getElementById('statAbsenTitle').textContent = title;
+  document.getElementById('statAbsenInfo').textContent = info;
+  document.getElementById('statAbsenBody').innerHTML = html;
+  document.getElementById('modalStatAbsen').classList.add('open');
+}
+
 async function loadAdminAbsensi() {
   const from = document.getElementById('admFilterFrom').value;
   const to   = document.getElementById('admFilterTo').value;
@@ -11054,6 +12023,7 @@ async function loadAdminAbsensi() {
   var pegawaiListDbAdm = getPegawaiListForStats();
   document.getElementById('adm-absent').textContent = pegawaiListDbAdm.length - todayData.length;
   document.getElementById('adm-total').textContent  = pegawaiListDbAdm.length;
+  window._admStatToday = { tanggal: todayVerified(), todayData: todayData, pegawai: pegawaiListDbAdm };
 
   if (!data.length) { tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data</td></tr>'; document.getElementById('pgAdminAbsensi').innerHTML=''; return; }
   renderPaged('adminAbsensi', data, 'adminAbsenBody', 'pgAdminAbsensi', function(a){
@@ -11718,7 +12688,8 @@ function _pdRenderProfil(p) {
       item('NIK', _pdEsc(p['NIK'])) +
       item('No. HP', _pdEsc(p['NO HP'])) +
       item('Jenis Kelamin', _pdEsc(p['JENIS KELAMIN'])) +
-      item('Tempat, Tgl Lahir', _pdEsc([p['TEMPAT LAHIR'], p['TGL LAHIR']].filter(Boolean).join(', '))) +
+      item('Tempat, Tgl Lahir', _pdEsc(fmtTTLCell(p) === '-' ? '' : fmtTTLCell(p))) +
+      item('Tanggal Pensiun (usia ' + USIA_PENSIUN + ' th)', pensiunCellHtml(p['TGL LAHIR'], true)) +
       item('Pendidikan', _pdEsc(p['PENDIDIKAN'])) +
       item('Alamat', _pdEsc(p['ALAMAT'])) +
       item('No. Rekening Gaji', _pdEsc(p['REKENING'])) +
@@ -11817,7 +12788,7 @@ function pdBukaEvaluasi() {
 async function loadAdminPegawai() {
   const filter = document.getElementById('filterPegawai').value;
   const tbody  = document.getElementById('adminPegawaiBody');
-  tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
 
   var pegawaiList = [];
   if (SCRIPT_URL) {
@@ -11851,7 +12822,7 @@ async function loadAdminPegawai() {
     }
   }
 
-  if (!pegawaiList.length) { tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data</td></tr>'; document.getElementById('pgAdminPegawai').innerHTML=''; return; }
+  if (!pegawaiList.length) { tbody.innerHTML='<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data</td></tr>'; document.getElementById('pgAdminPegawai').innerHTML=''; return; }
   renderPaged('adminPegawai', pegawaiList, 'adminPegawaiBody', 'pgAdminPegawai', function(p){
     var idPeg = p['ID PEGAWAI'] || p['idPegawai'] || '';
     
@@ -11869,6 +12840,8 @@ async function loadAdminPegawai() {
       <td style="font-family:'Space Mono',monospace;font-size:12px">${idPeg}</td>
       <td><div class="peg-nama-cell">${pegThumbHtml(p)}<strong>${p['NAMA']||'-'}</strong></div></td>
       <td style="font-family:'Space Mono',monospace;font-size:12px">${p['NIK']||'-'}</td>
+      <td style="font-size:12.5px;white-space:nowrap">${_pdEsc(fmtTTLCell(p))}</td>
+      <td style="white-space:nowrap">${pensiunCellHtml(p['TGL LAHIR'])}</td>
       <td><span class="badge badge-blue">${p['PEKERJAAN']||'-'}</span></td>
       <td><span class="badge badge-gray">${p['Tim']||'-'}</span></td>
       <td style="font-weight:700">${fmtRp(p['GAJI']||0)}</td>
@@ -11880,7 +12853,7 @@ async function loadAdminPegawai() {
         <button class="btn btn-danger btn-sm" onclick="hapusPegawai('${idPeg}')">🗑</button>
       </td>
     </tr>`;
-  }, 9, 'Tidak ada data');
+  }, 13, 'Tidak ada data');
   updateBulkDeleteBtn('Pegawai');
 }
 
@@ -14048,46 +15021,184 @@ function findCol(row, names) {
 }
 
 // ============================================================
+// TTL & PENSIUN (helper)
+// ============================================================
+var USIA_PENSIUN = 58; // usia pensiun PPNPN (tahun) — ubah di sini bila aturan berubah
+var _BULAN_INDO = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+var _BULAN_MAP = { jan:1, feb:2, peb:2, mar:3, apr:4, mei:5, may:5, jun:6, jul:7, agu:8, aug:8, agt:8, sep:9, okt:10, oct:10, nov:11, nop:11, des:12, dec:12 };
+
+function _pad2(n) { return String(n).padStart(2, '0'); }
+function _isoValid(y, m, d) {
+  if (!(y >= 1900 && y <= 2100 && m >= 1 && m <= 12 && d >= 1)) return '';
+  var dim = new Date(y, m, 0).getDate();
+  return d <= dim ? (y + '-' + _pad2(m) + '-' + _pad2(d)) : '';
+}
+// Terima "2026-10-20", "20/10/2026", "20-10-2026", "9 Mei 1975" -> "YYYY-MM-DD" (atau '' bila tidak valid)
+function normTgl(v) {
+  if (v == null) return '';
+  var s = String(v).trim();
+  if (!s) return '';
+  var m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return _isoValid(+m[1], +m[2], +m[3]);
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if (m) return _isoValid(+m[3], +m[2], +m[1]);
+  m = s.match(/^(\d{1,2})[\s\-\/]+([A-Za-z]+)\.?[\s\-\/,]+(\d{4})$/);
+  if (m) {
+    var bln = _BULAN_MAP[m[2].toLowerCase().slice(0, 3)];
+    return bln ? _isoValid(+m[3], bln, +m[1]) : '';
+  }
+  return '';
+}
+// "Subang, 9 Mei 1975" -> { tempat:'Subang', tgl:'1975-05-09' }
+function parseTTL(str) {
+  var s = String(str || '').replace(/\s+/g, ' ').trim();
+  if (!s) return { tempat: '', tgl: '' };
+  var m = s.match(/^(.*?)[,\s]+(\d{1,2}[\s\-\/.]+[A-Za-z0-9]+\.?[\s\-\/.,]+\d{4})$/);
+  if (m) return { tempat: m[1].replace(/[,\s]+$/, '').trim(), tgl: normTgl(m[2]) };
+  return { tempat: '', tgl: '' };
+}
+function fmtTglIndo(iso) {
+  var n = normTgl(iso);
+  if (!n) return '';
+  return (+n.slice(8, 10)) + ' ' + _BULAN_INDO[+n.slice(5, 7) - 1] + ' ' + n.slice(0, 4);
+}
+function fmtTTLCell(p) {
+  var tmp = (p && p['TEMPAT LAHIR']) || '';
+  var tgl = fmtTglIndo(p && p['TGL LAHIR']);
+  var out = [tmp, tgl].filter(Boolean).join(', ');
+  return out || '-';
+}
+// Tanggal pensiun = tanggal lahir + USIA_PENSIUN tahun (ISO). '' bila tanggal lahir kosong/tidak valid.
+function hitungTglPensiun(tglLahir) {
+  var iso = normTgl(tglLahir);
+  if (!iso) return '';
+  var y = +iso.slice(0, 4) + USIA_PENSIUN, m = +iso.slice(5, 7), d = +iso.slice(8, 10);
+  var dim = new Date(y, m, 0).getDate(); // 29 Feb -> 28 Feb bila tahun pensiun bukan kabisat
+  return y + '-' + _pad2(m) + '-' + _pad2(Math.min(d, dim));
+}
+function pensiunCellHtml(tglLahir, withNote) {
+  var iso = hitungTglPensiun(tglLahir);
+  if (!iso) return '<span style="color:var(--text-muted)">-</span>';
+  var now = new Date();
+  var today = now.getFullYear() + '-' + _pad2(now.getMonth() + 1) + '-' + _pad2(now.getDate());
+  var batas = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+  var batasIso = batas.getFullYear() + '-' + _pad2(batas.getMonth() + 1) + '-' + _pad2(batas.getDate());
+  var badge = '';
+  if (iso <= today) badge = ' <span class="badge badge-red">Sudah pensiun</span>';
+  else if (iso <= batasIso) badge = ' <span class="badge badge-amber">&lt; 1 tahun lagi</span>';
+  return '<span>' + fmtTglIndo(iso) + '</span>' + badge;
+}
+function updatePensiunPreview() {
+  var el = document.getElementById('adm-peg-pensiun');
+  if (!el) return;
+  el.value = fmtTglIndo(hitungTglPensiun(document.getElementById('adm-peg-tgllahir').value));
+}
+function updatePensiunProfil() {
+  var el = document.getElementById('pf-pensiun');
+  if (!el) return;
+  el.value = fmtTglIndo(hitungTglPensiun(document.getElementById('pf-tgl').value));
+}
+
+// Parser CSV yang menghormati tanda kutip ("Subang, 9 Mei 1975" tidak terpecah di koma)
+function csvToRowsQ(csv) {
+  csv = csv.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  var firstLine = csv.split('\n')[0] || '';
+  var delim = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ';' : ',';
+  var table = [], row = [], cur = '', q = false;
+  for (var i = 0; i < csv.length; i++) {
+    var c = csv[i];
+    if (q) {
+      if (c === '"') { if (csv[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+      else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === delim) { row.push(cur); cur = ''; }
+    else if (c === '\n') { row.push(cur); table.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  row.push(cur); table.push(row);
+  table = table.filter(function (r) { return r.some(function (x) { return String(x).trim().length; }); });
+  if (table.length < 2) return { headers: [], rows: [] };
+  var headers = table[0].map(function (h) { return String(h).trim(); });
+  var rows = table.slice(1).map(function (cols) {
+    var obj = {};
+    headers.forEach(function (h, i) { obj[h] = cols[i] !== undefined ? String(cols[i]).trim() : ''; });
+    return obj;
+  });
+  return { headers: headers, rows: rows };
+}
+function _normNama(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+// ============================================================
 // IMPORT: DATA PEGAWAI
+// Kolom yang dikenali: ID PEGAWAI, NAMA, NIK, PEKERJAAN, Tim, NO HP,
+// TTL (atau TEMPAT LAHIR + TGL LAHIR), ALAMAT.
+// Bila ID PEGAWAI kosong, baris dicocokkan ke pegawai terdaftar lewat NIK (lalu nama).
 // ============================================================
 async function importPegawaiFile(event) {
   var file = event.target.files[0];
   if (!file) return;
   readFileAsCSV(file, async function(csv){
-    var parsed = csvToRows(csv);
+    var parsed = csvToRowsQ(csv);
     if (!parsed.rows.length) { alert('File kosong atau format tidak dikenali'); return; }
 
-    // Ambil data pegawai yang sudah ada di Supabase, supaya username/password
-    // pegawai lama tidak tertimpa kosong saat re-import
-    var existingMap = {};
+    // Ambil data pegawai yang sudah ada di Supabase, supaya data lama (username/password,
+    // gaji, rekening, dst.) tidak tertimpa kosong saat import
+    var existingMap = {}, byNik = {}, byNama = {};
     if (SCRIPT_URL) {
       var exRes = await callAPI('getPegawai', {});
       if (exRes && exRes.success) {
         exRes.data.forEach(function(p){
           var id = p['ID PEGAWAI'] || p['idPegawai'];
-          if (id) existingMap[id] = p;
+          if (!id) return;
+          existingMap[id] = p;
+          var nik = String(p['NIK'] || '').replace(/\D/g, '');
+          if (nik) byNik[nik] = id;
+          var nm = _normNama(p['NAMA']);
+          if (nm) byNama[nm] = (byNama[nm] === undefined) ? id : null; // null = nama kembar, tidak dipakai
         });
       }
     }
 
     var existingLocal = JSON.parse(localStorage.getItem('ppnpn_pegawai_import') || '[]');
-    var count = 0, failed = 0;
-    var rowsToImport = parsed.rows.map(function(r){
-      var idPeg = findCol(r, ['ID PEGAWAI','idPegawai','ID']);
-      return { idPeg: idPeg, r: r };
-    }).filter(function(x){ return x.idPeg; });
+    var count = 0, failed = 0, tidakCocok = [], ttlGagal = [];
 
-    for (var i = 0; i < rowsToImport.length; i++) {
-      var idPeg = rowsToImport[i].idPeg;
-      var r = rowsToImport[i].r;
+    for (var i = 0; i < parsed.rows.length; i++) {
+      var r = parsed.rows[i];
+      var namaRow = findCol(r, ['NAMA','Nama']);
+      var nikRow  = String(findCol(r, ['NIK'])).replace(/\D/g, '');
+
+      // Tentukan ID pegawai: kolom ID -> NIK -> nama
+      var idPeg = findCol(r, ['ID PEGAWAI','idPegawai','ID']);
+      if (!idPeg && nikRow && byNik[nikRow]) idPeg = byNik[nikRow];
+      if (!idPeg && namaRow && byNama[_normNama(namaRow)]) idPeg = byNama[_normNama(namaRow)];
+      if (!idPeg) { if (namaRow || nikRow) tidakCocok.push(namaRow || nikRow); continue; }
+
       var ex = existingMap[idPeg] || {};
+
+      // Tempat & tanggal lahir
+      var tempat = findCol(r, ['TEMPAT LAHIR','Tempat']);
+      var tglRaw = findCol(r, ['TGL LAHIR','Tanggal Lahir']);
+      var ttlRaw = findCol(r, ['TTL','Tempat Tanggal Lahir','Tempat, Tgl Lahir','Tempat Tgl Lahir']);
+      if (ttlRaw) {
+        var pt = parseTTL(ttlRaw);
+        if (!tempat) tempat = pt.tempat;
+        if (!tglRaw) tglRaw = pt.tgl;
+        if (!pt.tgl && !normTgl(tglRaw)) ttlGagal.push(namaRow || idPeg);
+      }
+      var tglLahir = normTgl(tglRaw) || normTgl(ex['TGL LAHIR']);
+      tempat = tempat || ex['TEMPAT LAHIR'] || '';
+      var alamat = findCol(r, ['ALAMAT','Alamat']) || ex['ALAMAT'] || '';
+
       var obj = {
         'ID PEGAWAI': idPeg,
-        'NAMA': findCol(r, ['NAMA','Nama']) || ex['NAMA'] || '',
+        'NAMA': namaRow || ex['NAMA'] || '',
         'NIK': findCol(r, ['NIK']) || ex['NIK'] || '',
         'PEKERJAAN': findCol(r, ['PEKERJAAN','Pekerjaan','Jabatan']) || ex['PEKERJAAN'] || '',
         'Tim': findCol(r, ['Tim','TIM']) || ex['Tim'] || '',
-        'NO HP': findCol(r, ['NO HP','No HP','NoHP','Telepon']) || ex['NO HP'] || ''
+        'NO HP': findCol(r, ['NO HP','No HP','NoHP','Telepon']) || ex['NO HP'] || '',
+        'TEMPAT LAHIR': tempat,
+        'TGL LAHIR': tglLahir,
+        'ALAMAT': alamat
       };
 
       // Simpan cache lokal (untuk tampilan cepat / mode offline)
@@ -14104,8 +15215,17 @@ async function importPegawaiFile(event) {
           NO_HP: obj['NO HP'],
           PEKERJAAN: obj['PEKERJAAN'],
           TIM: obj['Tim'],
+          TEMPAT_LAHIR: obj['TEMPAT LAHIR'],
+          TGL_LAHIR: obj['TGL LAHIR'],
+          ALAMAT: obj['ALAMAT'],
           STATUS: obj['PEKERJAAN'] === 'Admin' ? 'Admin' : 'Pegawai'
         };
+        // Pegawai lama: bawa serta gaji/rekening/status BPJS supaya tidak tertimpa default (0/kosong)
+        if (existingMap[idPeg]) {
+          payload.GAJI = ex['GAJI'] || 0;
+          payload.REKENING = ex['REKENING'] || null;
+          payload.IKUT_BPJS = ex['IKUT BPJS'] !== 'Tidak';
+        }
         var res = await callAPI('savePegawaiAdmin', payload);
         if (res && res.success) count++; else failed++;
       } else {
@@ -14114,19 +15234,20 @@ async function importPegawaiFile(event) {
     }
 
     localStorage.setItem('ppnpn_pegawai_import', JSON.stringify(existingLocal));
-    if (SCRIPT_URL) {
-      alert('✅ Berhasil mengimpor ' + count + ' data pegawai ke database.' + (failed ? (' ⚠ ' + failed + ' baris gagal.') : ''));
-    } else {
-      alert('⚠ Supabase belum terhubung — ' + count + ' data hanya tersimpan sementara di perangkat ini.');
-    }
+    var pesan = SCRIPT_URL
+      ? '✅ Berhasil mengimpor ' + count + ' data pegawai ke database.' + (failed ? (' ⚠ ' + failed + ' baris gagal.') : '')
+      : '⚠ Supabase belum terhubung — ' + count + ' data hanya tersimpan sementara di perangkat ini.';
+    if (tidakCocok.length) pesan += '\n\n⚠ ' + tidakCocok.length + ' baris dilewati (tidak ada ID Pegawai dan NIK/nama tidak cocok dengan pegawai terdaftar):\n- ' + tidakCocok.slice(0, 10).join('\n- ') + (tidakCocok.length > 10 ? '\n- ...' : '');
+    if (ttlGagal.length) pesan += '\n\n⚠ Format TTL tidak terbaca (cth yang benar: Subang, 9 Mei 1975):\n- ' + ttlGagal.slice(0, 10).join('\n- ');
+    alert(pesan);
     loadAdminPegawai();
   });
   event.target.value = '';
 }
 
 function downloadTemplatePegawai() {
-  var csv = 'ID PEGAWAI,NAMA,NIK,PEKERJAAN,Tim,NO HP\n';
-  csv += 'CS2,Contoh Nama,3273xxxxxxxxxxxx,Cleaning Service,CS,08123456789\n';
+  var csv = 'ID PEGAWAI,NAMA,NIK,PEKERJAAN,Tim,NO HP,TTL,ALAMAT\n';
+  csv += 'CS2,Contoh Nama,3273xxxxxxxxxxxx,Cleaning Service,CS,08123456789,"Subang, 9 Mei 1975","Jl. Contoh No. 1 RT 01/02, Subang"\n';
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
@@ -14667,13 +15788,17 @@ async function loadAdminPotongan() {
   }
   await ensureLiburLoaded();
 
+  // Admin tidak ikut dalam perhitungan rekap potongan
+  pegawaiList = pegawaiList.filter(function(p){ return !isPegawaiAdmin(p); });
+
   if (!pegawaiList.length) {
     tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;padding:30px;color:var(--text-muted)">Tidak ada data pegawai</td></tr>';
     return;
   }
 
-  // Hitung hari kerja dalam periode (Senin-Jumat)
-  var hariKerja = hitungHariKerja(from, to);
+  // Hari kerja dihitung PER PEGAWAI: Security mengikuti hari piket (jadwal shift),
+  // pegawai lain Senin-Jumat.
+  var hariKerjaMax = 0;
 
   var rows = [];
   var totalLambatAll = 0, totalCepatAll = 0, totalAbsenAll = 0;
@@ -14689,7 +15814,16 @@ async function loadAdminPotongan() {
       return a.idPegawai === idPeg && a.tanggal >= from && a.tanggal <= to;
     });
 
-    var jumlahHadir    = absensiPeg.length;
+    var listHK = daftarHariKerjaPegawai(p, from, to);
+    var hariKerja = listHK.length;
+    if (hariKerja > hariKerjaMax) hariKerjaMax = hariKerja;
+    var setHK = {}; listHK.forEach(function(t){ setHK[t] = true; });
+    var isSec = (p['PEKERJAAN'] || '') === 'Security';
+
+    // Security: hadir dihitung hanya pada hari piket (absen di hari libur tidak mengurangi "tidak masuk")
+    var jumlahHadir    = isSec
+      ? absensiPeg.filter(function(a){ return setHK[a.tanggal]; }).length
+      : absensiPeg.length;
 
     // Absen di hari libur/off (bagi pegawai ybs) yang TIDAK ditugaskan lembur
     // tidak dihitung sebagai potongan keterlambatan/pulang cepat — misal
@@ -14715,7 +15849,10 @@ async function loadAdminPotongan() {
       // Hitung overlap dengan periode filter
       var start = mulai  > from ? mulai  : from;
       var end   = selesai < to  ? selesai : to;
-      if (start <= end) hariCutiDisetujui += hitungHariKerja(start, end);
+      if (start <= end) {
+        if (isSec) { for (var dc = start; dc <= end; dc = tambahHari(dc, 1)) { if (setHK[dc]) hariCutiDisetujui++; } }
+        else hariCutiDisetujui += hitungHariKerja(start, end);
+      }
     });
 
     // Tidak masuk tanpa ijin = hari kerja - hadir - cuti disetujui
@@ -14780,7 +15917,31 @@ async function loadAdminPotongan() {
 
   // Simpan rows ke global untuk export
   window._lastPotonganRows = rows;
-  window._lastPotonganPeriode = { from: from, to: to, jab: jab, hariKerja: hariKerja };
+  window._lastPotonganPeriode = { from: from, to: to, jab: jab, hariKerja: hariKerjaMax };
+}
+
+// True jika pegawai adalah Admin (tidak ikut dalam perhitungan rekap potongan)
+function isPegawaiAdmin(p) {
+  var st  = String((p && (p['STATUS'] || p.status)) || '').trim().toLowerCase();
+  var job = String((p && (p['PEKERJAAN'] || p.pekerjaan)) || '').trim().toLowerCase();
+  return st === 'admin' || job === 'admin';
+}
+
+// Daftar tanggal yang WAJIB masuk bagi pegawai tertentu dalam rentang from..to.
+// - Security: hanya hari piket (kode shift selain "L" pada TIM miliknya), bukan hari kerja kalender.
+// - Lainnya (CS/Pramubakti/Pengemudi): Senin-Jumat seperti sebelumnya.
+function daftarHariKerjaPegawai(p, from, to) {
+  var out = [];
+  var job = (p && (p['PEKERJAAN'] || p.pekerjaan)) || '';
+  for (var d = from; d <= to; d = tambahHari(d, 1)) {
+    if (job === 'Security') {
+      if (!isPegawaiLiburOnDate(p, d)) out.push(d);
+    } else {
+      var dw = new Date(d + 'T00:00:00').getDay();
+      if (dw !== 0 && dw !== 6) out.push(d);
+    }
+  }
+  return out;
 }
 
 // Hitung jumlah hari kerja (Senin-Jumat) antara dua tanggal
@@ -14819,7 +15980,7 @@ function exportPotonganExcel() {
   html += '<h2 style="color:#0b3d2e;margin-bottom:4px">REKAPITULASI POTONGAN PEGAWAI PPNPN</h2>';
   html += '<p style="color:#666;font-size:10pt">Periode: ' + fmtDate(periode.from) + ' s/d ' + fmtDate(periode.to);
   html += ' &nbsp;|&nbsp; Jabatan: ' + (periode.jab||'Semua');
-  html += ' &nbsp;|&nbsp; Hari Kerja: ' + periode.hariKerja + ' hari</p>';
+  html += ' &nbsp;|&nbsp; Hari Kerja: ' + periode.hariKerja + ' hari (Security mengikuti hari piket)</p>';
   html += '<p style="color:#666;font-size:9pt;margin-bottom:12px">Diekspor: ' + todayStr() + '</p>';
 
   html += '<table><thead><tr>';
@@ -14959,11 +16120,16 @@ async function hitungPotonganAbsenRentang(pegawaiList, from, to, onlyIdPeg) {
     }
     await ensureLiburLoaded();
 
-    var hariKerja = toTM >= from ? hitungHariKerja(from, toTM) : 0;
+    pegawaiList = pegawaiList.filter(function (p) { return !isPegawaiAdmin(p); });
     pegawaiList.forEach(function (p) {
       var idPeg = p['ID PEGAWAI'] || p['idPegawai'] || '';
+      var isSec = (p['PEKERJAAN'] || p['pekerjaan'] || '') === 'Security';
+      // Hari kerja per pegawai: Security = hari piket, lainnya Senin-Jumat
+      var listHK = toTM >= from ? daftarHariKerjaPegawai(p, from, toTM) : [];
+      var setHK = {}; listHK.forEach(function (t) { setHK[t] = true; });
+      var hariKerja = listHK.length;
       var absensiRentang = localAbsensi.filter(function (a) { return a.idPegawai === idPeg && a.tanggal >= from && a.tanggal <= to; });
-      var absensiTM = absensiRentang.filter(function (a) { return a.tanggal <= toTM; });
+      var absensiTM = absensiRentang.filter(function (a) { return a.tanggal <= toTM && (!isSec || setHK[a.tanggal]); });
       var kena = absensiRentang.filter(function (a) {
         var libur = isPegawaiLiburOnDate(p, a.tanggal);
         var lembur = a.isLembur || isPenugasanLembur(idPeg, a.tanggal);
@@ -14984,18 +16150,19 @@ async function hitungPotonganAbsenRentang(pegawaiList, from, to, onlyIdPeg) {
         if (!mulai || !selesai) return;
         var st = mulai > from ? mulai : from, en = selesai < toTM ? selesai : toTM;
         if (st <= en) {
-          hariCuti += hitungHariKerja(st, en);
-          for (var d = st; d <= en; d = tambahHari(d, 1)) { var dw = new Date(d).getDay(); if (dw !== 0 && dw !== 6) cutiSet[d] = true; }
+          for (var d = st; d <= en; d = tambahHari(d, 1)) {
+            var kerja = isSec ? !!setHK[d] : (new Date(d).getDay() !== 0 && new Date(d).getDay() !== 6);
+            if (kerja) { cutiSet[d] = true; hariCuti++; }
+          }
         }
       });
       var tidakMasuk = Math.max(0, hariKerja - absensiTM.length - hariCuti);
       var adaAbsen = {};
       absensiTM.forEach(function (a) { adaAbsen[a.tanggal] = true; });
       var gap = [];
-      for (var d2 = from; d2 <= toTM; d2 = tambahHari(d2, 1)) {
-        var dw2 = new Date(d2).getDay();
-        if (dw2 !== 0 && dw2 !== 6 && !adaAbsen[d2] && !cutiSet[d2]) gap.push(d2);
-      }
+      listHK.forEach(function (d2) {
+        if (!adaAbsen[d2] && !cutiSet[d2]) gap.push(d2);
+      });
       gap.slice(0, tidakMasuk).forEach(function (t) { detail.push({ tanggal: t, jenis: 'Tidak Masuk', ket: 'Tidak ada absensi & tanpa ijin/cuti disetujui', persen: 4 }); });
       detail.sort(function (x, y) { return x.tanggal.localeCompare(y.tanggal); });
       out[idPeg] = { terlambat: terlambat, cepat: cepat, tidakMasuk: tidakMasuk, persen: terlambat * 1 + cepat * 1 + tidakMasuk * 4, detail: detail };
@@ -16521,6 +17688,10 @@ function openAddPegawai() {
   document.getElementById('adm-peg-bpjs').value = 'Ya';
   document.getElementById('adm-peg-nobpjs').value = '';
   document.getElementById('adm-peg-nobpjskes').value = '';
+  document.getElementById('adm-peg-tmplahir').value = '';
+  document.getElementById('adm-peg-tgllahir').value = '';
+  document.getElementById('adm-peg-alamat').value = '';
+  updatePensiunPreview();
   resetPegFoto('');
   document.getElementById('pegawaiAdminModal').classList.add('open');
 }
@@ -16543,6 +17714,10 @@ function editPegawai(dataStr) {
   document.getElementById('adm-peg-bpjs').value = (p['IKUT BPJS'] === 'Tidak') ? 'Tidak' : 'Ya';
   document.getElementById('adm-peg-nobpjs').value = p['NO BPJS'] || '';
   document.getElementById('adm-peg-nobpjskes').value = p['NO BPJS KES'] || '';
+  document.getElementById('adm-peg-tmplahir').value = p['TEMPAT LAHIR'] || '';
+  document.getElementById('adm-peg-tgllahir').value = normTgl(p['TGL LAHIR']);
+  document.getElementById('adm-peg-alamat').value = p['ALAMAT'] || '';
+  updatePensiunPreview();
   resetPegFoto(p['FOTO'] || '');
   document.getElementById('pegawaiAdminModal').classList.add('open');
 }
@@ -16566,6 +17741,9 @@ async function simpanPegawaiAdmin() {
     IKUT_BPJS: document.getElementById('adm-peg-bpjs').value !== 'Tidak',
     NO_BPJS: document.getElementById('adm-peg-nobpjs').value.trim(),
     NO_BPJS_KES: document.getElementById('adm-peg-nobpjskes').value.trim(),
+    TEMPAT_LAHIR: document.getElementById('adm-peg-tmplahir').value.trim(),
+    TGL_LAHIR: document.getElementById('adm-peg-tgllahir').value,
+    ALAMAT: document.getElementById('adm-peg-alamat').value.trim(),
     STATUS: document.getElementById('adm-peg-job').value === 'Admin' ? 'Admin' : 'Pegawai'
   };
 
