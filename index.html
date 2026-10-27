@@ -2383,6 +2383,9 @@
             <div class="field"><label>Pekerjaan</label><input type="text" id="pf-pekerjaan" disabled></div>
             <div class="field"><label>Tim</label><input type="text" id="pf-tim" disabled></div>
           </div>
+          <div class="form-row single">
+            <div class="field"><label>No. Rekening Tabungan Gaji</label><input type="text" id="pf-rekening" disabled placeholder="Belum diisi admin"></div>
+          </div>
           <div class="form-row">
             <div class="field"><label>No. BPJS Ketenagakerjaan</label><input type="text" id="pf-nobpjs" inputmode="numeric" placeholder="cth: 2012345678"></div>
             <div class="field"><label>No. BPJS Kesehatan</label><input type="text" id="pf-nobpjskes" inputmode="numeric" placeholder="cth: 0001234567890"></div>
@@ -2842,6 +2845,7 @@
           <div class="tab active" onclick="switchPotGajiTab('input')">✏️ Input Potongan</div>
           <div class="tab" onclick="switchPotGajiTab('riwayat')">🕒 Riwayat Pemotongan</div>
           <div class="tab" onclick="switchPotGajiTab('rekap')">📊 Rekapitulasi Bulanan</div>
+          <div class="tab" onclick="switchPotGajiTab('utang')">🤝 Rekap Utang</div>
           <div class="tab" onclick="switchPotGajiTab('pengantar')">🖨️ Cetak Pengantar</div>
         </div>
 
@@ -2953,6 +2957,32 @@
             <table>
               <thead><tr><th>No</th><th>Bulan</th><th>Jumlah Pegawai</th><th>Total Gaji SPK</th><th>Total BPJS TK</th><th style="background:#dbeafe;color:#1e3a8a">Total BPJS Kesehatan (1%)<br><small>dipotong bendahara</small></th><th>Total Utang Pegawai</th><th>Total Paguyuban</th><th>Total Potongan (BRI)</th><th>Total Net Gaji (BRI)</th><th style="background:#dbeafe;color:#1e3a8a">Total Potongan Absen<br><small>(disetujui)</small></th><th style="background:#dcfce7;color:#14532d">Total Net Diterima</th></tr></thead>
               <tbody id="rekapPotBody"><tr><td colspan="12" style="text-align:center;padding:24px;color:var(--text-muted)">Pilih periode lalu klik "Tampilkan".</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+
+        <!-- ===== SUB: REKAP UTANG KE PEGAWAI (dikelompokkan per pemberi pinjaman) ===== -->
+        <div id="potGajiUtangWrap" style="display:none">
+        <div class="card">
+          <div class="card-title">🤝 Rekap Utang ke Pegawai — Per Pemberi Pinjaman</div>
+          <div class="filter-bar">
+            <div class="field"><label>Dari Bulan</label><input type="month" id="rkUtangDari"></div>
+            <div class="field"><label>Sampai Bulan</label><input type="month" id="rkUtangSampai"></div>
+            <div class="field"><label>Pemberi Pinjaman</label><select id="rkUtangPemberi" onchange="renderRekapUtang()"><option value="">Semua</option></select></div>
+            <button class="btn btn-primary" onclick="loadRekapUtang()">🔍 Tampilkan</button>
+            <button class="btn btn-success" onclick="exportRekapUtangExcel()" style="background:#16a34a;border-color:#16a34a">⬇ Export Excel</button>
+          </div>
+          <div class="stats-grid" id="rkUtangStats" style="display:none;margin-bottom:14px">
+            <div class="stat-card amber"><div class="label">Total Utang Dipotong</div><div class="value" id="rku-total">-</div></div>
+            <div class="stat-card blue"><div class="label">Jumlah Pemberi Pinjaman</div><div class="value" id="rku-pemberi">-</div></div>
+            <div class="stat-card green"><div class="label">Jumlah Pegawai Meminjam</div><div class="value" id="rku-pegawai">-</div></div>
+          </div>
+          <div class="alert alert-info alert-block" style="margin-bottom:12px;font-size:12.5px">ℹ️ Data diambil dari rincian <b>Utang Ke Pegawai</b> pada menu Input Potongan (nama pemberi pinjaman + jumlah per bulan). Nama pemberi yang sama (huruf besar/kecil tidak dibedakan) digabung dalam satu kelompok. Klik baris kelompok untuk membuka/menutup rinciannya.</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>No</th><th>Periode</th><th>Nama Pegawai (Peminjam)</th><th>Jabatan</th><th style="text-align:right">Jumlah Dipotong</th></tr></thead>
+              <tbody id="rkUtangBody"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">Pilih periode lalu klik "Tampilkan".</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -3921,7 +3951,7 @@
             <div id="dashInfo" style="font-size:12.5px;color:var(--text-muted);margin-top:12px"></div>
           </div>
 
-          <div class="stats-grid" id="dashStats" style="margin-top:16px">
+          <div class="stats-grid" id="dashStatsEvaluasi" style="margin-top:16px">
             <div class="stat-card blue"><div class="label">Rata-rata Capaian</div><div class="value" id="dashStatAvg">-</div><div class="sub">seluruh pegawai</div></div>
             <div class="stat-card green"><div class="label">Capaian Baik</div><div class="value" id="dashStatBaik">0</div><div class="sub">pegawai &ge; 80%</div></div>
             <div class="stat-card red"><div class="label">Perlu Perhatian</div><div class="value" id="dashStatKurang">0</div><div class="sub">pegawai &lt; 50%</div></div>
@@ -5937,6 +5967,37 @@ function quickSaveUrl(val) {
 // Script menjadi query ke Supabase, dengan bentuk hasil {success,data}
 // yang sama persis seperti sebelumnya supaya kompatibel.
 // ============================================================
+// Sinkronkan kolom "Utang ke Pegawai" dengan rincian (potongan_utang_pegawai).
+// Total utang pada baris potongan bisa 0 padahal rincian ada (mis. rincian tersimpan tapi baris
+// utamanya belum/ gagal tersimpan). Bila rincian untuk (pegawai, bulan, tahun) ada, jumlah rincian
+// dipakai sebagai nilai utang, lalu total potongan & net gaji dihitung ulang supaya konsisten di
+// semua tampilan (Rekap Gaji Saya, Riwayat, Rekap Bulanan, Input Potongan).
+function _bersihTag(v) { return typeof v === 'string' ? v.replace(/[<>]/g, '') : v; }
+async function mergeUtangRincian(rows, params) {
+  try {
+    if (!rows || !rows.length) return rows;
+    let q = supabaseClient.from('potongan_utang_pegawai').select('id_pegawai,bulan,tahun,jumlah');
+    if (params.idPegawai) q = q.eq('id_pegawai', params.idPegawai);
+    if (params.tahun) q = q.eq('tahun', params.tahun);
+    if (params.bulan) q = q.eq('bulan', params.bulan);
+    const { data, error } = await q.range(0, 9999);
+    if (error || !data) return rows;
+    const sum = {};
+    data.forEach(function (x) {
+      const k = x.id_pegawai + '|' + x.bulan + '|' + x.tahun;
+      sum[k] = (sum[k] || 0) + (Number(x.jumlah) || 0);
+    });
+    rows.forEach(function (r) {
+      const k = r.idPegawai + '|' + r.bulan + '|' + r.tahun;
+      if (!(k in sum)) return;
+      r.utangPegawai = sum[k];
+      r.totalPotongan = (Number(r.bpjsTk) || 0) + sum[k] + (Number(r.paguyuban) || 0);
+      r.netGaji = (Number(r.gaji) || 0) - r.totalPotongan;
+    });
+  } catch (e) { console.warn('mergeUtangRincian gagal:', e); }
+  return rows;
+}
+
 async function callAPI(action, params={}) {
   if (!supabaseClient) return null;
   try {
@@ -5964,9 +6025,9 @@ async function callAPI(action, params={}) {
         if (error) return { success:false, error: error.message };
         return { success:true, data: (data||[]).map(function(r){
           return {
-            'ID PEGAWAI': r.id_pegawai, 'NAMA': r.nama_pegawai, 'NIK': r.nik,
-            'NO HP': r.no_hp, 'TEMPAT LAHIR': r.tempat_lahir, 'TGL LAHIR': r.tgl_lahir,
-            'JENIS KELAMIN': r.jenis_kelamin, 'PENDIDIKAN': r.pendidikan, 'ALAMAT': r.alamat,
+            'ID PEGAWAI': r.id_pegawai, 'NAMA': _bersihTag(r.nama_pegawai), 'NIK': r.nik,
+            'NO HP': r.no_hp, 'TEMPAT LAHIR': _bersihTag(r.tempat_lahir), 'TGL LAHIR': r.tgl_lahir,
+            'JENIS KELAMIN': r.jenis_kelamin, 'PENDIDIKAN': r.pendidikan, 'ALAMAT': _bersihTag(r.alamat),
             'PEKERJAAN': r.pekerjaan, 'Tim': r.tim, 'TIM': r.tim, 'GAJI': r.gaji,
             'PASSWORD': r.password, 'USERNAME': r.username, 'STATUS': r.status,
             'REKENING': r.rekening, 'FOTO': r.foto_url || '', 'NO BPJS': r.no_bpjs || '', 'NO BPJS KES': r.no_bpjs_kes || '',
@@ -5977,6 +6038,9 @@ async function callAPI(action, params={}) {
 
       case 'savePegawai': {
         const upd = {};
+        ['NAMA','NIK','NO_HP','TEMPAT_LAHIR','JENIS_KELAMIN','PENDIDIKAN','ALAMAT','NO_BPJS','NO_BPJS_KES'].forEach(function(k){
+          if (typeof params[k] === 'string') params[k] = params[k].replace(/[<>]/g, '');
+        });
         if (params.NAMA !== undefined)          upd.nama_pegawai   = params.NAMA;
         if (params.NIK !== undefined)           upd.nik            = params.NIK;
         if (params.NO_HP !== undefined)         upd.no_hp          = params.NO_HP;
@@ -6018,7 +6082,7 @@ async function callAPI(action, params={}) {
           .eq('bulan', params.bulan).eq('tahun', params.tahun);
         const { data, error } = await q;
         if (error) return { success:false, error: error.message };
-        return { success:true, data: (data||[]).map(function(r){
+        return { success:true, data: await mergeUtangRincian((data||[]).map(function(r){
           return {
             idPegawai: r.id_pegawai, bulan: r.bulan, tahun: r.tahun,
             gaji: r.gaji, bpjsTk: r.bpjs_tk, utangPegawai: r.utang_pegawai,
@@ -6028,7 +6092,7 @@ async function callAPI(action, params={}) {
             bpjsKes: r.bpjs_kes, potonganAbsen: r.potongan_absen,
             absenStatus: r.absen_status, absenKet: r.absen_ket
           };
-        })};
+        }), params) };
       }
 
       // Riwayat pemotongan lintas periode (tanpa batas bulan/tahun tunggal),
@@ -6041,7 +6105,7 @@ async function callAPI(action, params={}) {
         q = q.order('tahun', { ascending:false }).order('bulan', { ascending:false });
         const { data, error } = await q;
         if (error) return { success:false, error: error.message };
-        return { success:true, data: (data||[]).map(function(r){
+        return { success:true, data: await mergeUtangRincian((data||[]).map(function(r){
           return {
             idPegawai: r.id_pegawai, bulan: r.bulan, tahun: r.tahun,
             gaji: r.gaji, bpjsTk: r.bpjs_tk, utangPegawai: r.utang_pegawai,
@@ -6051,7 +6115,7 @@ async function callAPI(action, params={}) {
             bpjsKes: r.bpjs_kes, potonganAbsen: r.potongan_absen,
             absenStatus: r.absen_status, absenKet: r.absen_ket
           };
-        })};
+        }), params) };
       }
 
       case 'savePotonganGaji': {
@@ -6098,6 +6162,21 @@ async function callAPI(action, params={}) {
         const { data, error } = await q;
         if (error) return { success:false, error: error.message };
         return { success:true, data: (data||[]).map(function(r){
+          return { id: r.id, idPegawai: r.id_pegawai, bulan: r.bulan, tahun: r.tahun, namaPemberi: r.nama_pemberi, jumlah: r.jumlah };
+        })};
+      }
+
+      case 'getUtangPegawaiRentang': {
+        // params.dari / params.sampai = 'YYYY-MM' (inklusif)
+        const pd = String(params.dari || '').split('-'), ps = String(params.sampai || '').split('-');
+        const kDari = (parseInt(pd[0], 10) || 0) * 100 + (parseInt(pd[1], 10) || 1);
+        const kSampai = (parseInt(ps[0], 10) || 9999) * 100 + (parseInt(ps[1], 10) || 12);
+        const { data, error } = await supabaseClient.from('potongan_utang_pegawai').select('*')
+          .gte('tahun', Math.floor(kDari / 100)).lte('tahun', Math.floor(kSampai / 100)).range(0, 9999);
+        if (error) return { success:false, error: error.message };
+        return { success:true, data: (data||[]).filter(function(r){
+          var k = Number(r.tahun) * 100 + Number(r.bulan); return k >= kDari && k <= kSampai;
+        }).map(function(r){
           return { id: r.id, idPegawai: r.id_pegawai, bulan: r.bulan, tahun: r.tahun, namaPemberi: r.nama_pemberi, jumlah: r.jumlah };
         })};
       }
@@ -8795,7 +8874,7 @@ async function syncFromSheets() {
           NAMA: p['NAMA'], NIK: p['NIK'], NO_HP: p['NO HP'], NO_BPJS: p['NO BPJS'] || '', NO_BPJS_KES: p['NO BPJS KES'] || '',
           TEMPAT_LAHIR: p['TEMPAT LAHIR'], TGL_LAHIR: p['TGL LAHIR'],
           JENIS_KELAMIN: p['JENIS KELAMIN'], PENDIDIKAN: p['PENDIDIKAN'],
-          ALAMAT: p['ALAMAT']
+          ALAMAT: p['ALAMAT'], REKENING: p['REKENING'] || ''
         };
         localStorage.setItem('ppnpn_pegawai', JSON.stringify(localPegawai));
       }
@@ -9373,15 +9452,41 @@ async function loadDashboard() {
     // ---- Ringkasan kehadiran bulan ini ----
     var nowM = new Date();
     var bulanIni = nowM.getFullYear()+'-'+String(nowM.getMonth()+1).padStart(2,'0');
-    var absensiBulanIni = localAbsensi.filter(function(a){ return a.idPegawai===u.idPegawai && a.tanggal && a.tanggal.startsWith(bulanIni); });
+    // Hitungan berbasis HARI KERJA (bukan hari kalender), s/d hari ini:
+    // Security = hari piket sesuai jadwal shift, lainnya Senin-Jumat.
+    var hariIniStr = (typeof todayVerified === 'function' && todayVerified()) || (bulanIni + '-' + String(nowM.getDate()).padStart(2,'0'));
+    var pegHK = { PEKERJAAN: u.pekerjaan, pekerjaan: u.pekerjaan, Tim: u.Tim, tim: u.Tim };
+    var listHKBln = daftarHariKerjaPegawai(pegHK, bulanIni + '-01', hariIniStr);
+    var setHKBln = {}; listHKBln.forEach(function(t){ setHKBln[t] = true; });
+    var hariKerjaBln = listHKBln.length;
+    var absensiBulanIni = localAbsensi.filter(function(a){ return a.idPegawai===u.idPegawai && a.tanggal && a.tanggal.startsWith(bulanIni) && setHKBln[a.tanggal]; });
     var jumlahHadirBln = absensiBulanIni.length;
     var jumlahTerlambatBln = absensiBulanIni.filter(function(a){ return a.statusAbsenMasuk==='Terlambat'; }).length;
     var jumlahPulangCepatBln = absensiBulanIni.filter(function(a){ return a.statusAbsenPulang==='Pulang Cepat'; }).length;
-    var jumlahCutiIjinBln = localPermohonan.filter(function(p){
-      return p.ID_Karyawan===u.idPegawai && p.Status==='Disetujui' && p.Tanggal_Mulai && p.Tanggal_Mulai.startsWith(bulanIni);
-    }).length;
-    var hariBerjalan = nowM.getDate();
-    var jumlahAlpaBln = Math.max(0, hariBerjalan - jumlahHadirBln - jumlahCutiIjinBln);
+    // Cuti/ijin disetujui: hitung hari kerja yang tercakup dalam bulan ini (s/d hari ini)
+    var jumlahCutiIjinBln = 0;
+    localPermohonan.filter(function(p){
+      return p.ID_Karyawan===u.idPegawai && p.Status==='Disetujui' && p.Tanggal_Mulai && p.Tanggal_Selesai;
+    }).forEach(function(p){
+      var awalBln = bulanIni + '-01';
+      var st = p.Tanggal_Mulai > awalBln ? p.Tanggal_Mulai : awalBln;
+      var en = p.Tanggal_Selesai < hariIniStr ? p.Tanggal_Selesai : hariIniStr;
+      for (var dc = st; dc <= en; dc = tambahHari(dc, 1)) { if (setHKBln[dc]) jumlahCutiIjinBln++; }
+    });
+    var hariBerjalan = hariKerjaBln;
+    // Alpa = hari kerja yang sudah lewat tanpa absen & tanpa cuti/ijin disetujui.
+    // Hari ini baru dihitung bila pegawai sudah absen/cuti (sama dengan aturan potongan absen).
+    var tglAda = {};
+    absensiBulanIni.forEach(function(a){ tglAda[a.tanggal] = true; });
+    localPermohonan.filter(function(p){
+      return p.ID_Karyawan===u.idPegawai && p.Status==='Disetujui' && p.Tanggal_Mulai && p.Tanggal_Selesai;
+    }).forEach(function(p){
+      var awalBln2 = bulanIni + '-01';
+      var st2 = p.Tanggal_Mulai > awalBln2 ? p.Tanggal_Mulai : awalBln2;
+      var en2 = p.Tanggal_Selesai < hariIniStr ? p.Tanggal_Selesai : hariIniStr;
+      for (var dc2 = st2; dc2 <= en2; dc2 = tambahHari(dc2, 1)) tglAda[dc2] = true;
+    });
+    var jumlahAlpaBln = listHKBln.filter(function(t){ return t < hariIniStr && !tglAda[t]; }).length;
     var maxBar = Math.max(jumlahHadirBln, jumlahTerlambatBln, jumlahPulangCepatBln, jumlahCutiIjinBln, jumlahAlpaBln, 1);
 
     document.getElementById('pdHadir').textContent = jumlahHadirBln;
@@ -10870,7 +10975,7 @@ function onJenisCutiChange() {
 // perhitungan saat submit (ajukanCuti) selalu konsisten.
 function hitungCutiInfo(mulai, selesai, jenis, halfDay) {
   if (!mulai || !selesai) return { error: null };
-  const d1 = new Date(mulai), d2 = new Date(selesai);
+  const d1 = new Date(String(mulai).length === 10 ? mulai + 'T00:00:00' : mulai), d2 = new Date(String(selesai).length === 10 ? selesai + 'T00:00:00' : selesai);
   if (d1 > d2) return { error: 'Tanggal mulai harus sebelum atau sama dengan tanggal selesai!' };
 
   const isHalfDay = jenis==='Cuti Tahunan' && (halfDay==='pagi' || halfDay==='siang');
@@ -11122,6 +11227,7 @@ function loadProfil() {
   document.getElementById('pf-id').value = u.idPegawai;
   document.getElementById('pf-nama').value = saved?.NAMA || u.namaPegawai;
   document.getElementById('pf-nik').value = saved?.NIK || '';
+  document.getElementById('pf-rekening').value = saved?.REKENING || '';
   document.getElementById('pf-nobpjs').value = saved?.NO_BPJS || '';
   document.getElementById('pf-nobpjskes').value = saved?.NO_BPJS_KES || '';
   document.getElementById('pf-nohp').value = saved?.NO_HP || '';
@@ -11149,6 +11255,7 @@ function saveProfil() {
     JENIS_KELAMIN: document.getElementById('pf-jk').value,
     PENDIDIKAN: document.getElementById('pf-pendidikan').value,
     ALAMAT: document.getElementById('pf-alamat').value,
+    REKENING: (localPegawai[u.idPegawai] && localPegawai[u.idPegawai].REKENING) || '',  // read-only, dikelola admin
   };
   localStorage.setItem('ppnpn_pegawai', JSON.stringify(localPegawai));
   showAlert('profilAlert','success','✅ Data profil berhasil disimpan!');
@@ -11672,7 +11779,7 @@ async function renderPiketHeroPegawai() {
   };
   var today = getPiketUntukPegawai(u, hariIni, cfg), html = '';
   if (today.length) {
-    html = '<div style="font-weight:800;margin-bottom:4px">🧹 Piket Kebersihan</div>' +
+    html = '<div style="font-weight:800;margin-bottom:4px">🧹 Piket Kebersihan anda hari ini</div>' +
       '<ul style="margin:0;padding-left:18px">' + fmtItems(today).map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>';
   } else {
     var next = null;
@@ -12883,7 +12990,7 @@ function switchShiftTab(tab) {
   document.getElementById('shiftTabData').style.display = tab==='data' ? 'block' : 'none';
   document.getElementById('shiftTabRekap').style.display = tab==='rekap' ? 'block' : 'none';
   document.getElementById('shiftTabTukar').style.display = tab==='tukar' ? 'block' : 'none';
-  if (tab === 'rekap' && !document.getElementById('filterRekapPiketFrom').value) loadRekapPiketSecurity();
+  // Tab Rekap Piket memakai filter Tahun + tombol "Tampilkan" (tidak ada lagi filter Dari/Sampai).
   if (tab === 'tukar') { initTukarShiftForm(); renderRiwayatTukarShift(); initUbahTimSection('adm'); }
 }
 
@@ -15947,8 +16054,8 @@ function daftarHariKerjaPegawai(p, from, to) {
 // Hitung jumlah hari kerja (Senin-Jumat) antara dua tanggal
 function hitungHariKerja(from, to) {
   var count = 0;
-  var cur   = new Date(from);
-  var end   = new Date(to);
+  var cur   = new Date(String(from).length === 10 ? from + 'T00:00:00' : from);
+  var end   = new Date(String(to).length === 10 ? to + 'T00:00:00' : to);
   while (cur <= end) {
     var day = cur.getDay();
     if (day !== 0 && day !== 6) count++;
@@ -16151,7 +16258,7 @@ async function hitungPotonganAbsenRentang(pegawaiList, from, to, onlyIdPeg) {
         var st = mulai > from ? mulai : from, en = selesai < toTM ? selesai : toTM;
         if (st <= en) {
           for (var d = st; d <= en; d = tambahHari(d, 1)) {
-            var kerja = isSec ? !!setHK[d] : (new Date(d).getDay() !== 0 && new Date(d).getDay() !== 6);
+            var kerja = isSec ? !!setHK[d] : (new Date(d + 'T00:00:00').getDay() !== 0 && new Date(d + 'T00:00:00').getDay() !== 6);
             if (kerja) { cutiSet[d] = true; hariCuti++; }
           }
         }
@@ -16300,7 +16407,7 @@ async function openRekapGajiDetail(bulan, tahun) {
   utangSub.textContent = utangItems.length ? (utangItems.length + ' rincian pinjaman') : 'Tidak ada pinjaman bulan ini';
   if (utangItems.length) {
     utangBody.innerHTML = utangItems.map(function (it) {
-      return '<tr><td>' + (it.namaPemberi || '-') + '</td><td>' + fmtRp(it.jumlah) + '</td></tr>';
+      return '<tr><td>' + String(it.namaPemberi || '-').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }) + '</td><td>' + fmtRp(it.jumlah) + '</td></tr>';
     }).join('');
     utangWrap.style.display = 'block';
   }
@@ -16600,12 +16707,14 @@ async function dropPotonganGajiRow(idPeg) {
 function switchPotGajiTab(tab) {
   var tabs = document.querySelectorAll('#potGajiMainTabs .tab');
   tabs.forEach(function (t, i) {
-    t.classList.toggle('active', (tab === 'input' && i === 0) || (tab === 'riwayat' && i === 1) || (tab === 'rekap' && i === 2) || (tab === 'pengantar' && i === 3));
+    t.classList.toggle('active', (tab === 'input' && i === 0) || (tab === 'riwayat' && i === 1) || (tab === 'rekap' && i === 2) || (tab === 'utang' && i === 3) || (tab === 'pengantar' && i === 4));
   });
   document.getElementById('potGajiInputWrap').style.display = tab === 'input' ? '' : 'none';
   document.getElementById('potGajiRiwayatWrap').style.display = tab === 'riwayat' ? '' : 'none';
   document.getElementById('potGajiRekapWrap').style.display = tab === 'rekap' ? '' : 'none';
+  document.getElementById('potGajiUtangWrap').style.display = tab === 'utang' ? '' : 'none';
   document.getElementById('potGajiPengantarWrap').style.display = tab === 'pengantar' ? '' : 'none';
+  if (tab === 'utang') initRekapUtangFilter();
   if (tab === 'riwayat') initRiwayatPotFilter();
   if (tab === 'rekap') initRekapPotFilter();
   if (tab === 'pengantar') initPengantarPotongan();
@@ -16832,6 +16941,122 @@ function exportRekapPotonganBulananExcel() {
   var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a'); a.href = url; a.download = 'Rekapitulasi_Pemotongan_' + tahun + '.xls';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// ---- Rekap Utang ke Pegawai (dikelompokkan per pemberi pinjaman) ----
+var rekapUtangRaw = [];     // semua rincian pada periode terpilih (sudah dilengkapi nama pegawai)
+var rekapUtangGroups = [];  // hasil pengelompokan yang sedang ditampilkan
+function _rkEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function _rkPeriodeLabel(tahun, bulan) { return fmtBulanTahun(tahun + '-' + String(bulan).padStart(2, '0')); }
+function initRekapUtangFilter() {
+  var a = document.getElementById('rkUtangDari'), b = document.getElementById('rkUtangSampai');
+  if (a.value && b.value) return;
+  var n = new Date();
+  a.value = n.getFullYear() + '-01';
+  b.value = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0');
+}
+async function loadRekapUtang() {
+  var dari = document.getElementById('rkUtangDari').value, sampai = document.getElementById('rkUtangSampai').value;
+  if (!dari || !sampai) { alert('Pilih periode "Dari Bulan" dan "Sampai Bulan" terlebih dahulu.'); return; }
+  if (dari > sampai) { alert('Bulan awal tidak boleh lebih besar dari bulan akhir!'); return; }
+  var tbody = document.getElementById('rkUtangBody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">⏳ Memuat...</td></tr>';
+  var res = SCRIPT_URL ? await callAPI('getUtangPegawaiRentang', { dari: dari, sampai: sampai }) : null;
+  if (!res || !res.success) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--danger)">Gagal memuat data utang pegawai.</td></tr>';
+    return;
+  }
+  var pr = await callAPI('getPegawai', {});
+  var pegMap = {};
+  ((pr && pr.success && pr.data) || []).forEach(function (p) { pegMap[p['ID PEGAWAI']] = p; });
+  rekapUtangRaw = (res.data || []).filter(function (r) { return Number(r.jumlah) > 0 || (r.namaPemberi && r.namaPemberi !== '-'); }).map(function (r) {
+    var p = pegMap[r.idPegawai] || {};
+    return { idPegawai: r.idPegawai, nama: p['NAMA'] || r.idPegawai, jabatan: p['PEKERJAAN'] || '-',
+             pemberi: String(r.namaPemberi || '-').trim() || '-', bulan: Number(r.bulan), tahun: Number(r.tahun), jumlah: Number(r.jumlah) || 0 };
+  });
+  // Isi pilihan filter pemberi (dari seluruh data periode)
+  var sel = document.getElementById('rkUtangPemberi');
+  var namaPemberiSet = {};
+  rekapUtangRaw.forEach(function (r) { var k = r.pemberi.toLowerCase().replace(/\s+/g, ' '); if (!namaPemberiSet[k]) namaPemberiSet[k] = r.pemberi; });
+  sel.innerHTML = '<option value="">Semua</option>' + Object.keys(namaPemberiSet).sort().map(function (k) {
+    return '<option value="' + _rkEsc(k) + '">' + _rkEsc(namaPemberiSet[k]) + '</option>';
+  }).join('');
+  renderRekapUtang();
+}
+function renderRekapUtang() {
+  var tbody = document.getElementById('rkUtangBody');
+  var filter = document.getElementById('rkUtangPemberi').value;
+  var groups = {};
+  rekapUtangRaw.forEach(function (r) {
+    var k = r.pemberi.toLowerCase().replace(/\s+/g, ' ');
+    if (filter && k !== filter) return;
+    if (!groups[k]) groups[k] = { pemberi: r.pemberi, total: 0, pegawai: {}, items: [] };
+    groups[k].total += r.jumlah;
+    groups[k].pegawai[r.idPegawai] = true;
+    groups[k].items.push(r);
+  });
+  rekapUtangGroups = Object.keys(groups).map(function (k) { return groups[k]; })
+    .sort(function (a, b) { return b.total - a.total; });
+  rekapUtangGroups.forEach(function (g) {
+    g.items.sort(function (a, b) { return (a.tahun * 100 + a.bulan) - (b.tahun * 100 + b.bulan) || a.nama.localeCompare(b.nama); });
+  });
+
+  var stats = document.getElementById('rkUtangStats');
+  if (!rekapUtangGroups.length) {
+    stats.style.display = 'none';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data utang ke pegawai pada periode ini.</td></tr>';
+    return;
+  }
+  var grand = 0, pegAll = {};
+  rekapUtangGroups.forEach(function (g) { grand += g.total; Object.keys(g.pegawai).forEach(function (id) { pegAll[id] = true; }); });
+  stats.style.display = '';
+  document.getElementById('rku-total').textContent = fmtRp(grand);
+  document.getElementById('rku-pemberi').textContent = rekapUtangGroups.length;
+  document.getElementById('rku-pegawai').textContent = Object.keys(pegAll).length;
+
+  var html = '';
+  rekapUtangGroups.forEach(function (g, gi) {
+    html += '<tr style="background:#fef3c7;font-weight:700;cursor:pointer" onclick="toggleRekapUtangGrup(' + gi + ')">' +
+      '<td colspan="4"><span id="rkUtangArrow' + gi + '">▼</span> 🤝 ' + _rkEsc(g.pemberi) +
+      ' <span style="font-weight:500;color:var(--text-muted);font-size:12px">— ' + Object.keys(g.pegawai).length + ' pegawai · ' + g.items.length + ' rincian</span></td>' +
+      '<td style="text-align:right">' + fmtRp(g.total) + '</td></tr>';
+    g.items.forEach(function (r, i) {
+      html += '<tr class="rku-g' + gi + '"><td>' + (i + 1) + '</td><td>' + _rkPeriodeLabel(r.tahun, r.bulan) + '</td><td>' + _rkEsc(r.nama) +
+        '</td><td>' + _rkEsc(r.jabatan) + '</td><td style="text-align:right">' + fmtRp(r.jumlah) + '</td></tr>';
+    });
+  });
+  html += '<tr style="font-weight:800;background:#fde8d3"><td colspan="4" style="text-align:right">TOTAL SEMUA PEMBERI PINJAMAN</td><td style="text-align:right">' + fmtRp(grand) + '</td></tr>';
+  tbody.innerHTML = html;
+}
+function toggleRekapUtangGrup(gi) {
+  var rows = document.querySelectorAll('#rkUtangBody .rku-g' + gi);
+  var hide = rows.length && rows[0].style.display !== 'none';
+  rows.forEach(function (tr) { tr.style.display = hide ? 'none' : ''; });
+  var ar = document.getElementById('rkUtangArrow' + gi);
+  if (ar) ar.textContent = hide ? '▶' : '▼';
+}
+function exportRekapUtangExcel() {
+  if (!rekapUtangGroups.length) { alert('Klik "Tampilkan" terlebih dahulu.'); return; }
+  var dari = document.getElementById('rkUtangDari').value, sampai = document.getElementById('rkUtangSampai').value;
+  var label = fmtBulanTahun(dari) + (dari === sampai ? '' : ' s/d ' + fmtBulanTahun(sampai));
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+  html += '<head><meta charset="UTF-8"><' + 'style>th{background:#dbeafe;padding:7px;border:1px solid #888;font-weight:bold}td{padding:5px;border:1px solid #ccc}.grp td{background:#fef3c7;font-weight:bold}<' + '/style><' + '/head><body>';
+  html += '<h2>REKAP UTANG KE PEGAWAI PER PEMBERI PINJAMAN</h2><p>Periode: ' + label + '</p>';
+  html += '<table><thead><tr><th>No</th><th>Pemberi Pinjaman</th><th>Periode</th><th>Nama Pegawai (Peminjam)</th><th>Jabatan</th><th>Jumlah Dipotong</th></tr></thead><tbody>';
+  var grand = 0;
+  rekapUtangGroups.forEach(function (g) {
+    grand += g.total;
+    html += '<tr class="grp"><td colspan="5">' + _rkEsc(g.pemberi) + ' (' + Object.keys(g.pegawai).length + ' pegawai)</td><td>' + fmtRp(g.total) + '</td></tr>';
+    g.items.forEach(function (r, i) {
+      html += '<tr><td>' + (i + 1) + '</td><td>' + _rkEsc(g.pemberi) + '</td><td>' + _rkPeriodeLabel(r.tahun, r.bulan) + '</td><td>' + _rkEsc(r.nama) + '</td><td>' + _rkEsc(r.jabatan) + '</td><td>' + fmtRp(r.jumlah) + '</td></tr>';
+    });
+  });
+  html += '<tr style="font-weight:bold"><td colspan="5" style="text-align:right">TOTAL</td><td>' + fmtRp(grand) + '</td></tr>';
+  html += '<' + '/tbody><' + '/table><' + '/body><' + '/html>';
+  var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'Rekap_Utang_Pegawai_' + dari + '_' + sampai + '.xls';
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
